@@ -1,5 +1,7 @@
 # 02 — Technical Requirements Document (TRD)
 
+> **Rules v2:** parts of this document are superseded by [07-Rules-v2.md](07-Rules-v2.md) (scoring, login, locations, surprises, no AI Mode). Where they disagree, 07 wins.
+
 **Product:** SPIDEY tracXer — Search the SpiderXman
 **Read with:** 01-PRD (the *what*), 05-Backend-Schema (the tables), 06-Implementation-Plan (the order)
 

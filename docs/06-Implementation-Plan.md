@@ -1,5 +1,7 @@
 # 06 — Implementation Plan
 
+> **Rules v2:** parts of this document are superseded by [07-Rules-v2.md](07-Rules-v2.md) (scoring, login, locations, surprises, no AI Mode). Where they disagree, 07 wins.
+
 **Product:** SPIDEY tracXer — Search the SpiderXman
 **How to use this:** Claude Code builds one milestone at a time. After each milestone it **stops**, summarises what it built and how it verified it, and waits for "continue". Every milestone ends with its acceptance checks passing.
 

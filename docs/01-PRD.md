@@ -1,5 +1,7 @@
 # 01 — Product Requirements Document (PRD)
 
+> **Rules v2:** parts of this document are superseded by [07-Rules-v2.md](07-Rules-v2.md) (scoring, login, locations, surprises, no AI Mode). Where they disagree, 07 wins.
+
 **Product:** SPIDEY tracXer — Search the SpiderXman
 **Type:** Browser-based, beginner-friendly, Spider-Man–themed CTF for a live college event
 **Organiser:** EYE club, PSG College of Technology

@@ -1,5 +1,7 @@
 # 03 — App Flow Document
 
+> **Rules v2:** parts of this document are superseded by [07-Rules-v2.md](07-Rules-v2.md) (scoring, login, locations, surprises, no AI Mode). Where they disagree, 07 wins.
+
 **Product:** SPIDEY tracXer — Search the SpiderXman
 **Purpose:** every screen, every route, every state, and what happens on each user action. Use it as the checklist for the UI and the E2E tests.
 

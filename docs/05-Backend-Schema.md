@@ -1,5 +1,7 @@
 # 05 — Backend Schema Document
 
+> **Rules v2:** parts of this document are superseded by [07-Rules-v2.md](07-Rules-v2.md) (scoring, login, locations, surprises, no AI Mode). Where they disagree, 07 wins.
+
 **Product:** SPIDEY tracXer — Search the SpiderXman
 **Database:** Supabase Postgres 15+, private schema `app`
 **Source of truth:** `supabase/migrations/0001_init.sql` and `0002_security.sql` (reproduced in full in §8). The migrations were run on a clean Postgres 16 and tested (§7).
