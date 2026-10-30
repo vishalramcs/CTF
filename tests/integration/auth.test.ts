@@ -75,8 +75,8 @@ async function createTeam(username = 'team1'): Promise<string> {
 
 async function createAdmin(username = 'admin1'): Promise<void> {
   await sql`
-    INSERT INTO app.users (username, password_hash, role)
-    VALUES (${username}, ${passwordHash}, 'admin')`;
+    INSERT INTO app.users (username, password_hash, role, admin_level)
+    VALUES (${username}, ${passwordHash}, 'admin', 'super_admin')`;
 }
 
 function tokenFrom(res: Response): string {
