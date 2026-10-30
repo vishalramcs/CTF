@@ -123,3 +123,13 @@ export function withAdmin<P = unknown>(
 ) {
   return withRole<AdminSession, P>('admin', handler);
 }
+
+// Only a SUPER_ADMIN may grant or revoke developer access (docs/07 §2).
+export function withSuperAdmin<P = unknown>(
+  handler: (req: NextRequest, session: AdminSession, ctx: RouteContext<P>) => Promise<Response>,
+) {
+  return withAdmin<P>(async (req, session, ctx) => {
+    if (session.adminLevel !== 'super_admin') throw new ApiError(403, 'forbidden', 'Not allowed.');
+    return handler(req, session, ctx);
+  });
+}

@@ -12,7 +12,13 @@ export const SESSION_HOURS = { team: 8, admin: 12 } as const;
 
 type SessionBase = { id: string; userId: string };
 export type TeamSession = SessionBase & { role: 'team'; teamId: string; teamName: string };
-export type AdminSession = SessionBase & { role: 'admin'; teamId: null; teamName: null };
+export type AdminLevel = 'super_admin' | 'developer';
+export type AdminSession = SessionBase & {
+  role: 'admin';
+  adminLevel: AdminLevel;
+  teamId: null;
+  teamName: null;
+};
 export type Session = TeamSession | AdminSession;
 
 export type SessionLookup =
@@ -32,6 +38,7 @@ export async function lookupSession(token: string | undefined): Promise<SessionL
       role: sessions.role,
       teamId: sessions.teamId,
       teamName: teams.name,
+      adminLevel: users.adminLevel,
       revokedAt: sessions.revokedAt,
       revokeReason: sessions.revokeReason,
       accountActive: sql<boolean>`${users.isActive} AND coalesce(${teams.isActive}, true)`,
@@ -56,8 +63,8 @@ export async function lookupSession(token: string | undefined): Promise<SessionL
       .where(eq(sessions.id, row.id));
   }
 
-  const { id, userId, role, teamId, teamName } = row;
-  return { ok: true, session: { id, userId, role, teamId, teamName } as Session };
+  const { id, userId, role, teamId, teamName, adminLevel } = row;
+  return { ok: true, session: { id, userId, role, teamId, teamName, adminLevel } as Session };
 }
 
 // 05 §5 Login recipe. The advisory lock makes the count and the eviction atomic per team.

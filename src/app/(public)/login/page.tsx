@@ -18,7 +18,7 @@ export default async function LoginPage({
   if (result.ok && result.session.role === 'team') redirect(target);
 
   return (
-    <AuthCard title="Team login" subtitle="Use the username and password on your team's slip.">
+    <AuthCard title="Team login" subtitle="Use the team code and password from your team's slip.">
       <LoginForm
         endpoint="/api/auth/login"
         next={target}

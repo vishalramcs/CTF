@@ -6,8 +6,8 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import { hashPassword } from '@/lib/auth/password';
+import { teamCode, teamPassword } from '@/lib/auth/team-credentials';
 import { hmacHex } from '@/lib/crypto/hmac';
-import { generatePassword } from '@/lib/crypto/tokens';
 import * as schema from '@/lib/db/schema';
 import { isWipeable, wipeAppTables } from '@/lib/db/wipe';
 import { env } from '@/lib/env';
@@ -102,8 +102,8 @@ async function main() {
   for (let i = 1; i <= TEAM_COUNT; i++) {
     const nn = String(i).padStart(2, '0');
     const name = `Test Team ${nn}`;
-    const username = `team${nn}`;
-    const password = generatePassword();
+    const username = teamCode();
+    const password = teamPassword(name);
     const [team] = await db
       .insert(schema.teams)
       .values({ name, slug: `test-team-${nn}` })

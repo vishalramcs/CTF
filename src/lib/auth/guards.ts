@@ -31,3 +31,9 @@ export async function requireAdmin(): Promise<AdminSession> {
   if (result.session.role !== 'admin') redirect('/dashboard');
   return result.session;
 }
+
+export async function requireSuperAdmin(): Promise<AdminSession> {
+  const session = await requireAdmin();
+  if (session.adminLevel !== 'super_admin') redirect('/admin');
+  return session;
+}

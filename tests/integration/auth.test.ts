@@ -15,7 +15,7 @@ import { hashSessionToken, randomToken } from '@/lib/crypto/tokens';
 import { db } from '@/lib/db/client';
 import { isWipeable, wipeAppTables } from '@/lib/db/wipe';
 import { env } from '@/lib/env';
-import { json, withAdmin, withTeam } from '@/lib/http';
+import { json, withAdmin, withSuperAdmin, withTeam } from '@/lib/http';
 
 const PASSWORD = 'correct-horse-battery';
 const ctx = { params: Promise.resolve({}) };
@@ -73,10 +73,13 @@ async function createTeam(username = 'team1'): Promise<string> {
   return team.id;
 }
 
-async function createAdmin(username = 'admin1'): Promise<void> {
+async function createAdmin(
+  username = 'admin1',
+  level: 'super_admin' | 'developer' = 'super_admin',
+): Promise<void> {
   await sql`
     INSERT INTO app.users (username, password_hash, role, admin_level)
-    VALUES (${username}, ${passwordHash}, 'admin', 'super_admin')`;
+    VALUES (${username}, ${passwordHash}, 'admin', ${level})`;
 }
 
 function tokenFrom(res: Response): string {
@@ -206,13 +209,16 @@ describe('login', () => {
 });
 
 describe('session cap', () => {
-  it('a 3rd login evicts the oldest, and the evicted session gets 401 evicted', async () => {
+  it('is one session per team', () => {
+    expect(env.MAX_SESSIONS_PER_TEAM).toBe(1);
+  });
+
+  it('a new login evicts the other session of the team, which then gets 401 evicted', async () => {
     await createTeam();
     const first = await logIn();
-    const second = await logIn();
     expect((await sessionStatus(first.cookie)).status).toBe(200);
 
-    const third = await logIn();
+    const second = await logIn();
 
     const evicted = await sessionStatus(first.cookie);
     expect(evicted.status).toBe(401);
@@ -220,13 +226,12 @@ describe('session cap', () => {
     expect(body.reason).toBe('evicted');
     expect(body.error.code).toBe('evicted');
     expect((await sessionStatus(second.cookie)).status).toBe(200);
-    expect((await sessionStatus(third.cookie)).status).toBe(200);
 
     const audits = await sql`SELECT action FROM app.audit_log`;
     expect(audits.map((a) => a.action)).toEqual(['session.evicted']);
   });
 
-  it('holds under parallel logins from separate server instances', async () => {
+  it('keeps exactly one session under parallel logins from separate server instances', async () => {
     const teamId = await createTeam();
     // Each fresh module graph gets its own connection, like separate serverless instances.
     const instances = await Promise.all(
@@ -255,20 +260,18 @@ describe('session cap', () => {
       SELECT count(*) FILTER (WHERE revoked_at IS NULL)::int AS active,
              count(*) FILTER (WHERE revoke_reason = 'evicted')::int AS evicted
       FROM app.sessions WHERE team_id = ${teamId}`;
-    expect(rows[0]).toEqual({ active: 2, evicted: 4 });
+    expect(rows[0]).toEqual({ active: 1, evicted: 5 });
   });
 
   it('ignores expired sessions when counting', async () => {
     const teamId = await createTeam();
     const first = await logIn();
-    const second = await logIn();
     await sql`UPDATE app.sessions SET expires_at = now() - interval '1 minute'
               WHERE team_id = ${teamId}`;
-    const third = await logIn();
+    const second = await logIn();
     expect((await sql`SELECT 1 FROM app.sessions WHERE revoked_at IS NOT NULL`).length).toBe(0);
-    expect((await sessionStatus(third.cookie)).status).toBe(200);
+    expect((await sessionStatus(second.cookie)).status).toBe(200);
     expect((await (await sessionStatus(first.cookie)).json()).reason).toBe('expired');
-    expect((await (await sessionStatus(second.cookie)).json()).reason).toBe('expired');
   });
 
   it('does not cap admin sessions', async () => {
@@ -276,6 +279,29 @@ describe('session cap', () => {
     for (let i = 0; i < 3; i++) await logIn('admin1', adminLogin);
     const rows = await sql`SELECT 1 FROM app.sessions WHERE revoked_at IS NULL`;
     expect(rows).toHaveLength(3);
+  });
+});
+
+describe('admin levels', () => {
+  const superRoute = withSuperAdmin(async (_req, s) => json({ level: s.adminLevel }));
+
+  it('lets a super admin through and keeps a developer out of super-admin routes', async () => {
+    await createAdmin('boss', 'super_admin');
+    await createAdmin('dev', 'developer');
+    const boss = await sessionFor('boss');
+    const dev = await sessionFor('dev');
+    const ok = await superRoute(request('/x', { cookie: boss.cookie, csrf: boss.csrf }), ctx);
+    expect(await ok.json()).toEqual({ level: 'super_admin' });
+    const denied = await superRoute(request('/x', { cookie: dev.cookie, csrf: dev.csrf }), ctx);
+    expect(denied.status).toBe(403);
+  });
+
+  it('keeps a team out of super-admin routes', async () => {
+    await createTeam();
+    const team = await sessionFor('team1');
+    expect(
+      (await superRoute(request('/x', { cookie: team.cookie, csrf: team.csrf }), ctx)).status,
+    ).toBe(403);
   });
 });
 
