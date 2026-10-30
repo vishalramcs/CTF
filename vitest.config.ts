@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
     include: ['tests/{unit,integration}/**/*.test.ts'],
+    globalSetup: ['tests/global-setup.ts'],
     // Integration tests share one database and wipe it.
     fileParallelism: false,
     testTimeout: 60_000,

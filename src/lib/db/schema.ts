@@ -1,5 +1,6 @@
 // Typing only. supabase/migrations/ is the source of truth for constraints and indexes.
 // tests/integration/schema.test.ts fails if these columns drift from the database.
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
@@ -63,7 +64,9 @@ export const sessions = app.table('sessions', {
   role: userRole('role').notNull(),
   teamId: uuid('team_id'),
   tokenHash: text('token_hash').notNull(),
-  inboxTag: text('inbox_tag').notNull(),
+  inboxTag: text('inbox_tag')
+    .notNull()
+    .default(sql`substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)`),
   ip: inet('ip'),
   userAgent: text('user_agent'),
   createdAt: timestamptz('created_at').notNull().defaultNow(),

@@ -11,6 +11,7 @@
         "test": "vitest run",
         "format": "prettier --write src scripts tests",
         "gen-secrets": "tsx scripts/gen-secrets.ts",
+        "bench:argon2": "tsx scripts/bench-argon2.ts",
         "seed": "tsx --env-file=.env.local scripts/seed.ts",
         "db:push": "tsx --env-file=.env.local scripts/db-push.ts"
     },

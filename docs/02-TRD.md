@@ -198,7 +198,8 @@ spidey-tracxer/
   3. A revoked session returns 401 with `{reason}`, and the client shows "Logged in on another device" or "Session ended by admin".
 - Admin sessions use the same table with `team_id NULL`.
 - CSRF: every mutating `POST` needs header `x-csrf-token` matching an HMAC of the session id (double-submit, derived on the server). Combined with `SameSite=Lax` and a JSON-only content-type check.
-- Login rate limit: counted from `app.login_attempts` (§05) as 10 failures per username per 10 min and 30 per IP per 10 min.
+- Login rate limit: counted from `app.login_attempts` (§05) as 10 failures per username per 10 min and 30 per IP per 10 min. A blocked attempt skips the password check and writes no row, so hammering a locked account can't extend its lockout.
+- The cookie's `Secure` flag is set when `NODE_ENV=production`, because Safari refuses Secure cookies on `http://localhost`.
 
 ### 5.3 Middleware
 `middleware.ts` only checks that the cookie exists and redirects (`/dashboard` to `/login`, `/admin/*` to `/admin/login`). **Real authorization happens in every route handler and server component** through `requireTeam()` / `requireAdmin()`. Never trust middleware alone.

@@ -13,11 +13,16 @@ export function isWipeable(databaseUrl: string, wipeableRef: string | undefined)
 }
 
 export async function wipeAppTables(sql: Sql): Promise<void> {
-  const tables = await sql<{ tablename: string }[]>`
-    SELECT tablename FROM pg_tables WHERE schemaname = 'app' AND tablename <> 'broadcast_gate'`;
-  const names = tables.map((t) => `app.${t.tablename}`).join(', ');
-  // event_state references teams, so it has to be truncated too and its singleton re-created.
-  await sql.unsafe(`TRUNCATE ${names} RESTART IDENTITY CASCADE`);
-  await sql`INSERT INTO app.event_state (id) VALUES (1)`;
-  await sql`UPDATE app.broadcast_gate SET last_sent_at = 'epoch'`;
+  // One round trip. event_state references teams, so it has to be truncated too and its
+  // singleton re-created.
+  await sql.unsafe(`
+    DO $$ BEGIN
+      EXECUTE (
+        SELECT 'TRUNCATE ' || string_agg(format('app.%I', tablename), ', ')
+          || ' RESTART IDENTITY CASCADE'
+        FROM pg_tables WHERE schemaname = 'app' AND tablename <> 'broadcast_gate'
+      );
+      INSERT INTO app.event_state (id) VALUES (1);
+      UPDATE app.broadcast_gate SET last_sent_at = 'epoch';
+    END $$`);
 }

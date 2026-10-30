@@ -27,7 +27,7 @@ Spider-Man–themed beginner CTF for a live 75-minute college event (EYE club, P
 ## Commands (keep this list current)
 - `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm format`
 - `pnpm db:push` (applies migrations to `DIRECT_DATABASE_URL`, no Docker needed)
-- `pnpm seed` (dev data, wipes app tables), `pnpm gen-secrets`
+- `pnpm seed` (dev data, wipes app tables), `pnpm gen-secrets`, `pnpm bench:argon2`
 - `pnpm test` needs `.env.local` and wipes the dev project's app tables, so run `pnpm seed` afterwards.
 
 ## Conventions

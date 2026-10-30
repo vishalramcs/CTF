@@ -37,12 +37,13 @@ Percent-encode any special characters in the database password.
 | `pnpm db:push` | Applies migrations to `DIRECT_DATABASE_URL` |
 | `pnpm seed` | Wipes and reloads dev data. Writes `seed-output/` (gitignored). Refuses other databases unless `--force` |
 | `pnpm gen-secrets` | Prints a `.env.local` block with fresh secrets |
+| `pnpm bench:argon2` | Times one hash and 100 concurrent hashes for each profile in TRD §5.1 |
 
 ## Folder map
 ```text
 docs/                 PRD, TRD, app flow, design brief, schema, implementation plan
 supabase/migrations/  SQL source of truth (never use drizzle-kit push)
-scripts/              seed, gen-secrets, db-push
+scripts/              seed, gen-secrets, db-push, bench-argon2
 src/lib/              env, db, crypto, auth, flags, variants
 tests/                unit and integration
 QUESTIONS_TEMPLATE.md format for the organisers' questions
