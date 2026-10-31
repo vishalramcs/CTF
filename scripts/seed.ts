@@ -11,8 +11,8 @@ import { hmacHex } from '@/lib/crypto/hmac';
 import * as schema from '@/lib/db/schema';
 import { isWipeable, wipeAppTables } from '@/lib/db/wipe';
 import { env } from '@/lib/env';
-import { buildTeamFlag, deriveSeed, expectedFlagHash, teamToken } from '@/lib/variants/derive';
-import { placeholderGenerator } from '@/lib/variants/generators/placeholder';
+import { buildTeamFlag, deriveSeed, teamToken } from '@/lib/variants/derive';
+import { regenerateVariants } from '@/lib/variants/regenerate';
 
 const TEAM_COUNT = 10;
 
@@ -164,25 +164,18 @@ async function main() {
 
   await db.update(schema.eventState).set({ status: 'running' });
 
+  const variantCount = await regenerateVariants(db, {});
   const flags: string[] = ['team,challenge,flag'];
-  const variants = teams.flatMap((team) =>
-    challenges.map((challenge) => {
+  for (const team of teams) {
+    for (const challenge of challenges) {
       const token = teamToken(deriveSeed(keys.variantKey, team.id, challenge.id));
       const flag = buildTeamFlag(keys.flagPrefix, challenge.flagTemplate!, {
         token,
         fragment: FRAGMENTS[challenge.number]?.value ?? null,
       });
       flags.push(`${team.name},${challenge.number},${flag}`);
-      return {
-        teamId: team.id,
-        challengeId: challenge.id,
-        variantData: placeholderGenerator(challenge.questionTemplate, flag),
-        expectedFlagHash: expectedFlagHash(flag, keys),
-        generatorVersion: challenge.generatorVersion,
-      };
-    }),
-  );
-  await db.insert(schema.teamChallengeVariants).values(variants);
+    }
+  }
 
   mkdirSync('seed-output', { recursive: true });
   writeFileSync('seed-output/credentials.csv', credentials.join('\n') + '\n');
@@ -193,7 +186,7 @@ async function main() {
     teams: teams.length,
     challenges: challenges.length,
     hints: challenges.length * 2,
-    variants: variants.length,
+    variants: variantCount,
   });
   console.log('Wrote seed-output/credentials.csv and seed-output/test-flags.csv');
 

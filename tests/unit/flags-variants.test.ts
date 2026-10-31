@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { normalizeFlag } from '@/lib/flags/normalize';
+import { checkFlag } from '@/lib/flags/verify';
 import { buildTeamFlag, deriveSeed, expectedFlagHash, teamToken } from '@/lib/variants/derive';
 import { placeholderGenerator } from '@/lib/variants/generators/placeholder';
 
@@ -56,9 +57,41 @@ describe('variants', () => {
 
   it('placeholder clue decodes back to the exact flag and hides the plaintext', () => {
     const flag = 'SPIDEY{47_k3w9qz2m}';
-    const { html } = placeholderGenerator('<p>{{flag|base64}}</p>', flag);
+    const { html } = placeholderGenerator(
+      { questionTemplate: '<p>{{flag|base64}}</p>', evidence: [], generatorConfig: {} },
+      { flag, token: 'k3w9qz2m', fragment: '47', rng: () => 0 },
+    );
     expect(html).not.toContain(flag);
     const encoded = html.replace(/<\/?p>/g, '');
     expect(Buffer.from(encoded, 'base64').toString('utf8')).toBe(flag);
+  });
+});
+
+describe('checkFlag', () => {
+  const flag = 'SPIDEY{47_k3w9qz2m}';
+  const expected = expectedFlagHash(flag, keys);
+
+  it.each([flag, 'spidey{47_K3W9QZ2M}', `  ${flag}\n`, 'SPIDEY{  47_k3w9qz2m }'])(
+    'accepts %j',
+    (input) => {
+      expect(checkFlag(input, expected, keys).result).toBe('correct');
+    },
+  );
+
+  it('rejects a well-formed wrong flag, keeping its hash', () => {
+    const { result, hash } = checkFlag('SPIDEY{nope}', expected, keys);
+    expect(result).toBe('wrong');
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it.each(['OTHER{47_k3w9qz2m}', '47_k3w9qz2m', 'SPIDEY{47_k3w9qz2m', ''])(
+    'treats %j as malformed, with no hash',
+    (input) => {
+      expect(checkFlag(input, expected, keys)).toEqual({ result: 'malformed', hash: '' });
+    },
+  );
+
+  it('never matches an empty expected hash', () => {
+    expect(checkFlag(flag, '', keys).result).toBe('wrong');
   });
 });

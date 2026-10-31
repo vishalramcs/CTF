@@ -165,8 +165,13 @@ export const solves = app.table('solves', {
   id: uuid('id').primaryKey().defaultRandom(),
   teamId: uuid('team_id').notNull(),
   challengeId: uuid('challenge_id').notNull(),
-  solvePosition: integer('solve_position').notNull(),
-  pointsAwarded: numeric('points_awarded', { precision: 7, scale: 1 }).notNull(),
+  // The trigger overwrites both columns on insert; the defaults only let the app omit them.
+  solvePosition: integer('solve_position')
+    .notNull()
+    .default(sql`0`),
+  pointsAwarded: numeric('points_awarded', { precision: 7, scale: 1 })
+    .notNull()
+    .default(sql`0`),
   solvedAt: timestamptz('solved_at').notNull().defaultNow(),
 });
 

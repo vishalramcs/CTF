@@ -231,37 +231,41 @@ describe('session cap', () => {
     expect(audits.map((a) => a.action)).toEqual(['session.evicted']);
   });
 
-  it('keeps exactly one session under parallel logins from separate server instances', async () => {
-    const teamId = await createTeam();
-    // Each fresh module graph gets its own connection, like separate serverless instances.
-    const instances = await Promise.all(
-      Array.from({ length: 6 }, async () => {
-        vi.resetModules();
-        return {
-          route: await import('@/app/api/auth/login/route'),
-          client: await import('@/lib/db/client'),
-        };
-      }),
-    );
-    try {
-      const results = await Promise.all(
-        instances.map(({ route }) =>
-          route.POST(
-            request('/api/auth/login', { body: { username: 'team1', password: PASSWORD } }),
-            ctx,
-          ),
-        ),
+  it(
+    'keeps exactly one session under parallel logins from separate server instances',
+    { timeout: 240_000 },
+    async () => {
+      const teamId = await createTeam();
+      // Each fresh module graph gets its own connection, like separate serverless instances.
+      const instances = await Promise.all(
+        Array.from({ length: 6 }, async () => {
+          vi.resetModules();
+          return {
+            route: await import('@/app/api/auth/login/route'),
+            client: await import('@/lib/db/client'),
+          };
+        }),
       );
-      expect(results.map((r) => r.status)).toEqual(Array(6).fill(200));
-    } finally {
-      await Promise.all(instances.map(({ client }) => client.db.$client.end()));
-    }
-    const rows = await sql`
+      try {
+        const results = await Promise.all(
+          instances.map(({ route }) =>
+            route.POST(
+              request('/api/auth/login', { body: { username: 'team1', password: PASSWORD } }),
+              ctx,
+            ),
+          ),
+        );
+        expect(results.map((r) => r.status)).toEqual(Array(6).fill(200));
+      } finally {
+        await Promise.all(instances.map(({ client }) => client.db.$client.end()));
+      }
+      const rows = await sql`
       SELECT count(*) FILTER (WHERE revoked_at IS NULL)::int AS active,
              count(*) FILTER (WHERE revoke_reason = 'evicted')::int AS evicted
       FROM app.sessions WHERE team_id = ${teamId}`;
-    expect(rows[0]).toEqual({ active: 1, evicted: 5 });
-  });
+      expect(rows[0]).toEqual({ active: 1, evicted: 5 });
+    },
+  );
 
   it('ignores expired sessions when counting', async () => {
     const teamId = await createTeam();

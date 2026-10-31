@@ -33,6 +33,13 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-success: var(--success);
+  --color-warn: var(--warn);
+  --color-ai-mode: var(--ai-mode);
+  --color-difficulty-easy: var(--difficulty-easy);
+  --color-difficulty-medium: var(--difficulty-medium);
+  --color-difficulty-difficult: var(--difficulty-difficult);
+  --color-difficulty-main: var(--difficulty-main);
 }
 
 /* Dark theme only: Design Brief §4.1. */
@@ -56,6 +63,22 @@
   --input: #1f2840;
   --ring: #2d6bff;
   --radius: 0.375rem;
+  --success: #2bd47d;
+  --warn: #ffb020;
+  --ai-mode: #9b5cff;
+  --difficulty-easy: #2bd47d;
+  --difficulty-medium: #2d6bff;
+  --difficulty-difficult: #ff8a1f;
+  --difficulty-main: #e2232a;
+}
+
+@keyframes shake {
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
 }
 
 @layer base {

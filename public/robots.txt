@@ -1,0 +1,3 @@
+# PLACEHOLDER clue line. The organisers' robots.txt clues arrive with their questions (M8).
+User-agent: *
+Disallow: /vault/
