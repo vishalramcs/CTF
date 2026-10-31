@@ -12,6 +12,7 @@ import {
 } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 import { normalizeLocation } from '@/lib/locations/normalize';
+import { notifyBoard } from '@/lib/realtime/broadcast';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
 
 const WRONG_LIMIT = 5;
@@ -28,7 +29,7 @@ export type LocationSubmitResult =
 
 // docs/07 §4. Exits before the attempt row write nothing, so hammering can't extend a lockout. The
 // unique indexes back up the lock: a repeat would roll back the whole payout, never pay twice.
-export async function submitLocation(
+async function submitLocationTx(
   { teamId }: { teamId: string },
   level: LocationLevel,
   input: string,
@@ -116,4 +117,12 @@ export async function submitLocation(
       finalMission: level === 'main_difficult',
     };
   });
+}
+
+export async function submitLocation(
+  ...args: Parameters<typeof submitLocationTx>
+): Promise<LocationSubmitResult> {
+  const result = await submitLocationTx(...args);
+  if (result.result === 'correct') await notifyBoard(); // after the commit
+  return result;
 }
