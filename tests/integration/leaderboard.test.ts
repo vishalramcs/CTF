@@ -122,9 +122,12 @@ describe('/api/public/state', () => {
     await score(hidden, 500);
     await score(inactive, 400);
     await score(teamA, 5);
+    // The helper builds the name from the username; a real team's name is unrelated to its code.
+    await sql`UPDATE app.teams SET name = 'Web Slingers' WHERE id = ${teamA}`;
 
     const raw = await (await stateRoute()).text();
     expect(JSON.parse(raw).leaderboard).toHaveLength(1);
+    expect(raw).toContain('Web Slingers');
     for (const secret of [
       'secretcode7',
       hidden,
