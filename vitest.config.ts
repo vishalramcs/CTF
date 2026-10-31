@@ -7,6 +7,8 @@ if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  // tsconfig says jsx: preserve for Next.js; component tests need it compiled.
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     include: ['tests/{unit,integration}/**/*.test.ts'],
     globalSetup: ['tests/global-setup.ts'],
