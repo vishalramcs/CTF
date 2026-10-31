@@ -148,6 +148,7 @@ describe('position scoring', () => {
   it('pays 50, 49.5, 49, 48.5, 48 to the first five, then 47.75 and 47.5, without rounding', async () => {
     const teams = [...team];
     for (let i = teams.length; i < 7; i++) teams.push(await addTeam(`more${i}`));
+    await regenerateVariants(db, {});
     const paid: number[] = [];
     for (const who of teams) paid.push((await flag(1, who)).points);
     expect(paid).toEqual([50, 49.5, 49, 48.5, 48, 47.75, 47.5]);
@@ -211,6 +212,7 @@ describe('simultaneous solves across server instances', () => {
     async () => {
       const teams = [...team];
       for (let i = teams.length; i < 8; i++) teams.push(await addTeam(`more${i}`));
+    await regenerateVariants(db, {});
       const list = await instances(8, () => import('@/app/api/challenges/[number]/submit/route'));
       try {
         const responses = await Promise.all(
