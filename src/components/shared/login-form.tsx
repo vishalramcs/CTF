@@ -11,10 +11,12 @@ export function LoginForm({
   endpoint,
   next,
   notice,
+  usernameLabel = 'Username',
 }: {
   endpoint: string;
   next: string;
   notice?: string;
+  usernameLabel?: string;
 }) {
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -54,7 +56,7 @@ export function LoginForm({
         </p>
       )}
       <label className="block text-sm font-medium">
-        Username
+        {usernameLabel}
         <input
           name="username"
           required

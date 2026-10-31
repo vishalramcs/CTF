@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import { hashPassword } from '@/lib/auth/password';
-import { teamCode, teamPassword } from '@/lib/auth/team-credentials';
+import { teamPassword } from '@/lib/auth/team-credentials';
 import { hmacHex } from '@/lib/crypto/hmac';
 import * as schema from '@/lib/db/schema';
 import { isWipeable, wipeAppTables } from '@/lib/db/wipe';
@@ -103,24 +103,23 @@ async function main() {
     adminLevel: 'super_admin',
   });
 
-  const credentials: string[] = ['team,username,password'];
+  const credentials: string[] = ['team,password'];
   const teams = [];
   for (let i = 1; i <= TEAM_COUNT; i++) {
     const nn = String(i).padStart(2, '0');
     const name = `Test Team ${nn}`;
-    const username = teamCode();
     const password = teamPassword(name);
     const [team] = await db
       .insert(schema.teams)
       .values({ name, slug: `test-team-${nn}` })
       .returning();
     await db.insert(schema.users).values({
-      username,
+      username: name,
       passwordHash: await hashPassword(password),
       role: 'team',
       teamId: team.id,
     });
-    credentials.push(`${name},${username},${password}`);
+    credentials.push(`${name},${password}`);
     teams.push(team);
   }
 

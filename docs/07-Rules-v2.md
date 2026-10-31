@@ -12,8 +12,8 @@ Source: the organisers' "Master Software Development Prompt" (SPIDEY CTF – The
 - Individual registration, team join codes, 4-member cap, PARTICIPANT role: login stays one shared login per team (§2).
 
 ## 2. Identity and sessions
-- One login per team, created by an admin. Username = a short team code (e.g. `team07`), **not shown on any public page**. Password = the team name lowercased, trimmed, spaces removed, reversed; stored as Argon2id like every other password. Reset-password restores the same derived value.
-- **Known weakness, accepted by the organisers:** the password is derivable from the team name, which is public. The hidden username is the only barrier. Revisit before the event.
+- One login per team, created by an admin. Username = the team name (changed by docs/08 §8; it was a hidden team code). Password = the team name lowercased, trimmed, spaces removed, reversed; stored as Argon2id like every other password. Reset-password restores the same derived value.
+- **Known weakness, accepted by the organisers:** the password is derivable from the team name, which is public, and so is the username. See docs/08 §8.
 - `MAX_SESSIONS_PER_TEAM = 1`. A new login ends the old session (existing M2 behaviour, reason `evicted`).
 - Admin roles: `SUPER_ADMIN` and `DEVELOPER` (replaces `admin`). Only SUPER_ADMIN grants or revokes developer access. Both reach `/admin`; role-restricted actions are checked server-side.
 - Event status (replaces phases): `not_started` → `running` ⇄ `paused` → `ended`. Submissions are accepted only while `running`.

@@ -114,7 +114,7 @@ describe('/api/public/state', () => {
     expect(typeof body.serverTime).toBe('number');
   });
 
-  it('hides hidden and inactive teams, and carries no team id or username', async () => {
+  it('hides hidden and inactive teams, and carries no team id or password hash', async () => {
     const hidden = await createTeam(sql, 'hiddenteam');
     const inactive = await createTeam(sql, 'inactiveteam');
     await sql`UPDATE app.teams SET is_hidden = true WHERE id = ${hidden}`;
@@ -122,25 +122,16 @@ describe('/api/public/state', () => {
     await score(hidden, 500);
     await score(inactive, 400);
     await score(teamA, 5);
-    // The helper builds the name from the username; a real team's name is unrelated to its code.
     await sql`UPDATE app.teams SET name = 'Web Slingers' WHERE id = ${teamA}`;
 
     const raw = await (await stateRoute()).text();
     expect(JSON.parse(raw).leaderboard).toHaveLength(1);
     expect(raw).toContain('Web Slingers');
-    for (const secret of [
-      'secretcode7',
-      hidden,
-      inactive,
-      teamA,
-      'hiddenteam',
-      'team_id',
-      'username',
-    ]) {
+    for (const secret of [hidden, inactive, teamA, 'hiddenteam', 'team_id', 'password_hash']) {
       expect(raw).not.toContain(secret);
     }
     const feedRaw = await (await feedRoute()).text();
-    for (const secret of ['secretcode7', teamA, 'team_id']) expect(feedRaw).not.toContain(secret);
+    for (const secret of [teamA, 'team_id', 'password_hash']) expect(feedRaw).not.toContain(secret);
   });
 
   it('serves the snapshot while frozen, and the live board again after', async () => {
