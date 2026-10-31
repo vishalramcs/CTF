@@ -47,6 +47,71 @@ export function SurprisesPanel({
   );
 }
 
+// docs/08 §9. The word becomes the Spidey Signal answer, so sending it also opens the surprise.
+function MorseSender({ enabled }: { enabled: boolean }) {
+  const { run, pending, error } = useAction();
+  const [word, setWord] = useState('');
+  const [sent, setSent] = useState(false);
+
+  async function send(event: FormEvent) {
+    event.preventDefault();
+    setSent(false);
+    const saved = await run('PATCH', '/api/admin/surprises/spidey_signal', { answer: word });
+    if (!saved.ok) return;
+    const activated = await run('POST', '/api/admin/surprises/spidey_signal/activate');
+    if (!activated.ok) return;
+    setSent(true);
+    setWord('');
+  }
+
+  return (
+    <form onSubmit={send} className="space-y-3 border-b border-border pb-4">
+      <p role="status" className="text-sm">
+        Morse spider: {enabled ? 'on, blinking on team screens' : 'off'}.
+      </p>
+      <Field
+        label="Morse word"
+        hint="Letters, digits and spaces. Teams see it within 30 seconds, and it repeats until they solve it."
+      >
+        <input
+          required
+          autoComplete="off"
+          maxLength={30}
+          pattern="[A-Za-z0-9 ]+"
+          value={word}
+          onChange={(e) => setWord(e.target.value)}
+          className={inputClass}
+        />
+      </Field>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" className={actionClass} disabled={pending || !word.trim()}>
+          Send
+        </Button>
+        {enabled && (
+          <Button
+            type="button"
+            variant="outline"
+            className={actionClass}
+            disabled={pending}
+            onClick={() => {
+              setSent(false);
+              return run('PATCH', '/api/admin/surprises/spidey_signal', { enabled: false });
+            }}
+          >
+            Stop
+          </Button>
+        )}
+        {sent && (
+          <span role="status" className="text-sm">
+            Sent.
+          </span>
+        )}
+      </div>
+      <ErrorText>{error}</ErrorText>
+    </form>
+  );
+}
+
 function SurpriseCard({
   surprise: s,
   timeZone,
@@ -101,6 +166,7 @@ function SurpriseCard({
           one needs an availability start time.
         </Notice>
       )}
+      {s.kind === 'spidey_signal' && <MorseSender enabled={s.enabled} />}
       <form onSubmit={save} className="space-y-3">
         <label className="flex items-center gap-2 font-medium">
           <input

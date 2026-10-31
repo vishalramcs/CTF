@@ -9,6 +9,7 @@ import { db } from '@/lib/db/client';
 import { eventState, surpriseEvents } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 import { ApiError, json, parseBody, withAdmin } from '@/lib/http';
+import { isMorseWord } from '@/lib/surprises/morse';
 import { hashSurpriseAnswer } from '@/lib/surprises/submit';
 
 export const runtime = 'nodejs';
@@ -38,6 +39,9 @@ export const PATCH = withAdmin<{ kind: string }>(async (req, session, ctx) => {
   const { answer, availableFrom, availableUntil, ...rest } = input;
   if (answer !== undefined && !answer.trim()) {
     throw new ApiError(400, 'bad_request', 'The answer can not be empty.');
+  }
+  if (kind === 'spidey_signal' && answer !== undefined && !isMorseWord(answer)) {
+    throw new ApiError(400, 'bad_request', 'Use up to 30 letters, digits and spaces for Morse.');
   }
 
   const changes = {

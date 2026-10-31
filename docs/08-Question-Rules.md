@@ -45,3 +45,10 @@ Create/edit all 13 questions; assign fragments; final coordinates; final locatio
 - The organisers accept that the password can be derived from the public team name, and that the username is public too.
 - Creating a team sets `users.username` to the name. Renaming a team updates `teams.name`, `users.username` and `users.password_hash` in one transaction, revokes that team's sessions (reason `password_reset`) and writes an audit row. Reset password restores the derived value.
 - Credentials CSV: `team,password`.
+
+## 9. Morse spider (overrides 07's removal of Morse)
+
+- The Spidey Signal surprise is a Morse spider. On `/admin/surprises` an admin types a word and presses Send: it becomes the Spidey Signal answer (hashed and encrypted as usual) and the surprise is activated. Reward stays 30, one per team.
+- Word: letters, digits and spaces, 30 characters at most. Timing is fixed: 400 ms unit, 5 s pause before it repeats.
+- `GET /api/surprises` sends the blink timings only, only while the surprise is available and the team has not completed it. The plain word never reaches a browser, but the timings can be read by anyone who is decoding them, which is the puzzle. This narrows CLAUDE.md's rule against sending Morse values.
+- It works whatever the event status, but answers are accepted only while submissions are open.

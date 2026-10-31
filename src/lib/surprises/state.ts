@@ -1,6 +1,9 @@
 import { sql } from 'drizzle-orm';
 
+import { decrypt } from '@/lib/crypto/aead';
 import { db } from '@/lib/db/client';
+import { env } from '@/lib/env';
+import { morseTimeline } from '@/lib/surprises/morse';
 
 export const SURPRISE_KINDS = ['spidey_signal', 'flashy_spider', 'spider_mutation'] as const;
 export type SurpriseKind = (typeof SURPRISE_KINDS)[number];
@@ -39,4 +42,20 @@ export async function listSurprises(teamId: string): Promise<SurpriseSummary[]> 
     WHERE p.team_id IS NOT NULL OR ${AVAILABLE}
     ORDER BY e.points`);
   return rows.map((row) => ({ ...row, points: Number(row.points) }));
+}
+
+// docs/08 §9. The Spidey Signal word as blink timings, only while it is live and this team has not
+// completed it. A bad ciphertext must not break the surprise list, so it just doesn't blink.
+export async function signalTimeline(teamId: string): Promise<number[] | null> {
+  const [row] = await db.execute<{ answer_enc: string | null }>(sql`
+    SELECT e.answer_enc
+    FROM app.surprise_events e
+    LEFT JOIN app.surprise_progress p ON p.event_id = e.id AND p.team_id = ${teamId}
+    WHERE e.kind = 'spidey_signal' AND ${AVAILABLE} AND p.completed_at IS NULL`);
+  if (!row?.answer_enc) return null;
+  try {
+    return morseTimeline(decrypt(env.REVEAL_ENC_KEY, row.answer_enc));
+  } catch {
+    return null;
+  }
 }

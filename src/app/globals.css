@@ -108,15 +108,6 @@
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
 
-@keyframes signal-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgb(45 107 255 / 0.6);
-  }
-  100% {
-    box-shadow: 0 0 0 18px rgb(45 107 255 / 0);
-  }
-}
-
 @keyframes mutant-crawl {
   0% {
     transform: translate(0, 0) rotate(0deg);
@@ -142,10 +133,6 @@
   }
 }
 
-.signal-pulse {
-  animation: signal-pulse 2.4s ease-out infinite;
-}
-
 .mutant-crawl {
   animation: mutant-crawl 60s ease-in-out infinite;
 }
@@ -155,7 +142,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .signal-pulse,
   .mutant-crawl,
   .fade-up {
     animation: none;

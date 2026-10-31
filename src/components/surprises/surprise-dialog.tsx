@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { AnswerForm } from '@/components/participant/answer-form';
+import { MorseSpider } from '@/components/surprises/morse-spider';
 import { apiPost } from '@/lib/api-client';
 
 type Found = { title: string; html: string; assetUrl: string | null; points: number };
@@ -11,10 +12,12 @@ type Phase = 'loading' | 'closed' | 'error' | 'video' | 'question' | 'done';
 // Discovering is what reveals the task, so nothing is fetched until the team opens it.
 export function SurpriseDialog({
   kind,
+  signal,
   onClose,
   onDone,
 }: {
   kind: string;
+  signal: number[];
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -78,6 +81,15 @@ export function SurpriseDialog({
 
         {phase === 'question' && found && (
           <>
+            {/* The dialog covers the corner spider, so the blinking continues here. */}
+            {kind === 'spidey_signal' && signal.length > 0 && (
+              <div className="flex flex-col items-center gap-2">
+                <MorseSpider timeline={signal} className="size-40" />
+                <p className="text-sm text-muted-foreground">
+                  The spider is blinking Morse code. Decode it and type the word.
+                </p>
+              </div>
+            )}
             {/* Sanitised on the server. */}
             <div dangerouslySetInnerHTML={{ __html: found.html }} />
             <AnswerForm

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { usePoll } from '@/components/participant/use-poll';
+import { MorseSpider } from '@/components/surprises/morse-spider';
 import { SurpriseDialog } from '@/components/surprises/surprise-dialog';
 
 type Summary = { kind: string; discovered: boolean; completed: boolean };
@@ -17,16 +18,6 @@ function readDismissed(): string[] {
   } catch {
     return [];
   }
-}
-
-function Signal() {
-  return (
-    <svg viewBox="0 0 32 32" className="size-7" aria-hidden fill="none" stroke="#5c8dff">
-      <circle cx="16" cy="16" r="3" fill="#5c8dff" />
-      <circle cx="16" cy="16" r="8" strokeOpacity="0.7" />
-      <circle cx="16" cy="16" r="13" strokeOpacity="0.4" />
-    </svg>
-  );
 }
 
 function Lens() {
@@ -57,13 +48,22 @@ function Mutant() {
 export function SurpriseLayer() {
   const router = useRouter();
   const [list, setList] = useState<Summary[]>([]);
+  const [signal, setSignal] = useState<number[]>([]);
   const [dismissed, setDismissed] = useState<string[]>(readDismissed);
   const [open, setOpen] = useState<string | null>(null);
 
   usePoll(() => {
     fetch('/api/surprises')
       .then((res) => (res.ok ? res.json() : null))
-      .then((body) => body && setList(body.surprises))
+      .then((body) => {
+        if (!body) return;
+        setList(body.surprises);
+        // Only a changed word restarts the blinking; a poll must not cut it off mid-letter.
+        setSignal((old) => {
+          const next: number[] = body.signal ?? [];
+          return old.join() === next.join() ? old : next;
+        });
+      })
       .catch(() => {});
   });
 
@@ -116,9 +116,9 @@ export function SurpriseLayer() {
               type="button"
               onClick={() => setOpen('spidey_signal')}
               aria-label="Spidey Signal detected. Open it."
-              className={`signal-pulse flex size-12 items-center justify-center rounded-full border border-ring bg-card ${FOCUS}`}
+              className={`flex size-20 items-center justify-center rounded-full border border-ring bg-card ${FOCUS}`}
             >
-              <Signal />
+              <MorseSpider timeline={signal} className="size-16" />
             </button>
           </div>
         )}
@@ -127,6 +127,7 @@ export function SurpriseLayer() {
         <SurpriseDialog
           key={open}
           kind={open}
+          signal={signal}
           onClose={() => setOpen(null)}
           onDone={() => {
             setList((l) => l.map((s) => (s.kind === open ? { ...s, completed: true } : s)));
