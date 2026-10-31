@@ -212,7 +212,7 @@ describe('simultaneous solves across server instances', () => {
     async () => {
       const teams = [...team];
       for (let i = teams.length; i < 8; i++) teams.push(await addTeam(`more${i}`));
-    await regenerateVariants(db, {});
+      await regenerateVariants(db, {});
       const list = await instances(8, () => import('@/app/api/challenges/[number]/submit/route'));
       try {
         const responses = await Promise.all(

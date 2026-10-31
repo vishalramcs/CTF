@@ -476,7 +476,7 @@ describe('scores', () => {
     await audited('score.adjust', async () => ok(await give(25.5), 201));
     await ok(await give(-5), 201);
     const [board] = await sql`SELECT total::text, adjustment_points::text FROM app.v_scoreboard`;
-    expect(board).toEqual({ total: '20.5', adjustment_points: '20.5' });
+    expect(board).toEqual({ total: '20.50', adjustment_points: '20.50' });
     const [ledger] =
       await sql`SELECT category, admin_id, reason FROM app.score_transactions ORDER BY id LIMIT 1`;
     expect(ledger).toEqual({ category: 'adjustment', admin_id: admin.id, reason: 'Judge call' });

@@ -171,7 +171,7 @@ describe('managing a team', () => {
 
     const detail = await ok(await call(teamGet, '/api/admin/x', { auth: admin, ctx }));
     expect(detail.team).toMatchObject({ name: 'Web Slingers 2', isHidden: true, isActive: false });
-    expect(detail.score.total).toBe('0.0');
+    expect(detail.score.total).toBe('0.00');
   });
 
   it('the team list marks hidden teams, and an unknown team is a 404', async () => {

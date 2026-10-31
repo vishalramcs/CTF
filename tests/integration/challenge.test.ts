@@ -184,7 +184,7 @@ describe('GET /api/challenges/:n', () => {
     expect((await res.json()).error.code).toBe('closed');
   });
 
-  it.each(['0', '11', '99', 'abc', '01', '-1', '1.5'])('answers 404 for %s', async (number) => {
+  it.each(['0', '14', '99', 'abc', '01', '-1', '1.5'])('answers 404 for %s', async (number) => {
     expect((await getDetail(number)).status).toBe(404);
   });
 
