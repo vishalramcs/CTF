@@ -32,9 +32,16 @@ export const POST = withAdmin(async (req, session) => {
     }
     if (changed.leaderboardFrozen) {
       // The frozen board is what this snapshot holds, taken in the same transaction as the flag.
+      // Keys match BoardRow, because /api/public/state serves it as is.
       if (froze) {
         await tx.execute(sql`INSERT INTO app.scoreboard_snapshots (snapshot, created_by)
-          SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY s.rank), '[]'::jsonb), ${session.userId}::uuid
+          SELECT coalesce(jsonb_agg(jsonb_build_object(
+                   'rank', s.rank, 'teamName', s.team_name,
+                   'challengePoints', s.challenge_points, 'locationPoints', s.location_points,
+                   'surprisePoints', s.surprise_points, 'adjustmentPoints', s.adjustment_points,
+                   'total', s.total, 'solves', s.solves, 'locations', s.locations,
+                   'keys', s.keys, 'surprises', s.surprises
+                 ) ORDER BY s.rank, s.team_name), '[]'::jsonb), ${session.userId}::uuid
           FROM app.v_public_scoreboard s`);
       }
       await tx.update(eventState).set({ leaderboardFrozen }).where(eq(eventState.id, 1));

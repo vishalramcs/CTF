@@ -130,7 +130,7 @@ describe('event controls', () => {
     await audited('event.settings', async () => ok(await freeze(true)));
     expect(await sql`SELECT snapshot FROM app.scoreboard_snapshots`).toHaveLength(1);
     const [{ snapshot }] = await sql`SELECT snapshot FROM app.scoreboard_snapshots`;
-    expect(snapshot.map((r: { team_name: string }) => r.team_name)).toEqual(['Team teama']);
+    expect(snapshot.map((r: { teamName: string }) => r.teamName)).toEqual(['Team teama']);
     expect(snapshot[0]).not.toHaveProperty('team_id');
 
     await ok(await freeze(true)); // already frozen: no second snapshot
