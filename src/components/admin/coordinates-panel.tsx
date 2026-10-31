@@ -52,16 +52,16 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
     <form onSubmit={save} className={panelClass}>
       <SectionTitle>Fragments</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        Fill in a value for exactly 6 regular questions: 2 Easy, 2 Medium, 2 Difficult, with orders
-        1 to 6 used once. Leave the others blank. Every team gets the same fragment. Clear all
-        values to remove the plan.
+        Fill in a value for exactly 6 regular questions. Each pair makes one coordinate: Easy uses
+        orders 1-2 (coordinate 1), Medium 3-4 (coordinate 2) and Difficult 5-6 (coordinate 3). Leave
+        the others blank. Every team gets the same fragment. Clear all values to remove the plan.
       </p>
       <p role="status" className="text-sm">
         {config.assignedCount === 0
           ? 'No fragments assigned.'
           : config.planError
             ? `Saved plan is invalid: ${config.planError}`
-            : 'Saved plan is valid (2 / 2 / 2, orders 1 to 6).'}
+            : 'Saved plan is valid (one pair per coordinate).'}
       </p>
       <div className="overflow-x-auto">
         <table className={tableClass}>
@@ -144,8 +144,15 @@ function FinalCoordinates({ config }: { config: CoordinateConfig }) {
     >
       <SectionTitle>Main Question: final coordinates</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        Shown to a team only after it solves the Main Question. All three are required.
+        Shown to a team only after it solves the Main Question. These are the same coordinates the
+        fragment pairs make, so the Main Question is a shortcut. All three are required.
       </p>
+      {config.mismatches.length > 0 && (
+        <p role="alert" className="text-sm text-destructive">
+          Coordinate {config.mismatches.join(', ')} does not match its fragment pair joined in
+          order.
+        </p>
+      )}
       {rows.map((row, i) => (
         <div key={i} className="grid gap-3 sm:grid-cols-2">
           <Field label={`Coordinate ${i + 1} label`}>

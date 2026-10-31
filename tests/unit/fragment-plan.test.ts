@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkFragmentPlan } from '@/lib/admin/coordinates';
+import { checkFragmentPlan, coordinateMismatches } from '@/lib/admin/coordinates';
 
 const difficulty = new Map([
   ['e1', 'easy'],
@@ -30,5 +30,35 @@ describe('checkFragmentPlan', () => {
       i === 5 ? { ...p, order: 1 } : p,
     );
     expect(checkFragmentPlan(dup, difficulty)).toMatch(/order/);
+  });
+
+  it('keeps each pair on its own coordinate, in either order within the pair', () => {
+    expect(checkFragmentPlan(plan(['e2', 'e1', 'm2', 'm1', 'd2', 'd1']), difficulty)).toBeNull();
+    expect(checkFragmentPlan(plan(['e1', 'm1', 'e2', 'm2', 'd1', 'd2']), difficulty)).toMatch(
+      /Easy uses orders 1-2/,
+    );
+  });
+});
+
+describe('coordinateMismatches', () => {
+  const fragments = [
+    { order: 2, value: '0168' },
+    { order: 1, value: '11.' },
+    { order: 3, value: '76.' },
+    { order: 4, value: '9558' },
+  ];
+
+  it('joins each pair in order and reports only the coordinates that differ', () => {
+    expect(
+      coordinateMismatches(fragments, [
+        { position: 1, value: '11.0168' },
+        { position: 2, value: '76.0000' },
+      ]),
+    ).toEqual([2]);
+  });
+
+  it('skips a coordinate whose pair is not fully assigned', () => {
+    expect(coordinateMismatches(fragments, [{ position: 3, value: '42' }])).toEqual([]);
+    expect(coordinateMismatches([], [{ position: 1, value: '11' }])).toEqual([]);
   });
 });

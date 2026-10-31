@@ -25,18 +25,19 @@ const BASE_POINTS = {
 
 type Level = keyof typeof BASE_POINTS;
 
-// Placeholder fragments (docs/08 §3): 2 Easy, 2 Medium, 2 Difficult, with orders 1-6 once each.
+// Placeholder fragments (docs/08 §3): each difficulty's pair makes one coordinate.
 // Real values come from the organisers.
 const FRAGMENTS: Record<number, { value: string; order: number }> = {
-  1: { value: '47', order: 3 },
-  3: { value: '00', order: 1 },
-  5: { value: '02', order: 5 },
-  7: { value: '77', order: 2 },
-  9: { value: '10', order: 6 },
-  11: { value: '28', order: 4 },
+  1: { value: '11.', order: 1 },
+  3: { value: '0', order: 2 },
+  5: { value: '76.', order: 3 },
+  7: { value: '9', order: 4 },
+  9: { value: '4', order: 5 },
+  11: { value: '2', order: 6 },
 };
 
-// Placeholder final coordinates and final location. Real ones come from the organisers.
+// Placeholder final coordinates (the joined pairs above) and final location. Real ones come from
+// the organisers.
 const FINAL_COORDINATES = [
   { position: 1, label: 'PLACEHOLDER A', value: '11.0' },
   { position: 2, label: 'PLACEHOLDER B', value: '76.9' },

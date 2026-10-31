@@ -32,6 +32,7 @@ export async function getCoordinateBoard(teamId: string) {
     .select({
       number: challenges.number,
       title: challenges.title,
+      difficulty: challenges.difficulty,
       value: challenges.fragmentValue,
       orderClue: challenges.orderClue,
     })

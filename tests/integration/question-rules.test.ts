@@ -285,7 +285,13 @@ describe('fragments', () => {
     expect(await flag(3, team[0])).not.toHaveProperty('fragment');
     const mine = JSON.parse(await coordinates(team[0]));
     expect(mine.fragments).toEqual([
-      { number: 1, title: 'Challenge 1', value: FRAGMENTS[1], orderClue: 'Clue 1' },
+      {
+        number: 1,
+        title: 'Challenge 1',
+        difficulty: 'easy',
+        value: FRAGMENTS[1],
+        orderClue: 'Clue 1',
+      },
     ]);
     expect(mine.slots).toBe(6);
     expect(JSON.stringify(mine)).not.toMatch(/coordinateOrder|coordinate_order/);

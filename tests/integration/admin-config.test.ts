@@ -252,12 +252,12 @@ describe('challenges', () => {
   });
 });
 
-// Placeholder plan: 2 Easy, 2 Medium, 2 Difficult, orders 1-6.
+// Placeholder plan: 2 Easy, 2 Medium, 2 Difficult, orders 1-6. Swap reorders within each pair.
 const PLAN = (swap = false) =>
   [1, 2, 5, 6, 9, 10].map((n, i) => ({
     challengeId: c[n].id,
     value: `VALUE${n}`,
-    order: swap ? 6 - i : i + 1,
+    order: swap ? (i ^ 1) + 1 : i + 1,
     orderClue: `Clue ${n}`,
   }));
 const FINAL = [

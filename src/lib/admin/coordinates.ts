@@ -37,7 +37,30 @@ export function checkFragmentPlan(
   if (counts.easy !== 2 || counts.medium !== 2 || counts.difficult !== 2) {
     return 'Use 2 Easy, 2 Medium and 2 Difficult questions.';
   }
+  const firstOrder: Record<string, number> = { easy: 1, medium: 3, difficult: 5 };
+  for (const p of plan) {
+    const first = firstOrder[difficultyOf.get(p.challengeId)!];
+    if (p.order !== first && p.order !== first + 1) {
+      return 'Easy uses orders 1-2, Medium 3-4 and Difficult 5-6: each pair makes one coordinate.';
+    }
+  }
   return null;
+}
+
+// docs/08 §3. Coordinate positions (1-3) whose fragment pair, joined in order, differs from the
+// value the Main Question reveals. Saved separately, so this warns instead of refusing a save.
+export function coordinateMismatches(
+  fragments: { order: number; value: string }[],
+  final: { position: number; value: string }[],
+): number[] {
+  return final
+    .filter(({ position, value }) => {
+      const pair = [2 * position - 1, 2 * position].map(
+        (order) => fragments.find((f) => f.order === order)?.value,
+      );
+      return pair.every((v) => v !== undefined) && pair.join('') !== value;
+    })
+    .map((c) => c.position);
 }
 
 // Never selects answer_hash or answer_enc: the page only learns whether an answer is set.
@@ -90,6 +113,10 @@ export async function loadCoordinateConfig() {
       new Map(questions.map((q) => [q.id, q.difficulty])),
     ),
     assignedCount: assigned.length,
+    mismatches: coordinateMismatches(
+      assigned.map((q) => ({ order: q.coordinateOrder!, value: q.fragmentValue! })),
+      final,
+    ),
   };
 }
 

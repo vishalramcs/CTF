@@ -17,6 +17,7 @@ Source: the organisers' revised rules. Migration `0004_question_rules.sql`. Ever
 - Exactly 6 regular questions carry a fragment: 2 Easy, 2 Medium, 2 Difficult, with a unique `coordinate_order` 1-6. Stored on `challenges` (`fragment_value`, `coordinate_order`, `order_clue`), identical for all teams, never on the Main Question. The admin code validates the 2/2/2 split; the table enforces the pairing, the range and uniqueness.
 - A fragment (and its order clue) is shown only after the team solves that question. The real order is never sent. Fragments carry no points.
 - `{{fragment}}` in flag templates comes from `challenges.fragment_value`.
+- Each pair makes one of the three final coordinates: Easy pair (orders 1-2) = coordinate 1, Medium pair (orders 3-4) = coordinate 2, Difficult pair (orders 5-6) = coordinate 3. The admin code refuses a plan that puts a fragment outside its difficulty's orders. Each pair, joined in order, should equal the matching `final_coordinates` value; the admin page warns when it does not. The team board groups fragments by coordinate but never joins them or sends the order.
 
 ## 4. Ranking and leaderboard
 
@@ -25,7 +26,7 @@ Public board: rank, team, total, Easy/Medium/Difficult solved, Main done, coordi
 
 ## 5. Main Question and coordinate race
 
-- Solving the Main Question returns the three `final_coordinates` (only to that team), and records who solved first and when. It does not replace the 6 fragments.
+- Solving the Main Question returns the three `final_coordinates` (only to that team), and records who solved first and when. These are the same three coordinates the 6 fragments build, so it is a shortcut: a team needs either all 6 fragments or the Main Question. Fragments stay available after it.
 - Final location: a team submits it in a box. The first correct submission is the coordinate winner (`event_state.coordinate_winner_id`), announced in the feed, with no bonus points. Later correct submissions only set that team's coordinates-done status.
 - The answer is stored as an HMAC of the normalised text (`COORD_HMAC_KEY`) plus an encrypted copy. Requires the event running; 5 wrong per 60 s; every checked attempt writes a row; team advisory lock, then `event_state ... FOR UPDATE` so exactly one team wins. A team need not have solved anything to submit.
 - The coordinate winner and the overall leader are tracked separately and may differ.
