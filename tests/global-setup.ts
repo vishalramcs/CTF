@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { acquireTestLock } from './test-lock';
 
 export default async function setup(): Promise<(() => void) | void> {
-  // Unit-only runs touch no database, so they don't need to wait.
-  if (process.argv.some((arg) => arg.includes('tests/unit'))) return;
+  // Only a run of nothing but unit tests may skip the wait: it touches no database.
+  const paths = process.argv.slice(2).filter((arg) => arg.startsWith('tests/'));
+  if (paths.length > 0 && paths.every((path) => path.startsWith('tests/unit'))) return;
   return acquireTestLock(join(tmpdir(), 'spidey-ctf-test-run.lock'));
 }
