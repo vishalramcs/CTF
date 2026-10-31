@@ -1,0 +1,9 @@
+.env*
+!.env.example
+.claude
+.next
+seed-output
+tests
+docs
+scripts
+supabase
