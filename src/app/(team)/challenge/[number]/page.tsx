@@ -63,10 +63,6 @@ export default async function ChallengePage({ params }: { params: Promise<{ numb
       <Evidence blocks={view.evidence} number={view.number} />
       <Hints number={view.number} count={view.hintCount} />
       <FlagForm number={view.number} prefix={env.FLAG_PREFIX} solved={view.solved} />
-
-      <p className="text-sm text-muted-foreground">
-        Stuck? The Manual covers this. Your Toolkit can decode it.
-      </p>
     </main>
   );
 }

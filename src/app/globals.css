@@ -92,3 +92,74 @@
     @apply font-sans;
   }
 }
+
+/* R6: participant dashboard. Original web art in CSS only; motion stops under reduced motion. */
+.web-bg {
+  background-color: #07090f;
+  background-image:
+    repeating-radial-gradient(circle at 0 0, transparent 0 46px, rgb(45 107 255 / 0.07) 47px 48px),
+    repeating-conic-gradient(
+      from 0deg at 0 0,
+      transparent 0 9deg,
+      rgb(45 107 255 / 0.07) 9deg 9.4deg
+    ),
+    linear-gradient(180deg, #0a1020 0%, #07090f 60%);
+}
+
+.panel-notch {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+@keyframes signal-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(45 107 255 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 18px rgb(45 107 255 / 0);
+  }
+}
+
+@keyframes mutant-crawl {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-30vw, 8vh) rotate(-8deg);
+  }
+  50% {
+    transform: translate(-55vw, -6vh) rotate(6deg);
+  }
+  75% {
+    transform: translate(-25vw, -14vh) rotate(-4deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.signal-pulse {
+  animation: signal-pulse 2.4s ease-out infinite;
+}
+
+.mutant-crawl {
+  animation: mutant-crawl 60s ease-in-out infinite;
+}
+
+.fade-up {
+  animation: fade-up 600ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-pulse,
+  .mutant-crawl,
+  .fade-up {
+    animation: none;
+  }
+}

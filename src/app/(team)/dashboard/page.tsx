@@ -1,36 +1,37 @@
-import { ChallengeCard, DIFFICULTY } from '@/components/participant/challenge-card';
+import { DashboardClient } from '@/components/participant/dashboard-client';
+import type { LocationView } from '@/components/locations/location-panel';
 import { requireTeam } from '@/lib/auth/guards';
-import {
-  getEventState,
-  listChallengeCards,
-  type ChallengeCard as Card,
-} from '@/lib/scoring/team-state';
-
-const GROUPS: Card['difficulty'][] = ['easy', 'medium', 'difficult', 'main_difficult'];
+import { listLocations } from '@/lib/locations/state';
+import { listAnnouncements } from '@/lib/participant/announcements';
+import { listCompletedSurprises } from '@/lib/participant/history';
+import { getEventState, getTeamScore, listChallengeCards } from '@/lib/scoring/team-state';
 
 export default async function DashboardPage() {
-  const { teamId } = await requireTeam();
+  const { teamId, teamName } = await requireTeam();
+  // One after the other: the app has a single pooled connection.
   const { status } = await getEventState();
+  const { score, rank } = await getTeamScore(teamId);
   const cards = await listChallengeCards(teamId, status);
+  const locations = await listLocations(teamId);
+  const announcements = await listAnnouncements();
+  const surprises = await listCompletedSurprises(teamId);
+
+  // Dates become strings for the browser. Locations carry only fragments this team has earned.
+  const view: LocationView[] = locations.map((l) => ({
+    ...l,
+    achievedAt: l.achievedAt?.toISOString() ?? null,
+    key: l.key ? { name: l.key.name, acquiredAt: l.key.acquiredAt.toISOString() } : null,
+  }));
 
   return (
-    <main className="mx-auto flex max-w-[1200px] flex-col gap-8 p-4">
-      {GROUPS.map((difficulty) => {
-        const group = cards.filter((card) => card.difficulty === difficulty);
-        if (group.length === 0) return null;
-        return (
-          <section key={difficulty} aria-labelledby={difficulty} className="flex flex-col gap-3">
-            <h2 id={difficulty} className="font-heading text-2xl font-bold uppercase">
-              {DIFFICULTY[difficulty].label}
-            </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {group.map((card) => (
-                <ChallengeCard key={card.number} card={card} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
-    </main>
+    <DashboardClient
+      teamName={teamName}
+      score={score}
+      rank={rank}
+      cards={cards}
+      locations={view}
+      announcements={announcements}
+      surprises={surprises}
+    />
   );
 }
