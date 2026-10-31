@@ -1,3 +1,5 @@
+> Superseded in part by `docs/08-Question-Rules.md` (questions, scoring, fragments, Main Question, locations removed, ranking). Where they disagree, 08 wins.
+
 # 07 — Rules v2 (supersedes conflicting parts of docs 01–06)
 
 Source: the organisers' "Master Software Development Prompt" (SPIDEY CTF – The Multiverse Crisis), §1–16. The stack stays Next.js + Supabase Postgres on Vercel. Where this doc and docs 01–06 disagree, **this doc wins**. Docs 01–06 carry a pointer to it. Everything not mentioned here (security rules, variants, inspect surfaces, templates, realtime design) stays as written.
