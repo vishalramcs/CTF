@@ -35,15 +35,13 @@ export const POST = withAdmin(async (req, session) => {
         })
         .returning({ id: challenges.id });
       if (hints.length > 0) {
-        await tx
-          .insert(challengeHints)
-          .values(
-            hints.map((contentMd, i) => ({
-              challengeId: challenge.id,
-              hintOrder: i + 1,
-              contentMd,
-            })),
-          );
+        await tx.insert(challengeHints).values(
+          hints.map((contentMd, i) => ({
+            challengeId: challenge.id,
+            hintOrder: i + 1,
+            contentMd,
+          })),
+        );
       }
       await audit(tx, {
         ...actor(req, session),

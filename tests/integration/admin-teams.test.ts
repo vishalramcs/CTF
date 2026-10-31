@@ -9,6 +9,7 @@ import { POST as revoke } from '@/app/api/admin/teams/[id]/revoke-sessions/route
 import { GET as sessionsGet } from '@/app/api/admin/teams/[id]/sessions/route';
 import { GET as teamGet } from '@/app/api/admin/teams/[id]/route';
 import { GET as teamsGet, POST as teamsPost } from '@/app/api/admin/teams/route';
+import { hashPassword } from '@/lib/auth/password';
 import { teamPassword } from '@/lib/auth/team-credentials';
 import { db } from '@/lib/db/client';
 import { wipeAppTables } from '@/lib/db/wipe';
@@ -113,7 +114,8 @@ describe('managing a team', () => {
 
     // A live session, then a changed password: the reset must restore the derived one and log out.
     expect((await logIn(username, password)).status).toBe(200);
-    await sql`UPDATE app.users SET password_hash = 'x' WHERE username = ${username}`;
+    const other = await hashPassword('another-password');
+    await sql`UPDATE app.users SET password_hash = ${other} WHERE username = ${username}`;
     expect((await logIn(username, password)).status).toBe(401);
     const body = await ok(
       await call(resetPassword, '/api/admin/teams/x/reset-password', {

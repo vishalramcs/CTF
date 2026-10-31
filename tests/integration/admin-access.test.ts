@@ -113,7 +113,7 @@ describe('guards', () => {
 describe('secrets', () => {
   it('no response carries a hash, a ciphertext or a password hash', async () => {
     const challenge = await createChallenge(sql, 1);
-    await sql`UPDATE app.challenges SET static_flag_hash = 'MARKER-STATIC-HASH' WHERE id = ${challenge.id}`;
+    await sql`UPDATE app.challenges SET flag_mode = 'static', flag_template = NULL, static_flag_hash = 'MARKER-STATIC-HASH' WHERE id = ${challenge.id}`;
     await sql`UPDATE app.locations SET answer_hash = 'MARKER-LOC-HASH', answer_enc = 'MARKER-LOC-ENC'
       WHERE level = 'easy'`;
     await sql`UPDATE app.surprise_events SET answer_hash = 'MARKER-SUR-HASH', answer_enc = 'MARKER-SUR-ENC'
