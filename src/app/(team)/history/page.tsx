@@ -3,7 +3,7 @@ import { requireTeam } from '@/lib/auth/guards';
 import { getTeamHistory } from '@/lib/participant/history';
 import { formatDateTimeIST } from '@/lib/participant/time';
 
-const TYPE = { challenge: 'Challenge', location: 'Location', surprise: 'Surprise' } as const;
+const TYPE = { challenge: 'Challenge', surprise: 'Surprise' } as const;
 
 export default async function HistoryPage() {
   const { teamId } = await requireTeam();

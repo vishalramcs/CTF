@@ -42,8 +42,7 @@ export function OverviewLive({ initial }: { initial: Overview }) {
     ['Active teams', counts.activeTeams],
     ['Online now', counts.onlineTeams],
     ['Total solves', counts.solves],
-    ['Location discoveries', counts.locationDiscoveries],
-    ['Keys collected', counts.keysCollected],
+    ['Teams with final location', counts.coordinatesFound],
     ['Surprise completions', counts.surpriseCompletions],
   ];
 
@@ -72,7 +71,9 @@ export function OverviewLive({ initial }: { initial: Overview }) {
                 <th className={thClass}>Team</th>
                 <th className={thClass}>Total</th>
                 <th className={thClass}>Challenge</th>
-                <th className={thClass}>Location</th>
+                <th className={thClass}>E / M / D</th>
+                <th className={thClass}>Main</th>
+                <th className={thClass}>Coordinates</th>
                 <th className={thClass}>Surprise</th>
                 <th className={thClass}>Adjust</th>
                 <th className={thClass}>Solves</th>
@@ -86,7 +87,11 @@ export function OverviewLive({ initial }: { initial: Overview }) {
                   <td className={tdClass}>{row.teamName}</td>
                   <td className={tdClass}>{row.total}</td>
                   <td className={tdClass}>{row.challengePoints}</td>
-                  <td className={tdClass}>{row.locationPoints}</td>
+                  <td className={tdClass}>
+                    {row.easySolved} / {row.mediumSolved} / {row.difficultSolved}
+                  </td>
+                  <td className={tdClass}>{row.mainSolvedAt ? 'Yes' : '—'}</td>
+                  <td className={tdClass}>{row.coordinatesFoundAt ? 'Yes' : '—'}</td>
                   <td className={tdClass}>{row.surprisePoints}</td>
                   <td className={tdClass}>{row.adjustmentPoints}</td>
                   <td className={tdClass}>{row.solves}</td>

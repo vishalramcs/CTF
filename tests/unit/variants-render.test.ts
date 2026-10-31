@@ -158,12 +158,12 @@ describe('sanitizeHtml', () => {
 });
 
 describe('points and access', () => {
-  it('shows the next solve as base minus 0.5 per earlier solve, never below zero', () => {
-    expect(nextPoints(60, 0)).toBe(60);
-    expect(nextPoints(60, 1)).toBe(59.5);
-    expect(nextPoints(60, 5)).toBe(57.5);
-    expect(nextPoints(400, 3)).toBe(398.5);
+  it('mirrors the two-tier formula: 0.5 steps to the 5th, then 0.25, never below zero', () => {
+    const base50 = [0, 1, 2, 3, 4, 5, 6].map((prior) => nextPoints(50, prior));
+    expect(base50).toEqual([50, 49.5, 49, 48.5, 48, 47.75, 47.5]);
+    expect(nextPoints(200, 9)).toBe(200 - 2 - 5 * 0.25);
     expect(nextPoints(1, 4)).toBe(0);
+    expect(nextPoints(1, 30)).toBe(0);
   });
 
   it('locks before the event starts, closes after it ends, and stays readable while paused', () => {

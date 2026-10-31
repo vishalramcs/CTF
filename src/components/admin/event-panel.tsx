@@ -4,10 +4,11 @@ import { useState } from 'react';
 
 import { Notice } from '@/components/admin/fields';
 import { panelClass, SectionTitle } from '@/components/admin/page-title';
-import { actionClass, ConfirmModal, ErrorText } from '@/components/admin/ui';
+import { actionClass, ConfirmModal, ErrorText, inputClass } from '@/components/admin/ui';
 import { useAction } from '@/components/admin/use-action';
 import { Button } from '@/components/ui/button';
 import {
+  formatTime,
   STATUS_LABELS,
   TRANSITIONS,
   type EventStatus,
@@ -31,15 +32,20 @@ export function EventPanel({
   status,
   submissionsOpen,
   leaderboardFrozen,
+  freezeAt,
+  timeZone,
   isSuper,
 }: {
   status: EventStatus;
   submissionsOpen: boolean;
   leaderboardFrozen: boolean;
+  freezeAt: Date | string | null;
+  timeZone: string;
   isSuper: boolean;
 }) {
   const { run, error, pending } = useAction();
   const [dialog, setDialog] = useState<Dialog>();
+  const [finale, setFinale] = useState('');
   const close = () => setDialog(undefined);
   const active = BUTTONS.find((b) => b.action === dialog);
 
@@ -100,15 +106,47 @@ export function EventPanel({
             (freezing saves the public board as it is now)
           </span>
         </label>
+        <div className="space-y-2">
+          <label className="block font-medium">
+            Freeze the leaderboard at (finale time, {timeZone})
+            <input
+              type="datetime-local"
+              className={inputClass}
+              value={finale}
+              onChange={(e) => setFinale(e.target.value)}
+            />
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Now: {freezeAt ? formatTime(freezeAt, timeZone) : 'not set'}. The board freezes on the
+            first public read after this time.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              className={actionClass}
+              disabled={pending || !finale}
+              onClick={() => run('POST', '/api/admin/event/settings', { freezeAt: `${finale}:00` })}
+            >
+              Set finale time
+            </Button>
+            <Button
+              variant="outline"
+              className={actionClass}
+              disabled={pending || !freezeAt}
+              onClick={() => run('POST', '/api/admin/event/settings', { freezeAt: null })}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
       </section>
 
       {isSuper && (
         <section className={panelClass}>
           <SectionTitle>Reset test data</SectionTitle>
           <Notice tone="warn">
-            Clears all solves, submissions, scores, locations, keys, surprise progress, hints and
-            snapshots, and sets the event back to Not started. Teams, challenges and configuration
-            stay.
+            Clears all solves, submissions, scores, coordinate attempts and winner, surprise
+            progress, hints and snapshots, and sets the event back to Not started. Teams, challenges
+            and configuration stay.
           </Notice>
           <Button variant="destructive" className={actionClass} onClick={() => setDialog('reset')}>
             Reset test data

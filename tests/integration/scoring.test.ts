@@ -39,7 +39,7 @@ beforeEach(async () => {
   authA = await sessionFor(sql, 'teama');
   authB = await sessionFor(sql, 'teamb');
   easy = await createChallenge(sql, 1, { fragment: { value: '47', order: 3, clue: 'Clue three' } });
-  main = await createChallenge(sql, 10, { fragment: { value: '11', order: 1, clue: 'Clue one' } });
+  main = await createChallenge(sql, 13);
   await regenerateVariants(db, {});
   await setStatus(sql, 'running');
 });
@@ -74,36 +74,36 @@ describe('correct flag', () => {
   it('gives one solve at full points, a ledger row, and the fragment with its clue', async () => {
     expect(await send(easy, flagOf(teamA, easy))).toEqual({
       result: 'correct',
-      points: 60,
+      points: 50,
       position: 1,
       fragment: '47',
       orderClue: 'Clue three',
     });
     expect(await solves()).toEqual([
-      { team_id: teamA, challenge_id: easy.id, solve_position: 1, points_awarded: '60.0' },
+      { team_id: teamA, challenge_id: easy.id, solve_position: 1, points_awarded: '50.00' },
     ]);
-    expect(await ledger()).toEqual([{ team_id: teamA, category: 'challenge', points: '60.0' }]);
+    expect(await ledger()).toEqual([{ team_id: teamA, category: 'challenge', points: '50.00' }]);
     const [attempt] = await attempts();
     expect(attempt).toMatchObject({ result: 'correct', is_correct: true, submitted_preview: null });
     expect(attempt.submitted_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('pays each later team half a point less', async () => {
-    expect(await send(easy, flagOf(teamA, easy))).toMatchObject({ points: 60, position: 1 });
+  it('pays each later team half a point less (to the 5th)', async () => {
+    expect(await send(easy, flagOf(teamA, easy))).toMatchObject({ points: 50, position: 1 });
     expect(await send(easy, flagOf(teamB, easy), authB)).toMatchObject({
-      points: 59.5,
+      points: 49.5,
       position: 2,
     });
     expect(await send(main, flagOf(teamB, main), authB)).toMatchObject({
-      points: 400,
+      points: 200,
       position: 1,
     });
-    expect(await send(main, flagOf(teamA, main))).toMatchObject({ points: 399.5, position: 2 });
+    expect(await send(main, flagOf(teamA, main))).toMatchObject({ points: 199.5, position: 2 });
   });
 
   it('does not change what a wrong flag costs: nothing', async () => {
     await send(easy, 'SPIDEY{nope}');
-    expect(await send(easy, flagOf(teamA, easy))).toMatchObject({ points: 60 });
+    expect(await send(easy, flagOf(teamA, easy))).toMatchObject({ points: 50 });
   });
 
   it('accepts any case and surrounding whitespace', async () => {
@@ -265,7 +265,7 @@ describe('races across separate server instances', () => {
   );
 
   it(
-    'two teams solving at the same moment get positions 1 and 2 and 60 and 59.5',
+    'two teams solving at the same moment get positions 1 and 2 and 50 and 49.5',
     { timeout: 240_000 },
     async () => {
       const results = await sendAll([
@@ -274,8 +274,8 @@ describe('races across separate server instances', () => {
       ]);
       expect(results.map((r) => r.result)).toEqual(['correct', 'correct']);
       expect(results.map((r) => r.position).sort()).toEqual([1, 2]);
-      expect(results.map((r) => r.points).sort((a, b) => b - a)).toEqual([60, 59.5]);
-      expect((await ledger()).map((l) => l.points).sort()).toEqual(['59.5', '60.0']);
+      expect(results.map((r) => r.points).sort((a, b) => b - a)).toEqual([50, 49.5]);
+      expect((await ledger()).map((l) => l.points).sort()).toEqual(['49.50', '50.00']);
     },
   );
 

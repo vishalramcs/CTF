@@ -1,4 +1,4 @@
-// Checks migration 0003 (docs/07-Rules-v2.md). Wipes the app tables, so re-run `pnpm seed` afterwards.
+// Checks migrations 0003 and 0004 (docs/07-Rules-v2.md, docs/08-Question-Rules.md). Wipes the app tables, so re-run `pnpm seed` afterwards.
 import { is } from 'drizzle-orm';
 import { getTableConfig, getViewConfig, PgTable, PgView } from 'drizzle-orm/pg-core';
 import postgres from 'postgres';
@@ -22,12 +22,12 @@ beforeAll(() => {
 beforeEach(() => wipeAppTables(sql));
 afterAll(() => sql.end());
 
-const BASE = { easy: 60, medium: 110, difficult: 175, main_difficult: 400 } as const;
+const BASE = { easy: 50, medium: 75, difficult: 100, main_difficult: 200 } as const;
 
 function levelOf(number: number): keyof typeof BASE {
   if (number <= 4) return 'easy';
-  if (number <= 7) return 'medium';
-  if (number <= 9) return 'difficult';
+  if (number <= 8) return 'medium';
+  if (number <= 12) return 'difficult';
   return 'main_difficult';
 }
 
@@ -75,21 +75,15 @@ function insertSolve(teamId: string, challengeId: string) {
   return sql`INSERT INTO app.solves (team_id, challenge_id) VALUES (${teamId}, ${challengeId})`;
 }
 
-async function levelId(table: 'locations' | 'cosmic_keys', level: string): Promise<string> {
-  const [row] =
-    await sql`SELECT id FROM app.${sql(table)} WHERE level = ${level}::app.challenge_difficulty`;
-  return row.id;
-}
-
 describe('structure', () => {
-  it('has 26 tables and 4 views, all with RLS on', async () => {
+  it('has 22 tables and 3 views, all with RLS on', async () => {
     const [{ tables }] = await sql`
       SELECT count(*)::int AS tables FROM pg_tables WHERE schemaname = 'app'`;
     const [{ views }] = await sql`
       SELECT count(*)::int AS views FROM pg_views WHERE schemaname = 'app'`;
     const [{ open }] = await sql`
       SELECT count(*)::int AS open FROM pg_tables WHERE schemaname = 'app' AND NOT rowsecurity`;
-    expect({ tables, views, open }).toEqual({ tables: 26, views: 4, open: 0 });
+    expect({ tables, views, open }).toEqual({ tables: 22, views: 3, open: 0 });
   });
 
   it('Drizzle schema matches every table and view column in the database', async () => {
@@ -105,8 +99,8 @@ describe('structure', () => {
     const objects = Object.values(schema);
     const tables = objects.filter((o) => is(o, PgTable)) as PgTable[];
     const views = objects.filter((o) => is(o, PgView)) as PgView[];
-    expect(tables).toHaveLength(26);
-    expect(views).toHaveLength(4);
+    expect(tables).toHaveLength(22);
+    expect(views).toHaveLength(3);
 
     for (const table of tables) {
       const { name, columns } = getTableConfig(table);
@@ -145,34 +139,23 @@ describe('client roles', () => {
 });
 
 describe('reference rows', () => {
-  it('has the four locations, four keys and three surprises with the fixed rewards', async () => {
-    const locations = await sql`
-      SELECT level, reward_points::text AS reward, fragments_required FROM app.locations ORDER BY reward_points`;
-    expect(locations).toEqual([
-      { level: 'easy', reward: '180.0', fragments_required: 2 },
-      { level: 'medium', reward: '330.0', fragments_required: 2 },
-      { level: 'difficult', reward: '525.0', fragments_required: 2 },
-      { level: 'main_difficult', reward: '1200.0', fragments_required: 1 },
-    ]);
-    const [{ keys }] = await sql`SELECT count(*)::int AS keys FROM app.cosmic_keys`;
-    expect(keys).toBe(4);
+  it('has the three surprises with the fixed rewards', async () => {
     const surprises = await sql`
       SELECT kind, points::text AS points, enabled FROM app.surprise_events ORDER BY points`;
     expect(surprises).toEqual([
-      { kind: 'spidey_signal', points: '30.0', enabled: false },
-      { kind: 'flashy_spider', points: '50.0', enabled: false },
-      { kind: 'spider_mutation', points: '70.0', enabled: false },
+      { kind: 'spidey_signal', points: '30.00', enabled: false },
+      { kind: 'flashy_spider', points: '50.00', enabled: false },
+      { kind: 'spider_mutation', points: '70.00', enabled: false },
     ]);
   });
 
-  it('survives a wipe, reset to unconfigured', async () => {
-    await sql`UPDATE app.locations SET answer_hash = 'h', name = 'Somewhere'`;
+  it('keeps the surprises through a wipe, reset to unconfigured', async () => {
+    await sql`UPDATE app.surprise_events SET enabled = true, answer_hash = 'h'`;
     await wipeAppTables(sql);
-    const [{ configured }] = await sql`
-      SELECT count(*)::int AS configured FROM app.locations WHERE answer_hash IS NOT NULL OR name <> ''`;
-    expect(configured).toBe(0);
-    const [{ total }] = await sql`SELECT count(*)::int AS total FROM app.locations`;
-    expect(total).toBe(4);
+    const [{ configured, total }] = await sql`
+      SELECT count(*) FILTER (WHERE enabled OR answer_hash IS NOT NULL)::int AS configured,
+             count(*)::int AS total FROM app.surprise_events`;
+    expect({ configured, total }).toEqual({ configured: 0, total: 3 });
   });
 
   it('refuses to change a surprise reward', async () => {
@@ -184,20 +167,23 @@ describe('reference rows', () => {
 
 describe('dynamic scoring', () => {
   it.each([
-    ['easy', 1, ['60.0', '59.5', '59.0', '58.5', '58.0']],
-    ['medium', 5, ['110.0', '109.5', '109.0']],
-    ['difficult', 8, ['175.0', '174.5', '174.0']],
-    ['main_difficult', 10, ['400.0', '399.5', '399.0']],
-  ] as const)('%s decays by 0.5 per earlier solve', async (_level, number, expected) => {
-    const challenge = await createChallenge(number);
-    for (let i = 0; i < expected.length; i++) {
-      await insertSolve(await createTeam(`Team ${i}`), challenge);
-    }
-    const rows = await sql`
+    ['easy', 1, ['50.00', '49.50', '49.00', '48.50', '48.00', '47.75', '47.50']],
+    ['medium', 5, ['75.00', '74.50', '74.00', '73.50', '73.00', '72.75', '72.50']],
+    ['difficult', 9, ['100.00', '99.50', '99.00', '98.50', '98.00', '97.75', '97.50']],
+    ['main_difficult', 13, ['200.00', '199.50', '199.00', '198.50', '198.00', '197.75', '197.50']],
+  ] as const)(
+    '%s decays by 0.5 to the 5th solve, then 0.25, without rounding',
+    async (_level, number, expected) => {
+      const challenge = await createChallenge(number);
+      for (let i = 0; i < expected.length; i++) {
+        await insertSolve(await createTeam(`Team ${i}`), challenge);
+      }
+      const rows = await sql`
       SELECT solve_position, points_awarded::text AS points FROM app.solves ORDER BY solve_position`;
-    expect(rows.map((r) => r.points)).toEqual(expected);
-    expect(rows.map((r) => r.solve_position)).toEqual(expected.map((_, i) => i + 1));
-  });
+      expect(rows.map((r) => r.points)).toEqual(expected);
+      expect(rows.map((r) => r.solve_position)).toEqual(expected.map((_, i) => i + 1));
+    },
+  );
 
   it('counts each challenge on its own', async () => {
     const c1 = await createChallenge(1);
@@ -223,7 +209,7 @@ describe('dynamic scoring', () => {
     for (let i = 0; i < 4; i++) await insertSolve(await createTeam(`Team ${i}`), challenge);
     const rows =
       await sql`SELECT points_awarded::text AS points FROM app.solves ORDER BY solve_position`;
-    expect(rows.map((r) => r.points)).toEqual(['1.0', '0.5', '0.0', '0.0']);
+    expect(rows.map((r) => r.points)).toEqual(['1.00', '0.50', '0.00', '0.00']);
     // A zero-point solve leaves no ledger row (ledger points must be non-zero).
     const [{ ledger }] = await sql`SELECT count(*)::int AS ledger FROM app.score_transactions`;
     expect(ledger).toBe(2);
@@ -237,7 +223,7 @@ describe('dynamic scoring', () => {
       SELECT t.category, t.points::text AS points, t.ref_type, t.ref_id = s.id AS linked
         FROM app.score_transactions t JOIN app.solves s ON s.team_id = t.team_id`;
     expect(rows).toEqual([
-      { category: 'challenge', points: '60.0', ref_type: 'solve', linked: true },
+      { category: 'challenge', points: '50.00', ref_type: 'solve', linked: true },
     ]);
   });
 
@@ -252,7 +238,9 @@ describe('dynamic scoring', () => {
     const rows = await sql`
       SELECT solve_position, points_awarded::float AS points FROM app.solves ORDER BY solve_position`;
     expect(rows.map((r) => r.solve_position)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
-    expect(rows.map((r) => r.points)).toEqual(Array.from({ length: 30 }, (_, i) => 100 - 0.5 * i));
+    expect(rows.map((r) => r.points)).toEqual(
+      Array.from({ length: 30 }, (_, i) => (i < 5 ? 100 - 0.5 * i : 100 - 2 - 0.25 * (i - 4))),
+    );
     const [{ ledger }] = await sql`SELECT count(*)::int AS ledger FROM app.score_transactions`;
     expect(ledger).toBe(30);
   });
@@ -287,7 +275,7 @@ describe('ledger', () => {
     const [{ id }] = await sql`SELECT gen_random_uuid() AS id`;
     const pay = () => sql`
       INSERT INTO app.score_transactions (team_id, category, points, ref_type, ref_id)
-      VALUES (${team}, 'location', 180, 'location', ${id})`;
+      VALUES (${team}, 'surprise', 180, 'surprise', ${id})`;
     await pay();
     await expect(pay()).rejects.toThrow('ledger_once_uq');
   });
@@ -315,28 +303,23 @@ describe('ledger', () => {
 });
 
 describe('scoreboard', () => {
-  it('sums the ledger by category, hides hidden teams and counts achievements', async () => {
+  it('sums the ledger by category, hides hidden teams and counts solves by difficulty', async () => {
     const admin = await createAdmin();
     const c1 = await createChallenge(1);
     const c2 = await createChallenge(2);
+    const c5 = await createChallenge(5);
     const a = await createTeam('Team A');
     const b = await createTeam('Team B');
     const hidden = await createTeam('Team Hidden', true);
 
-    await insertSolve(hidden, c1); // 60
-    await insertSolve(a, c1); // 59.5
-    await insertSolve(a, c2); // 60
+    await insertSolve(hidden, c1); // 50
+    await insertSolve(a, c1); // 49.5
+    await insertSolve(a, c2); // 50
+    await insertSolve(a, c5); // 75
     await sql`
       INSERT INTO app.score_transactions (team_id, category, points, reason, admin_id)
       VALUES (${a}, 'adjustment', -20, 'test penalty', ${admin})`;
 
-    const easy = await levelId('locations', 'easy');
-    await sql`INSERT INTO app.location_achievements (team_id, location_id) VALUES (${b}, ${easy})`;
-    await sql`
-      INSERT INTO app.score_transactions (team_id, category, points, ref_type, ref_id)
-      VALUES (${b}, 'location', 180, 'location', ${easy})`;
-    const key = await levelId('cosmic_keys', 'easy');
-    await sql`INSERT INTO app.team_cosmic_keys (team_id, key_id) VALUES (${b}, ${key})`;
     const [surprise] = await sql`SELECT id FROM app.surprise_events WHERE kind = 'spidey_signal'`;
     await sql`
       INSERT INTO app.surprise_progress (team_id, event_id, completed_at) VALUES (${b}, ${surprise.id}, now())`;
@@ -346,65 +329,80 @@ describe('scoreboard', () => {
 
     const board = await sql`
       SELECT team_name, total::text AS total, challenge_points::text AS challenge,
-             location_points::text AS location, surprise_points::text AS surprise,
-             adjustment_points::text AS adjustment, solves, locations, keys, surprises, rank_all
+             surprise_points::text AS surprise, adjustment_points::text AS adjustment, solves,
+             easy_solved, medium_solved, difficult_solved, surprises, rank_all
         FROM app.v_scoreboard ORDER BY rank_all, team_name`;
     expect(board).toEqual([
       {
-        team_name: 'Team B',
-        total: '210.0',
-        challenge: '0.0',
-        location: '180.0',
-        surprise: '30.0',
-        adjustment: '0.0',
-        solves: 0,
-        locations: 1,
-        keys: 1,
-        surprises: 1,
+        team_name: 'Team A',
+        total: '154.50',
+        challenge: '174.50',
+        surprise: '0.00',
+        adjustment: '-20.00',
+        solves: 3,
+        easy_solved: 2,
+        medium_solved: 1,
+        difficult_solved: 0,
+        surprises: 0,
         rank_all: 1,
       },
       {
-        team_name: 'Team A',
-        total: '99.5',
-        challenge: '119.5',
-        location: '0.0',
-        surprise: '0.0',
-        adjustment: '-20.0',
-        solves: 2,
-        locations: 0,
-        keys: 0,
+        team_name: 'Team Hidden',
+        total: '50.00',
+        challenge: '50.00',
+        surprise: '0.00',
+        adjustment: '0.00',
+        solves: 1,
+        easy_solved: 1,
+        medium_solved: 0,
+        difficult_solved: 0,
         surprises: 0,
         rank_all: 2,
       },
       {
-        team_name: 'Team Hidden',
-        total: '60.0',
-        challenge: '60.0',
-        location: '0.0',
-        surprise: '0.0',
-        adjustment: '0.0',
-        solves: 1,
-        locations: 0,
-        keys: 0,
-        surprises: 0,
+        team_name: 'Team B',
+        total: '30.00',
+        challenge: '0.00',
+        surprise: '30.00',
+        adjustment: '0.00',
+        solves: 0,
+        easy_solved: 0,
+        medium_solved: 0,
+        difficult_solved: 0,
+        surprises: 1,
         rank_all: 3,
       },
     ]);
 
     const publicBoard = await sql`
-      SELECT rank, team_name, total::text AS total FROM app.v_public_scoreboard ORDER BY rank`;
+      SELECT rank, team_name, total::text AS total, easy_solved, main_done, coordinates_done
+        FROM app.v_public_scoreboard ORDER BY rank`;
     expect(publicBoard).toEqual([
-      { rank: 1, team_name: 'Team B', total: '210.0' },
-      { rank: 2, team_name: 'Team A', total: '99.5' },
+      {
+        rank: 1,
+        team_name: 'Team A',
+        total: '154.50',
+        easy_solved: 2,
+        main_done: false,
+        coordinates_done: false,
+      },
+      {
+        rank: 2,
+        team_name: 'Team B',
+        total: '30.00',
+        easy_solved: 0,
+        main_done: false,
+        coordinates_done: false,
+      },
     ]);
 
     const columns = await sql`
       SELECT column_name FROM information_schema.columns
-       WHERE table_schema = 'app' AND table_name = 'v_public_scoreboard'`;
+       WHERE table_schema = 'app' AND table_name IN ('v_public_scoreboard', 'v_public_feed')`;
     expect(columns.map((c) => c.column_name)).not.toContain('team_id');
 
     const feed = await sql`SELECT team_name FROM app.v_public_feed`;
-    expect(feed.map((f) => f.team_name).sort()).toEqual(['Team A', 'Team A']);
+    expect(feed.map((f) => f.team_name).sort()).toEqual(['Team A', 'Team A', 'Team A']);
   });
 
   it('breaks ties by who reached the total first, and shares the rank when still tied', async () => {
@@ -430,73 +428,49 @@ describe('scoreboard', () => {
   });
 });
 
-describe('fragments and locations', () => {
-  async function fragment(challenge: string, level: string, label: string, value: string) {
-    const location = await levelId('locations', level);
-    await sql`
-      INSERT INTO app.coordinate_fragments (location_id, challenge_id, label, value)
-      VALUES (${location}, ${challenge}, ${label}, ${value})`;
-  }
+describe('fragments and the coordinate race', () => {
+  const setFragment = (number: number, value: string | null, order: number | null) =>
+    sql`UPDATE app.challenges SET fragment_value = ${value}, coordinate_order = ${order}
+         WHERE number = ${number}`;
 
-  it('gives a team a fragment only once it has solved that challenge', async () => {
-    const c1 = await createChallenge(1);
-    const c2 = await createChallenge(2);
-    await fragment(c1, 'easy', 'A', '47');
-    await fragment(c2, 'easy', 'B', '00');
-    const a = await createTeam('Team A');
-    const b = await createTeam('Team B');
-    await insertSolve(a, c1);
-    await insertSolve(b, c2);
-
-    const rows = await sql`
-      SELECT t.name, f.label, f.value FROM app.v_team_fragments f JOIN app.teams t ON t.id = f.team_id
-       ORDER BY t.name`;
-    expect(rows).toEqual([
-      { name: 'Team A', label: 'A', value: '47' },
-      { name: 'Team B', label: 'B', value: '00' },
-    ]);
+  it('sets a fragment and its order together, order 1 to 6, unique', async () => {
+    await createChallenge(1);
+    await createChallenge(2);
+    await setFragment(1, '47', 3);
+    await expect(setFragment(2, '00', 3)).rejects.toThrow('challenges_coordinate_order_uq');
+    await expect(setFragment(2, '00', 7)).rejects.toThrow('challenges_coordinate_order_check');
+    await expect(setFragment(2, '00', null)).rejects.toThrow('challenges_fragment_pair');
+    await expect(setFragment(2, null, 2)).rejects.toThrow('challenges_fragment_pair');
   });
 
-  it('allows one fragment per challenge and one label per location', async () => {
-    const c1 = await createChallenge(1);
-    const c2 = await createChallenge(2);
-    await fragment(c1, 'easy', 'A', '47');
-    await expect(fragment(c1, 'easy', 'B', '00')).rejects.toThrow(
-      'coordinate_fragments_challenge_id_key',
-    );
-    await expect(fragment(c2, 'easy', 'A', '00')).rejects.toThrow(
-      'coordinate_fragments_location_id_label_key',
-    );
+  it('refuses a fragment on the Main Question, and a second Main Question', async () => {
+    await createChallenge(13);
+    await expect(setFragment(13, '11', 1)).rejects.toThrow('challenges_no_main_fragment');
+    await expect(
+      insertChallenge(12, { difficulty: 'main_difficult', base_points: 200 }),
+    ).rejects.toThrow('challenges_one_main_uq');
   });
 
-  it('records one correct location submission per team, but keeps every wrong attempt', async () => {
+  it('keeps final coordinates to positions 1 to 3', async () => {
+    await sql`INSERT INTO app.final_coordinates (position, value) VALUES (1, 'a'), (3, 'c')`;
+    await expect(
+      sql`INSERT INTO app.final_coordinates (position, value) VALUES (4, 'd')`,
+    ).rejects.toThrow('final_coordinates_position_check');
+  });
+
+  it('records one correct coordinate submission per team, but keeps every wrong attempt', async () => {
     const team = await createTeam('Team A');
     const other = await createTeam('Team B');
-    const location = await levelId('locations', 'easy');
     const submit = (t: string, correct: boolean) => sql`
-      INSERT INTO app.location_submissions (team_id, location_id, submitted_hash, is_correct)
-      VALUES (${t}, ${location}, 'h', ${correct})`;
+      INSERT INTO app.coordinate_submissions (team_id, submitted_hash, is_correct)
+      VALUES (${t}, 'h', ${correct})`;
     await submit(team, false);
     await submit(team, false);
     await submit(team, true);
-    await expect(submit(team, true)).rejects.toThrow('location_sub_one_correct_uq');
+    await expect(submit(team, true)).rejects.toThrow('coordinate_sub_one_correct_uq');
     await submit(other, true);
-    const [{ rows }] = await sql`SELECT count(*)::int AS rows FROM app.location_submissions`;
+    const [{ rows }] = await sql`SELECT count(*)::int AS rows FROM app.coordinate_submissions`;
     expect(rows).toBe(4);
-  });
-
-  it('records each location achievement and each key once per team', async () => {
-    const team = await createTeam('Team A');
-    const location = await levelId('locations', 'easy');
-    const key = await levelId('cosmic_keys', 'easy');
-    await sql`INSERT INTO app.location_achievements (team_id, location_id) VALUES (${team}, ${location})`;
-    await expect(
-      sql`INSERT INTO app.location_achievements (team_id, location_id) VALUES (${team}, ${location})`,
-    ).rejects.toThrow('location_achievements_pkey');
-    await sql`INSERT INTO app.team_cosmic_keys (team_id, key_id) VALUES (${team}, ${key})`;
-    await expect(
-      sql`INSERT INTO app.team_cosmic_keys (team_id, key_id) VALUES (${team}, ${key})`,
-    ).rejects.toThrow('team_cosmic_keys_pkey');
   });
 });
 
@@ -541,9 +515,9 @@ describe('constraints', () => {
     await expect(insertChallenge(1, overrides)).rejects.toThrow(constraint);
   });
 
-  it('rejects challenge number 0 and 11', async () => {
+  it('rejects challenge number 0 and 14', async () => {
     await expect(insertChallenge(0)).rejects.toThrow('challenges_number_range');
-    await expect(insertChallenge(11)).rejects.toThrow('challenges_number_range');
+    await expect(insertChallenge(14)).rejects.toThrow('challenges_number_range');
   });
 
   it('rejects an admin without a level and a team user with one', async () => {

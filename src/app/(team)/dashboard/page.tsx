@@ -1,7 +1,6 @@
 import { DashboardClient } from '@/components/participant/dashboard-client';
-import type { LocationView } from '@/components/locations/location-panel';
 import { requireTeam } from '@/lib/auth/guards';
-import { listLocations } from '@/lib/locations/state';
+import { getCoordinateBoard } from '@/lib/coordinates/state';
 import { listAnnouncements } from '@/lib/participant/announcements';
 import { listCompletedSurprises } from '@/lib/participant/history';
 import { getEventState, getTeamScore, listChallengeCards } from '@/lib/scoring/team-state';
@@ -12,16 +11,9 @@ export default async function DashboardPage() {
   const { status } = await getEventState();
   const { score, rank } = await getTeamScore(teamId);
   const cards = await listChallengeCards(teamId, status);
-  const locations = await listLocations(teamId);
+  const coordinates = await getCoordinateBoard(teamId);
   const announcements = await listAnnouncements();
   const surprises = await listCompletedSurprises(teamId);
-
-  // Dates become strings for the browser. Locations carry only fragments this team has earned.
-  const view: LocationView[] = locations.map((l) => ({
-    ...l,
-    achievedAt: l.achievedAt?.toISOString() ?? null,
-    key: l.key ? { name: l.key.name, acquiredAt: l.key.acquiredAt.toISOString() } : null,
-  }));
 
   return (
     <DashboardClient
@@ -29,7 +21,7 @@ export default async function DashboardPage() {
       score={score}
       rank={rank}
       cards={cards}
-      locations={view}
+      coordinates={coordinates}
       announcements={announcements}
       surprises={surprises}
     />

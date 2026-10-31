@@ -1,31 +1,33 @@
-import { asc, desc } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
+
+import { bumpBoard, snapshotBoard } from '@/lib/admin/event';
 
 import { db } from '@/lib/db/client';
 import { eventState, scoreboardSnapshots, vPublicFeed, vPublicScoreboard } from '@/lib/db/schema';
 import { env } from '@/lib/env';
+import { notifyBoard } from '@/lib/realtime/broadcast';
 import type { EventStatus } from '@/lib/scoring/points';
 
-// Public by design: no team id, no username. Rows come from views that never had them.
+// Public by design: no team id, no username, no times, no coordinate values. Rows come from views
+// that never had them. `mainDone` and `coordinatesDone` are statuses only.
 export type BoardRow = {
   rank: number;
   teamName: string;
-  challengePoints: number;
-  locationPoints: number;
-  surprisePoints: number;
-  adjustmentPoints: number;
   total: number;
-  solves: number;
-  locations: number;
-  keys: number;
-  surprises: number;
+  easySolved: number;
+  mediumSolved: number;
+  difficultSolved: number;
+  mainDone: boolean;
+  coordinatesDone: boolean;
 };
 
 export type FeedItem = {
-  solvedAt: string;
+  at: string;
+  kind: 'solve' | 'main_first' | 'coordinate_winner';
   teamName: string;
-  challengeNumber: number;
-  challengeTitle: string;
-  points: number;
+  challengeNumber: number | null;
+  challengeTitle: string | null;
+  points: number | null;
 };
 
 export type PublicState = {
@@ -45,19 +47,7 @@ async function liveBoard(): Promise<BoardRow[]> {
     .select()
     .from(vPublicScoreboard)
     .orderBy(asc(vPublicScoreboard.rank), asc(vPublicScoreboard.teamName));
-  return rows.map((r) => ({
-    rank: r.rank,
-    teamName: r.teamName,
-    challengePoints: Number(r.challengePoints),
-    locationPoints: Number(r.locationPoints),
-    surprisePoints: Number(r.surprisePoints),
-    adjustmentPoints: Number(r.adjustmentPoints),
-    total: Number(r.total),
-    solves: r.solves,
-    locations: r.locations,
-    keys: r.keys,
-    surprises: r.surprises,
-  }));
+  return rows.map((r) => ({ ...r, total: Number(r.total) }));
 }
 
 // A snapshot is the board as served: an array of BoardRow, or { leaderboard: BoardRow[] }.
@@ -72,16 +62,38 @@ async function frozenBoard(): Promise<BoardRow[] | null> {
   return Array.isArray(rows) ? rows : null;
 }
 
+// docs/08 §6. No cron exists, so the first public read after freeze_at freezes the board, once,
+// under the event_state row lock (the same lock an admin freeze takes).
+async function freezeIfDue(): Promise<boolean> {
+  const froze = await db.transaction(async (tx) => {
+    const [row] = await tx.execute<{ due: boolean }>(sql`SELECT
+        (freeze_at IS NOT NULL AND freeze_at <= now() AND NOT leaderboard_frozen) AS due
+      FROM app.event_state WHERE id = 1 FOR UPDATE`);
+    if (!row.due) return false;
+    await snapshotBoard(tx, null);
+    await tx.update(eventState).set({ leaderboardFrozen: true }).where(eq(eventState.id, 1));
+    await bumpBoard(tx);
+    return true;
+  });
+  if (froze) await notifyBoard(); // after the commit
+  return froze;
+}
+
 // Queries run one after another: the app has a single pooled connection.
 export async function getPublicState(): Promise<PublicState> {
-  const [state] = await db
-    .select({
-      status: eventState.status,
-      frozen: eventState.leaderboardFrozen,
-      v: eventState.scoreboardVersion,
-    })
-    .from(eventState);
-  // shortcut: a freeze with no snapshot falls back to the live board; the admin freeze writes one.
+  const read = () =>
+    db
+      .select({
+        status: eventState.status,
+        frozen: eventState.leaderboardFrozen,
+        v: eventState.scoreboardVersion,
+        due: sql<boolean>`(${eventState.freezeAt} IS NOT NULL AND ${eventState.freezeAt} <= now()
+          AND NOT ${eventState.leaderboardFrozen})`,
+      })
+      .from(eventState);
+  let [state] = await read();
+  if (state.due && (await freezeIfDue())) [state] = await read();
+  // shortcut: a freeze with no snapshot falls back to the live board; every freeze writes one.
   const leaderboard = (state.frozen && (await frozenBoard())) || (await liveBoard());
   return {
     v: state.v,
@@ -96,12 +108,13 @@ export async function getPublicState(): Promise<PublicState> {
 export async function getPublicFeed(): Promise<FeedItem[]> {
   const [state] = await db.select({ frozen: eventState.leaderboardFrozen }).from(eventState);
   if (state.frozen) return [];
-  const rows = await db.select().from(vPublicFeed).orderBy(desc(vPublicFeed.solvedAt)).limit(20);
+  const rows = await db.select().from(vPublicFeed).orderBy(desc(vPublicFeed.occurredAt)).limit(20);
   return rows.map((r) => ({
-    solvedAt: r.solvedAt.toISOString(),
+    at: r.occurredAt.toISOString(),
+    kind: r.kind as FeedItem['kind'],
     teamName: r.teamName,
     challengeNumber: r.challengeNumber,
     challengeTitle: r.challengeTitle,
-    points: Number(r.pointsAwarded),
+    points: r.pointsAwarded === null ? null : Number(r.pointsAwarded),
   }));
 }

@@ -95,12 +95,6 @@ export async function loadTeamDetail(id: string) {
   }>(sql`SELECT c.number, s.submitted_preview, s.result, s.submitted_at
     FROM app.submissions s JOIN app.challenges c ON c.id = s.challenge_id
     WHERE s.team_id = ${id} AND NOT s.is_correct ORDER BY s.submitted_at DESC LIMIT 100`);
-  const locations = await db.execute<{ level: string; name: string; achieved_at: Date }>(sql`
-    SELECT l.level, l.name, a.achieved_at FROM app.location_achievements a
-    JOIN app.locations l ON l.id = a.location_id WHERE a.team_id = ${id} ORDER BY a.achieved_at`);
-  const keys = await db.execute<{ name: string; acquired_at: Date }>(sql`
-    SELECT k.name, t.acquired_at FROM app.team_cosmic_keys t
-    JOIN app.cosmic_keys k ON k.id = t.key_id WHERE t.team_id = ${id} ORDER BY t.acquired_at`);
   const surprises = await db.execute<{
     title: string;
     discovered_at: Date;
@@ -112,8 +106,6 @@ export async function loadTeamDetail(id: string) {
     score,
     solved: [...solved],
     failed: [...failed],
-    locations: [...locations],
-    keys: [...keys],
     surprises: [...surprises],
   };
 }

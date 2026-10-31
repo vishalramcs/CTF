@@ -12,7 +12,7 @@ export default async function MonitorPage() {
     <>
       <PageTitle>Monitor</PageTitle>
       <p className="text-sm text-muted-foreground">
-        Latest 100 flag, location and surprise attempts.
+        Latest 100 flag, final location and surprise attempts.
       </p>
       <MonitorPanel teams={teams} timeZone={env.EVENT_TIMEZONE} />
     </>

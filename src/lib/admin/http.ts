@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import type { AdminSession } from '@/lib/auth/session';
-import { LEVELS, SURPRISE_KINDS, type Difficulty, type SurpriseKind } from '@/lib/admin/shared';
+import { SURPRISE_KINDS, type SurpriseKind } from '@/lib/admin/shared';
 import { ApiError, clientIp } from '@/lib/http';
 
 export function actor(req: NextRequest, session: AdminSession) {
@@ -13,11 +13,6 @@ export function parseUuid(value: unknown): string {
   const parsed = z.uuid().safeParse(value);
   if (!parsed.success) throw new ApiError(404, 'not_found', 'Not found.');
   return parsed.data;
-}
-
-export function parseLevel(value: unknown): Difficulty {
-  if (!LEVELS.includes(value as Difficulty)) throw new ApiError(404, 'not_found', 'Not found.');
-  return value as Difficulty;
 }
 
 export function parseKind(value: unknown): SurpriseKind {

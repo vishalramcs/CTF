@@ -19,12 +19,12 @@ export const TRANSITIONS = {
 
 export type TransitionAction = keyof typeof TRANSITIONS;
 
-// docs/07 §3 and §4. Rewards are fixed by the rules; the admin only sees them.
+// docs/08 §1. Default base points per difficulty; an admin can change them per question.
 export const DIFFICULTIES = {
-  easy: { label: 'Easy', base: 60, reward: 180 },
-  medium: { label: 'Medium', base: 110, reward: 330 },
-  difficult: { label: 'Hard', base: 175, reward: 525 },
-  main_difficult: { label: 'Main', base: 400, reward: 1200 },
+  easy: { label: 'Easy', base: 50 },
+  medium: { label: 'Medium', base: 75 },
+  difficult: { label: 'Difficult', base: 100 },
+  main_difficult: { label: 'Main Question', base: 200 },
 } as const;
 
 export type Difficulty = keyof typeof DIFFICULTIES;

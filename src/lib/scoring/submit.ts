@@ -1,7 +1,9 @@
 import { eq, sql } from 'drizzle-orm';
 
+import { finalCoordinatesFor, type FinalCoordinate } from '@/lib/coordinates/state';
+
 import { db } from '@/lib/db/client';
-import { coordinateFragments, solves, submissions } from '@/lib/db/schema';
+import { challenges, solves, submissions } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 import { checkFlag } from '@/lib/flags/verify';
 import { notifyBoard } from '@/lib/realtime/broadcast';
@@ -17,6 +19,7 @@ export type SubmitResult =
       position: number;
       fragment?: string;
       orderClue?: string;
+      finalCoordinates?: FinalCoordinate[];
     }
   | { result: 'wrong'; attemptsLeft: number }
   | { result: 'already_solved' }
@@ -94,19 +97,25 @@ async function submitFlagTx(
       .returning({ points: solves.pointsAwarded, position: solves.solvePosition });
     if (!solve) return { result: 'already_solved' };
 
-    // The fragment is shown only now that the team has earned it.
-    const [fragment] = await tx
-      .select({ value: coordinateFragments.value, orderClue: coordinateFragments.orderClue })
-      .from(coordinateFragments)
-      .where(eq(coordinateFragments.challengeId, challenge.id));
+    // Fragment and final coordinates are shown only now that the team has earned them.
+    const [earned] = await tx
+      .select({
+        value: challenges.fragmentValue,
+        orderClue: challenges.orderClue,
+        difficulty: challenges.difficulty,
+      })
+      .from(challenges)
+      .where(eq(challenges.id, challenge.id));
+    const final =
+      earned.difficulty === 'main_difficult' ? await finalCoordinatesFor(tx, teamId) : null;
 
-    // M6 adds try_open_gate('board') + broadcast after this commit.
     return {
       result: 'correct',
       points: Number(solve.points),
       position: solve.position,
-      ...(fragment ? { fragment: fragment.value } : {}),
-      ...(fragment?.orderClue ? { orderClue: fragment.orderClue } : {}),
+      ...(earned.value ? { fragment: earned.value } : {}),
+      ...(earned.value && earned.orderClue ? { orderClue: earned.orderClue } : {}),
+      ...(final ? { finalCoordinates: final } : {}),
     };
   });
 }

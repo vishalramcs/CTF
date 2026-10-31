@@ -1,15 +1,7 @@
 import { asc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
-import {
-  challenges,
-  locationAchievements,
-  locations,
-  solves,
-  submissions,
-  surpriseEvents,
-  surpriseProgress,
-} from '@/lib/db/schema';
+import { challenges, solves, submissions, surpriseEvents, surpriseProgress } from '@/lib/db/schema';
 
 export type HistoryEntry =
   | {
@@ -20,7 +12,6 @@ export type HistoryEntry =
       position: number;
       number: number;
     }
-  | { type: 'location'; at: string; title: string; points: number }
   | { type: 'surprise'; at: string; title: string; points: number };
 
 export type SurpriseDone = { kind: string; title: string; points: number; at: string };
@@ -70,16 +61,6 @@ export async function getTeamHistory(teamId: string) {
     .groupBy(challenges.number, challenges.title)
     .orderBy(asc(challenges.number));
 
-  const found = await db
-    .select({
-      title: locations.name,
-      points: locations.rewardPoints,
-      at: locationAchievements.achievedAt,
-    })
-    .from(locationAchievements)
-    .innerJoin(locations, eq(locations.id, locationAchievements.locationId))
-    .where(eq(locationAchievements.teamId, teamId));
-
   const surprises = await listCompletedSurprises(teamId);
 
   const entries: HistoryEntry[] = [
@@ -90,12 +71,6 @@ export async function getTeamHistory(teamId: string) {
       points: Number(r.points),
       position: r.position,
       number: r.number,
-    })),
-    ...found.map((r) => ({
-      type: 'location' as const,
-      at: r.at.toISOString(),
-      title: r.title,
-      points: Number(r.points),
     })),
     ...surprises.map((s) => ({
       type: 'surprise' as const,

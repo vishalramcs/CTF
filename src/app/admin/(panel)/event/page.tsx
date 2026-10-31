@@ -3,6 +3,7 @@ import { PageTitle } from '@/components/admin/page-title';
 import { loadEventState } from '@/lib/admin/event';
 import type { EventStatus } from '@/lib/admin/shared';
 import { requireAdmin } from '@/lib/auth/guards';
+import { env } from '@/lib/env';
 
 export default async function EventPage() {
   const session = await requireAdmin();
@@ -15,6 +16,8 @@ export default async function EventPage() {
         status={event.status as EventStatus}
         submissionsOpen={event.submissionsOpen}
         leaderboardFrozen={event.leaderboardFrozen}
+        freezeAt={event.freezeAt}
+        timeZone={env.EVENT_TIMEZONE}
         isSuper={session.adminLevel === 'super_admin'}
       />
     </>
