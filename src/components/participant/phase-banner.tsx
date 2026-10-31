@@ -1,13 +1,13 @@
 import type { EventStatus } from '@/lib/scoring/points';
 
-const STATUS: Record<EventStatus, { name: string; rule: string }> = {
+export const STATUS: Record<EventStatus, { name: string; rule: string }> = {
   not_started: { name: 'Standing by', rule: 'The event has not started. The trails open soon.' },
   running: { name: 'Live', rule: 'All 10 challenges are open. Find the Cosmic Keys.' },
   paused: { name: 'Paused', rule: 'The event is paused. Submissions are closed for now.' },
   ended: { name: 'Ended', rule: 'The event is over. Thanks for playing.' },
 };
 
-// Static until R8 adds the live updates.
+// The layout copy is server-rendered; the dashboard shows the live status.
 export function StatusBanner({ status }: { status: EventStatus }) {
   const { name, rule } = STATUS[status];
   return (

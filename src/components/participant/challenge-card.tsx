@@ -5,8 +5,8 @@ import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
 export const DIFFICULTY: Record<Card['difficulty'], { label: string; border: string }> = {
   easy: { label: 'Easy', border: 'border-difficulty-easy' },
   medium: { label: 'Medium', border: 'border-difficulty-medium' },
-  difficult: { label: 'Difficult', border: 'border-difficulty-difficult' },
-  main_difficult: { label: 'Main Difficult', border: 'border-difficulty-main' },
+  difficult: { label: 'Hard', border: 'border-difficulty-difficult' },
+  main_difficult: { label: 'Main Mission', border: 'border-difficulty-main' },
 };
 
 export function DifficultyChip({ difficulty }: { difficulty: Card['difficulty'] }) {
