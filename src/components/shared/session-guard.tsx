@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { usePoll } from '@/components/participant/use-poll';
 import { fetchSession, SESSION_ENDED_EVENT } from '@/lib/api-client';
 import {
   isSessionEndReason,
@@ -24,16 +25,12 @@ export function SessionGuard({ loginPath }: { loginPath: string }) {
       setLoginHref(`${loginPath}?next=${encodeURIComponent(next)}`);
       setReason(detail);
     };
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void fetchSession().catch(() => {});
-    };
     window.addEventListener(SESSION_ENDED_EVENT, onEnded);
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      window.removeEventListener(SESSION_ENDED_EVENT, onEnded);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
+    return () => window.removeEventListener(SESSION_ENDED_EVENT, onEnded);
   }, [loginPath]);
+
+  // A kicked device sits idle on the page, so it has to ask. Also runs when the tab is focused.
+  usePoll(() => void fetchSession().catch(() => {}), 10_000);
 
   useEffect(() => {
     if (reason && !dialog.current?.open) dialog.current?.showModal();
