@@ -4,6 +4,7 @@ import { hmacHex, safeEqual } from '@/lib/crypto/hmac';
 import { db } from '@/lib/db/client';
 import { scoreTransactions, surpriseProgress, surpriseSubmissions } from '@/lib/db/schema';
 import { env } from '@/lib/env';
+import { notifyBoard } from '@/lib/realtime/broadcast';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
 import { sanitizeHtml } from '@/lib/variants/sanitize';
 
@@ -74,7 +75,7 @@ export async function discoverSurprise(
 
 // Same shape as submitFlag: blocked attempts exit before the attempt row, so hammering can't extend
 // a lockout. The points come straight from the event row and go to the ledger unchanged.
-export async function submitSurprise(
+async function submitSurpriseTx(
   teamId: string,
   kind: SurpriseKind,
   input: string,
@@ -140,4 +141,12 @@ export async function submitSurprise(
     });
     return { result: 'correct', points: Number(row.points) };
   });
+}
+
+export async function submitSurprise(
+  ...args: Parameters<typeof submitSurpriseTx>
+): Promise<SurpriseSubmitResult> {
+  const result = await submitSurpriseTx(...args);
+  if (result.result === 'correct') await notifyBoard(); // after the commit
+  return result;
 }

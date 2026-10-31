@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { coordinateFragments, solves, submissions } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 import { checkFlag } from '@/lib/flags/verify';
+import { notifyBoard } from '@/lib/realtime/broadcast';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
 
 const WRONG_LIMIT = 5;
@@ -26,7 +27,7 @@ export type SubmitResult =
 // as the recipe says: the result column can't hold them, and counting them would extend a lockout.
 // Position, decayed points and the ledger row are set by the database trigger (migration 0003),
 // under one lock per challenge, so this only inserts the team and the challenge.
-export async function submitFlag(
+async function submitFlagTx(
   { teamId, sessionId }: { teamId: string; sessionId: string },
   challenge: { id: string },
   input: string,
@@ -108,4 +109,10 @@ export async function submitFlag(
       ...(fragment?.orderClue ? { orderClue: fragment.orderClue } : {}),
     };
   });
+}
+
+export async function submitFlag(...args: Parameters<typeof submitFlagTx>): Promise<SubmitResult> {
+  const result = await submitFlagTx(...args);
+  if (result.result === 'correct') await notifyBoard(); // after the commit
+  return result;
 }
