@@ -45,7 +45,7 @@ export async function loadChallenge(id: string) {
 export type LoadedChallenge = NonNullable<Awaited<ReturnType<typeof loadChallenge>>>;
 
 export const challengeFields = z.object({
-  number: z.number().int().min(1).max(10),
+  number: z.number().int().min(1).max(13),
   title: z.string().trim().min(1).max(120),
   difficulty: z.enum(LEVELS),
   category: z.string().trim().min(1).max(40),
@@ -80,6 +80,12 @@ export function rethrowConflict(e: unknown): never {
     if (constraint === 'challenges_slug_key') {
       throw new ApiError(409, 'conflict', 'Another challenge has that slug. Change the title.');
     }
+  }
+  if (code === '23505' && constraint === 'challenges_one_main_uq') {
+    throw new ApiError(409, 'conflict', 'There is already a Main Question.');
+  }
+  if (code === '23514' && constraint === 'challenges_no_main_fragment') {
+    throw new ApiError(409, 'conflict', 'Remove this question from the fragment plan first.');
   }
   throw e;
 }

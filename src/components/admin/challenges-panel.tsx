@@ -210,12 +210,12 @@ function ChallengeForm({ row, onClose }: { row?: Row; onClose: () => void }) {
       {ready && !loadError && (
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Number (1 to 10)">
+            <Field label="Number (1-4 Easy, 5-8 Medium, 9-12 Difficult, 13 Main)">
               <input
                 name="number"
                 type="number"
                 min={1}
-                max={10}
+                max={13}
                 required
                 defaultValue={row?.number}
                 className={inputClass}
@@ -247,7 +247,7 @@ function ChallengeForm({ row, onClose }: { row?: Row; onClose: () => void }) {
                 ))}
               </select>
             </Field>
-            <Field label="Base points" hint="Defaults: 60 / 110 / 175 / 400.">
+            <Field label="Base points" hint="Defaults: 50 / 75 / 100 / 200.">
               <input
                 type="number"
                 min={1}

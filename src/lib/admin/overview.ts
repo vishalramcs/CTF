@@ -13,8 +13,7 @@ export async function loadOverview() {
     online_teams: number;
     hidden_teams: number;
     solves: number;
-    locations: number;
-    keys: number;
+    coordinates: number;
     surprises: number;
   }>(sql`SELECT
     (SELECT count(*) FROM app.teams)::int AS teams,
@@ -24,8 +23,7 @@ export async function loadOverview() {
          AND last_seen_at > now() - interval '5 minutes')::int AS online_teams,
     (SELECT count(*) FROM app.teams WHERE is_hidden)::int AS hidden_teams,
     (SELECT count(*) FROM app.solves)::int AS solves,
-    (SELECT count(*) FROM app.location_achievements)::int AS locations,
-    (SELECT count(*) FROM app.team_cosmic_keys)::int AS keys,
+    (SELECT count(*) FROM app.coordinate_submissions WHERE is_correct)::int AS coordinates,
     (SELECT count(*) FROM app.surprise_progress WHERE completed_at IS NOT NULL)::int AS surprises`);
   // Admins see hidden and inactive teams too, marked as such.
   const board = await db
@@ -40,8 +38,7 @@ export async function loadOverview() {
       onlineTeams: counts.online_teams,
       hiddenTeams: counts.hidden_teams,
       solves: counts.solves,
-      locationDiscoveries: counts.locations,
-      keysCollected: counts.keys,
+      coordinatesFound: counts.coordinates,
       surpriseCompletions: counts.surprises,
     },
     board,

@@ -1,23 +1,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { formatPoints } from '@/components/leaderboard/format';
-import { FinalMissionOverlay } from '@/components/locations/final-mission';
-import {
-  LEVEL_LABEL,
-  LocationPanel,
-  type LocationView,
-} from '@/components/locations/location-panel';
+import { CoordinateBoard } from '@/components/coordinates/coordinate-board';
 import { Announcements } from '@/components/participant/announcements';
 import { ChallengeCard, DIFFICULTY } from '@/components/participant/challenge-card';
-import { KeyBadge } from '@/components/participant/key-badge';
 import { LeaderboardPreview } from '@/components/participant/leaderboard-preview';
 import { STATUS } from '@/components/participant/phase-banner';
 import { useLiveState } from '@/hooks/use-live-state';
 import { formatDateTimeIST } from '@/lib/participant/time';
 import type { SurpriseDone } from '@/lib/participant/history';
+import type { CoordinateBoard as CoordinateView } from '@/lib/coordinates/state';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
 
 const GROUPS: Card['difficulty'][] = ['easy', 'medium', 'difficult', 'main_difficult'];
@@ -39,7 +34,7 @@ export function DashboardClient({
   score,
   rank,
   cards,
-  locations,
+  coordinates,
   announcements,
   surprises,
 }: {
@@ -47,7 +42,7 @@ export function DashboardClient({
   score: number;
   rank: number | null;
   cards: Card[];
-  locations: LocationView[];
+  coordinates: CoordinateView;
   announcements: { message: string; createdAt: string }[];
   surprises: SurpriseDone[];
 }) {
@@ -60,9 +55,7 @@ export function DashboardClient({
     if (seen.current && stamp && seen.current !== stamp) router.refresh();
     seen.current = stamp;
   }, [stamp, router]);
-  const [finale, setFinale] = useState(false);
   const status = STATUS[state?.status ?? 'running'];
-  const keys = locations.filter((l) => l.key).length;
 
   return (
     <div className="web-bg">
@@ -86,7 +79,7 @@ export function DashboardClient({
           <h2 id="score" className="sr-only">
             Score
           </h2>
-          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat label="Total score" value={formatPoints(score)} />
             <Stat label="Rank" value={rank === null ? '—' : `#${rank}`} />
             <Stat
@@ -94,10 +87,9 @@ export function DashboardClient({
               value={`${cards.filter((c) => c.state === 'solved').length}/${cards.length}`}
             />
             <Stat
-              label="Locations found"
-              value={`${locations.filter((l) => l.completed).length}/4`}
+              label="Fragments"
+              value={`${coordinates.fragments.length}/${coordinates.slots}`}
             />
-            <Stat label="Cosmic Keys" value={`${keys}/4`} />
           </dl>
         </section>
 
@@ -125,19 +117,11 @@ export function DashboardClient({
               })}
             </section>
 
-            <section aria-labelledby="locations" className="flex flex-col gap-3">
-              <h2 id="locations" className={H2}>
-                Location discovery
+            <section aria-labelledby="coordinates" className="flex flex-col gap-3">
+              <h2 id="coordinates" className={H2}>
+                Coordinate board
               </h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {locations.map((l) => (
-                  <LocationPanel
-                    key={l.level}
-                    location={l}
-                    onFinalMission={() => setFinale(true)}
-                  />
-                ))}
-              </div>
+              <CoordinateBoard board={coordinates} />
             </section>
 
             <section aria-labelledby="surprises" className="flex flex-col gap-2">
@@ -157,16 +141,7 @@ export function DashboardClient({
               <h2 id="achievements" className={H2}>
                 Achievements
               </h2>
-              <ul className="flex flex-col gap-2">
-                {locations.map((l) => (
-                  <KeyBadge
-                    key={l.level}
-                    level={l.level}
-                    name={l.key?.name ?? `${LEVEL_LABEL[l.level]} Cosmic Key`}
-                    acquiredAt={l.key?.acquiredAt ?? null}
-                  />
-                ))}
-              </ul>
+              {surprises.length === 0 && <p className="text-muted-foreground">None yet.</p>}
               {surprises.length > 0 && (
                 <ul className="flex flex-col gap-2">
                   {surprises.map((s) => (
@@ -185,7 +160,6 @@ export function DashboardClient({
           </aside>
         </div>
       </main>
-      {finale && <FinalMissionOverlay onClose={() => setFinale(false)} />}
     </div>
   );
 }

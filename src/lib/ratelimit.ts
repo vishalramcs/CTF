@@ -27,8 +27,9 @@ async function secondsBlocked(key: SQL, limit: number): Promise<number> {
 
 // Seconds until a login may be tried again, 0 if it may be tried now.
 // shortcut: the count isn't atomic with the insert, so a parallel burst can pass the limit by a
-// few guesses. Guessing the hidden team code is the barrier here (docs/07 §2), and its 35 random
-// bits make a few extra guesses harmless. Lock if the codes ever get shorter.
+// few guesses. The username is the public team name and the password is derived from it (docs/08
+// §8, accepted by the organisers), so this limit only slows blind guessing of other logins.
+// Lock the check if logins ever hold a real secret.
 export async function loginRetryAfter(username: string, ip: string | null): Promise<number> {
   const byUsername = await secondsBlocked(
     sql`lower(${loginAttempts.username}) = lower(${username})`,

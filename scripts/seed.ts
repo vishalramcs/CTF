@@ -1,12 +1,11 @@
-// Dev data per docs/06-Implementation-Plan.md §3 and docs/07-Rules-v2.md. Wipes every app table first.
+// Dev data per docs/06-Implementation-Plan.md §3 and docs/07-Rules-v2.md and docs/08-Question-Rules.md. Wipes every app table first.
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import { hashPassword } from '@/lib/auth/password';
-import { teamCode, teamPassword } from '@/lib/auth/team-credentials';
+import { teamPassword } from '@/lib/auth/team-credentials';
 import { hmacHex } from '@/lib/crypto/hmac';
 import * as schema from '@/lib/db/schema';
 import { isWipeable, wipeAppTables } from '@/lib/db/wipe';
@@ -16,34 +15,38 @@ import { regenerateVariants } from '@/lib/variants/regenerate';
 
 const TEAM_COUNT = 10;
 
-// docs/07 §3: Easy 60, Medium 110, Hard 175, Main 400.
+// docs/08 §1: Easy 50, Medium 75, Difficult 100, Main Question 200.
 const BASE_POINTS = {
-  easy: 60,
-  medium: 110,
-  difficult: 175,
-  main_difficult: 400,
+  easy: 50,
+  medium: 75,
+  difficult: 100,
+  main_difficult: 200,
 } as const;
 
 type Level = keyof typeof BASE_POINTS;
 
-// Placeholder fragment mapping (docs/07 §4). Easy: any 2 of 4. Medium: A on #5, B on #7, none on #6.
-// Hard: both. Main: the one main coordinate. Real values come from the organisers.
-const FRAGMENTS: Record<number, { label: string; value: string }> = {
-  1: { label: 'A', value: '47' },
-  2: { label: 'B', value: '00' },
-  3: { label: 'C', value: '11' },
-  4: { label: 'D', value: '28' },
-  5: { label: 'A', value: '02' },
-  7: { label: 'B', value: '77' },
-  8: { label: 'A', value: '24' },
-  9: { label: 'B', value: '10' },
-  10: { label: 'A', value: '11' },
+// Placeholder fragments (docs/08 §3): 2 Easy, 2 Medium, 2 Difficult, with orders 1-6 once each.
+// Real values come from the organisers.
+const FRAGMENTS: Record<number, { value: string; order: number }> = {
+  1: { value: '47', order: 3 },
+  3: { value: '00', order: 1 },
+  5: { value: '02', order: 5 },
+  7: { value: '77', order: 2 },
+  9: { value: '10', order: 6 },
+  11: { value: '28', order: 4 },
 };
+
+// Placeholder final coordinates and final location. Real ones come from the organisers.
+const FINAL_COORDINATES = [
+  { position: 1, label: 'PLACEHOLDER A', value: '11.0' },
+  { position: 2, label: 'PLACEHOLDER B', value: '76.9' },
+  { position: 3, label: 'PLACEHOLDER C', value: '42' },
+];
 
 function levelOf(number: number): Level {
   if (number <= 4) return 'easy';
-  if (number <= 7) return 'medium';
-  if (number <= 9) return 'difficult';
+  if (number <= 8) return 'medium';
+  if (number <= 12) return 'difficult';
   return 'main_difficult';
 }
 
@@ -52,7 +55,7 @@ function placeholderChallenge(number: number) {
   return {
     number,
     slug: `placeholder-${number}`,
-    title: `PLACEHOLDER — question ${number}`,
+    title: number === 13 ? 'PLACEHOLDER — Main Question' : `PLACEHOLDER — question ${number}`,
     difficulty,
     category: 'placeholder',
     basePoints: BASE_POINTS[difficulty],
@@ -61,6 +64,9 @@ function placeholderChallenge(number: number) {
     generatorKey: 'placeholder',
     flagTemplate: FRAGMENTS[number] ? '{{fragment}}_{{token}}' : '{{token}}',
     isPublished: true,
+    fragmentValue: FRAGMENTS[number]?.value ?? null,
+    coordinateOrder: FRAGMENTS[number]?.order ?? null,
+    orderClue: FRAGMENTS[number] ? `PLACEHOLDER order clue for #${number}` : null,
   };
 }
 
@@ -97,30 +103,29 @@ async function main() {
     adminLevel: 'super_admin',
   });
 
-  const credentials: string[] = ['team,username,password'];
+  const credentials: string[] = ['team,password'];
   const teams = [];
   for (let i = 1; i <= TEAM_COUNT; i++) {
     const nn = String(i).padStart(2, '0');
     const name = `Test Team ${nn}`;
-    const username = teamCode();
     const password = teamPassword(name);
     const [team] = await db
       .insert(schema.teams)
       .values({ name, slug: `test-team-${nn}` })
       .returning();
     await db.insert(schema.users).values({
-      username,
+      username: name,
       passwordHash: await hashPassword(password),
       role: 'team',
       teamId: team.id,
     });
-    credentials.push(`${name},${username},${password}`);
+    credentials.push(`${name},${password}`);
     teams.push(team);
   }
 
   const challenges = await db
     .insert(schema.challenges)
-    .values(Array.from({ length: 10 }, (_, i) => placeholderChallenge(i + 1)))
+    .values(Array.from({ length: 13 }, (_, i) => placeholderChallenge(i + 1)))
     .returning();
 
   await db.insert(schema.challengeHints).values(
@@ -133,36 +138,13 @@ async function main() {
     ),
   );
 
-  const locations = await db.select().from(schema.locations);
-  const locationOf = (level: Level) => locations.find((l) => l.level === level)!;
-  await db.insert(schema.coordinateFragments).values(
-    challenges.flatMap((c) => {
-      const fragment = FRAGMENTS[c.number];
-      return fragment
-        ? [
-            {
-              locationId: locationOf(c.difficulty).id,
-              challengeId: c.id,
-              label: fragment.label,
-              value: fragment.value,
-              orderClue: `PLACEHOLDER order clue for #${c.number}`,
-            },
-          ]
-        : [];
-    }),
-  );
-  // Placeholder answer for every location, so the decoder can be tried in dev.
-  for (const location of locations) {
-    await db
-      .update(schema.locations)
-      .set({
-        name: `PLACEHOLDER ${location.level} location`,
-        answerHash: hmacHex(env.COORD_HMAC_KEY, 'placeholder'),
-      })
-      .where(eq(schema.locations.id, location.id));
-  }
+  await db.insert(schema.finalCoordinates).values(FINAL_COORDINATES);
 
-  await db.update(schema.eventState).set({ status: 'running' });
+  await db.update(schema.eventState).set({
+    status: 'running',
+    // Placeholder final location, so the submit box can be tried in dev.
+    coordinateAnswerHash: hmacHex(env.COORD_HMAC_KEY, 'placeholder'),
+  });
 
   const variantCount = await regenerateVariants(db, {});
   const flags: string[] = ['team,challenge,flag'];

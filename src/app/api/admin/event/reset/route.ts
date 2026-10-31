@@ -9,15 +9,13 @@ import { db } from '@/lib/db/client';
 import {
   eventState,
   hintReveals,
-  locationAchievements,
-  locationSubmissions,
+  coordinateSubmissions,
   scoreboardSnapshots,
   scoreTransactions,
   solves,
   submissions,
   surpriseProgress,
   surpriseSubmissions,
-  teamCosmicKeys,
 } from '@/lib/db/schema';
 import { json, parseBody, withSuperAdmin } from '@/lib/http';
 
@@ -25,7 +23,7 @@ export const runtime = 'nodejs';
 
 const body = z.object({ confirm: z.literal('RESET') });
 
-// Clears every team's progress and nothing else: teams, challenges, locations, surprises and
+// Clears every team's progress and nothing else: teams, challenges, the final location answer, surprises and
 // announcements stay. Children go first; none of these tables references another here.
 export const POST = withSuperAdmin(async (req, session) => {
   await parseBody(req, body);
@@ -35,9 +33,7 @@ export const POST = withSuperAdmin(async (req, session) => {
     await tx.delete(solves);
     await tx.delete(submissions);
     await tx.delete(scoreTransactions);
-    await tx.delete(locationSubmissions);
-    await tx.delete(locationAchievements);
-    await tx.delete(teamCosmicKeys);
+    await tx.delete(coordinateSubmissions);
     await tx.delete(surpriseProgress);
     await tx.delete(surpriseSubmissions);
     await tx.delete(hintReveals);
@@ -49,6 +45,9 @@ export const POST = withSuperAdmin(async (req, session) => {
         status: 'not_started',
         statusChangedAt: sql`now()`,
         leaderboardFrozen: false,
+        freezeAt: null,
+        coordinateWinnerId: null,
+        coordinateWonAt: null,
         scoreboardVersion: sql`${eventState.scoreboardVersion} + 1`,
         updatedAt: sql`now()`,
       })

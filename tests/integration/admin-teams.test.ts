@@ -53,7 +53,7 @@ async function createTeams(names = NAMES) {
     }),
     201,
   );
-  return body.credentials as { team: string; username: string; password: string }[];
+  return body.credentials as { team: string; password: string }[];
 }
 
 async function logIn(username: string, password: string) {
@@ -61,18 +61,22 @@ async function logIn(username: string, password: string) {
 }
 
 describe('creating teams', () => {
-  it('creates 3 teams that can log in with their code and reversed-name password', async () => {
+  it('creates 3 teams that can log in with their team name and reversed-name password', async () => {
     const credentials = await createTeams();
     expect(credentials.map((c) => c.team)).toEqual(NAMES);
     expect(credentials.map((c) => c.password)).toEqual(['sregnilsbew', 'slwothgin', 'gnagredips']);
 
     for (const c of credentials) {
-      expect(c.username).toMatch(/^sp-/);
+      expect(c).not.toHaveProperty('username');
       expect(c.password).toBe(teamPassword(c.team));
-      const res = await logIn(c.username, c.password);
+      const res = await logIn(c.team, c.password);
       expect((await ok(res)).team.name).toBe(c.team);
     }
-    expect((await logIn(credentials[0].username, 'wrong-password')).status).toBe(401);
+    const [{ username }] = await sql`SELECT username FROM app.users WHERE username = ${NAMES[0]}`;
+    expect(username).toBe(NAMES[0]);
+    // The typed name is trimmed and case-insensitive.
+    expect((await logIn(`  ${NAMES[0].toUpperCase()} `, credentials[0].password)).status).toBe(200);
+    expect((await logIn(credentials[0].team, 'wrong-password')).status).toBe(401);
 
     // Only the Argon2 hash is stored, and variants exist for every new team.
     const stored = await sql`SELECT password_hash FROM app.users WHERE role = 'team'`;
@@ -107,7 +111,8 @@ describe('creating teams', () => {
 
 describe('managing a team', () => {
   it('resets the password, revokes sessions, renames, hides and deactivates, each audited', async () => {
-    const [{ team: name, username, password }] = await createTeams(['Web Slingers']);
+    const [{ team: name, password }] = await createTeams(['Web Slingers']);
+    const username = name;
     const [row] = await sql`SELECT team_id FROM app.users WHERE username = ${username}`;
     const id: string = row.team_id;
     const ctx = { id };
@@ -140,6 +145,7 @@ describe('managing a team', () => {
     const ended = await sql`SELECT revoke_reason FROM app.sessions WHERE team_id = ${id}`;
     expect(ended.map((r) => r.revoke_reason).sort()).toEqual(['admin', 'password_reset']);
 
+    expect((await logIn(username, password)).status).toBe(200); // a live session to end
     await ok(
       await call(teamPatch, '/api/admin/x', {
         method: 'PATCH',
@@ -148,7 +154,15 @@ describe('managing a team', () => {
         body: { name: 'Web Slingers 2', isHidden: true },
       }),
     );
-    await logIn(username, teamPassword(name));
+    // The rename moved the login: the new name and its reversed password work, the old ones don't.
+    expect((await logIn(username, teamPassword(name))).status).toBe(401);
+    expect((await logIn('Web Slingers 2', teamPassword('Web Slingers 2'))).status).toBe(200);
+    expect(
+      (await sql`SELECT username FROM app.users WHERE team_id = ${id}`).map((u) => u.username),
+    ).toEqual(['Web Slingers 2']);
+    const renamed = await sql`SELECT revoke_reason FROM app.sessions WHERE team_id = ${id}
+      ORDER BY created_at`;
+    expect(renamed.filter((r) => r.revoke_reason === 'password_reset')).toHaveLength(2);
     await ok(
       await call(teamPatch, '/api/admin/x', {
         method: 'PATCH',
@@ -162,7 +176,7 @@ describe('managing a team', () => {
         await sql`SELECT revoke_reason FROM app.sessions WHERE team_id = ${id} AND revoke_reason = 'team_disabled'`
       ).length,
     ).toBe(1);
-    expect((await logIn(username, teamPassword(name))).status).toBe(403);
+    expect((await logIn('Web Slingers 2', teamPassword('Web Slingers 2'))).status).toBe(403);
 
     const actions = await auditActions(sql);
     expect(actions).toEqual(
@@ -171,7 +185,7 @@ describe('managing a team', () => {
 
     const detail = await ok(await call(teamGet, '/api/admin/x', { auth: admin, ctx }));
     expect(detail.team).toMatchObject({ name: 'Web Slingers 2', isHidden: true, isActive: false });
-    expect(detail.score.total).toBe('0.0');
+    expect(detail.score.total).toBe('0.00');
   });
 
   it('the team list marks hidden teams, and an unknown team is a 404', async () => {

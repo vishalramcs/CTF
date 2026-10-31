@@ -8,23 +8,28 @@ export function Feed({ items, large }: { items: FeedItem[]; large?: boolean }) {
         id="feed-title"
         className={`font-heading font-bold uppercase ${large ? 'text-3xl' : 'text-xl'}`}
       >
-        Latest solves
+        Live feed
       </h2>
       {items.length === 0 ? (
-        <p className="text-muted-foreground">No solves to show yet.</p>
+        <p className="text-muted-foreground">Nothing to show yet.</p>
       ) : (
         <ul className={`flex flex-col gap-1 ${large ? 'text-xl' : 'text-sm'}`}>
           {items.map((item) => (
             <li
-              key={`${item.solvedAt}-${item.teamName}-${item.challengeNumber}`}
+              key={`${item.at}-${item.kind}-${item.teamName}-${item.challengeNumber}`}
               className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-border py-1"
             >
               <span>
-                <strong>{item.teamName}</strong> solved #{item.challengeNumber}{' '}
-                {item.challengeTitle}
+                <strong>{item.teamName}</strong>{' '}
+                {item.kind === 'coordinate_winner'
+                  ? 'found the final coordinates first'
+                  : item.kind === 'main_first'
+                    ? `was first to solve the Main Question #${item.challengeNumber}`
+                    : `solved #${item.challengeNumber} ${item.challengeTitle}`}
               </span>
               <span className="font-mono text-muted-foreground tabular-nums">
-                +{formatPoints(item.points)} · {formatTimeIST(item.solvedAt)}
+                {item.points !== null && `+${formatPoints(item.points)} · `}
+                {formatTimeIST(item.at)}
               </span>
             </li>
           ))}

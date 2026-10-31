@@ -35,7 +35,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
   --color-success: var(--success);
   --color-warn: var(--warn);
-  --color-ai-mode: var(--ai-mode);
   --color-difficulty-easy: var(--difficulty-easy);
   --color-difficulty-medium: var(--difficulty-medium);
   --color-difficulty-difficult: var(--difficulty-difficult);
@@ -65,7 +64,6 @@
   --radius: 0.375rem;
   --success: #2bd47d;
   --warn: #ffb020;
-  --ai-mode: #9b5cff;
   --difficulty-easy: #2bd47d;
   --difficulty-medium: #2d6bff;
   --difficulty-difficult: #ff8a1f;

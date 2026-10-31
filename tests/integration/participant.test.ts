@@ -76,16 +76,13 @@ describe('getTeamHistory', () => {
   it('lists completions in time order and wrong attempts as counts only', async () => {
     await sql`INSERT INTO app.solves (team_id, challenge_id, solved_at)
       VALUES (${team}, ${challenge.id}, now() - interval '2 minutes')`;
-    await sql`UPDATE app.locations SET name = 'Somewhere' WHERE level = 'easy'`;
-    await sql`INSERT INTO app.location_achievements (team_id, location_id, achieved_at)
-      SELECT ${team}, id, now() - interval '1 minute' FROM app.locations WHERE level = 'easy'`;
     for (const text of ['SECRETGUESS1', 'SECRETGUESS2']) {
       await sql`INSERT INTO app.submissions (team_id, challenge_id, submitted_hash, submitted_preview, is_correct, result)
         VALUES (${team}, ${challenge.id}, ${text}, ${text}, false, 'wrong')`;
     }
 
     const history = await getTeamHistory(team);
-    expect(history.entries.map((e) => e.type)).toEqual(['challenge', 'location']);
+    expect(history.entries.map((e) => e.type)).toEqual(['challenge']);
     expect(history.entries[0]).toMatchObject({ number: 1, position: 1 });
     expect(history.wrongAttempts).toEqual([{ number: 1, title: 'Challenge 1', count: 2 }]);
     expect(JSON.stringify(history)).not.toContain('SECRETGUESS');

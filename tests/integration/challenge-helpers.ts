@@ -3,6 +3,8 @@ import { NextRequest } from 'next/server';
 import postgres from 'postgres';
 
 import { csrfToken } from '@/lib/auth/csrf';
+import { normalizeLocation } from '@/lib/coordinates/normalize';
+import { hmacHex } from '@/lib/crypto/hmac';
 import { SESSION_COOKIE } from '@/lib/auth/shared';
 import { hashSessionToken, randomToken } from '@/lib/crypto/tokens';
 import { isWipeable } from '@/lib/db/wipe';
@@ -71,20 +73,20 @@ export type TestChallenge = {
   flagTemplate: string;
 };
 
-// docs/07 §3.
-const BASE = { easy: 60, medium: 110, difficult: 175, main_difficult: 400 };
+// docs/08 §1: 1-4 Easy, 5-8 Medium, 9-12 Difficult, 13 Main Question.
+const BASE = { easy: 50, medium: 75, difficult: 100, main_difficult: 200 };
 
 function difficultyOf(number: number): keyof typeof BASE {
   if (number <= 4) return 'easy';
-  if (number <= 7) return 'medium';
-  return number <= 9 ? 'difficult' : 'main_difficult';
+  if (number <= 8) return 'medium';
+  return number <= 12 ? 'difficult' : 'main_difficult';
 }
 
 export async function createChallenge(
   sql: postgres.Sql,
   number: number,
   options: {
-    // A fragment from the mapping: shown to a team only once it has solved this challenge.
+    // Stored on the challenge: shown to a team only once it has solved this challenge.
     fragment?: { value: string; order: number; clue: string };
     questionTemplate?: string;
     evidence?: unknown[];
@@ -99,27 +101,29 @@ export async function createChallenge(
   const [row] = await sql`
     INSERT INTO app.challenges (
       number, slug, title, difficulty, category, base_points,
-      story_md, question_template, evidence, generator_config, flag_template, is_published
+      story_md, question_template, evidence, generator_config, flag_template, is_published,
+      fragment_value, coordinate_order, order_clue
     ) VALUES (
       ${number}, ${`challenge-${number}`}, ${`Challenge ${number}`}, ${difficulty}, 'test',
       ${BASE[difficulty]}, ${`Story ${number}.`},
       ${options.questionTemplate ?? '<p>{{flag|base64}}</p>'},
       ${sql.json((options.evidence ?? []) as never)},
       ${sql.json((options.generatorConfig ?? {}) as never)},
-      ${flagTemplate}, ${options.isPublished ?? true}
+      ${flagTemplate}, ${options.isPublished ?? true},
+      ${fragment?.value ?? null}, ${fragment?.order ?? null}, ${fragment?.clue ?? null}
     ) RETURNING id`;
-  if (fragment) {
-    await sql`
-      INSERT INTO app.coordinate_fragments (location_id, challenge_id, label, value, order_clue)
-      SELECT id, ${row.id}, ${`F${fragment.order}`}, ${fragment.value}, ${fragment.clue}
-        FROM app.locations WHERE level = ${difficulty}::app.challenge_difficulty`;
-  }
   for (const [i, hint] of hints.entries()) {
     await sql`
       INSERT INTO app.challenge_hints (challenge_id, hint_order, content_md)
       VALUES (${row.id}, ${i + 1}, ${hint})`;
   }
   return { id: row.id, number, fragment: fragment?.value ?? null, flagTemplate };
+}
+
+// Sets the final location answer the way the admin route does: an HMAC of the normalised text.
+export function setFinalAnswer(sql: postgres.Sql, answer: string) {
+  return sql`UPDATE app.event_state
+    SET coordinate_answer_hash = ${hmacHex(env.COORD_HMAC_KEY, normalizeLocation(answer)!)}`;
 }
 
 export function setStatus(

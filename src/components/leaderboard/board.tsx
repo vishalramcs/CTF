@@ -54,28 +54,22 @@ export function Board({
               Team
             </th>
             <th scope="col" className={num}>
-              Challenge pts
-            </th>
-            <th scope="col" className={num}>
-              Location pts
-            </th>
-            <th scope="col" className={num}>
-              Surprise pts
-            </th>
-            <th scope="col" className={num}>
               Total
             </th>
             <th scope="col" className={num}>
-              Solved
+              Easy
             </th>
             <th scope="col" className={num}>
-              Locations
+              Medium
             </th>
             <th scope="col" className={num}>
-              Keys
+              Difficult
             </th>
             <th scope="col" className={num}>
-              Surprises
+              Main
+            </th>
+            <th scope="col" className={num}>
+              Coordinates
             </th>
           </tr>
         </thead>
@@ -97,14 +91,12 @@ export function Board({
                   {row.teamName}
                   {own && <span className="ml-2 text-xs uppercase">(you)</span>}
                 </td>
-                <td className={num}>{formatPoints(row.challengePoints)}</td>
-                <td className={num}>{formatPoints(row.locationPoints)}</td>
-                <td className={num}>{formatPoints(row.surprisePoints)}</td>
                 <td className={`${num} font-bold`}>{formatPoints(row.total)}</td>
-                <td className={num}>{row.solves}</td>
-                <td className={num}>{row.locations}</td>
-                <td className={num}>{row.keys}</td>
-                <td className={num}>{row.surprises}</td>
+                <td className={num}>{row.easySolved}</td>
+                <td className={num}>{row.mediumSolved}</td>
+                <td className={num}>{row.difficultSolved}</td>
+                <td className={num}>{row.mainDone ? '✓ Done' : '—'}</td>
+                <td className={num}>{row.coordinatesDone ? '✓ Found' : '—'}</td>
               </tr>
             );
           })}

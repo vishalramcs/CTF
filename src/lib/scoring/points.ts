@@ -1,10 +1,12 @@
 export type EventStatus = 'not_started' | 'running' | 'paused' | 'ended';
 export type ChallengeAccess = 'open' | 'locked' | 'closed';
 
-// docs/07 §3: base minus 0.5 per earlier solve, never below zero. The database trigger is the
-// authority; this only shows a team what the next solve will be worth.
+// docs/08 §2: 0.5 less per position up to the 5th, then 0.25 less, never below zero. The database
+// trigger is the authority; this only shows a team what the next solve will be worth.
 export function nextPoints(basePoints: number, priorSolves: number): number {
-  return Math.max(basePoints - 0.5 * priorSolves, 0);
+  const n = priorSolves + 1;
+  const raw = n <= 5 ? basePoints - (n - 1) * 0.5 : basePoints - 2 - (n - 5) * 0.25;
+  return Math.max(raw, 0);
 }
 
 // A challenge can be read once the event has started, and stays readable while paused.

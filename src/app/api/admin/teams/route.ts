@@ -6,7 +6,7 @@ import { actor, NO_STORE, pgError, slugify } from '@/lib/admin/http';
 import { listTeams, parseTeamNames, uniqueHandle } from '@/lib/admin/teams';
 import { audit } from '@/lib/audit';
 import { hashPassword } from '@/lib/auth/password';
-import { teamCode, teamPassword } from '@/lib/auth/team-credentials';
+import { teamPassword } from '@/lib/auth/team-credentials';
 import { db } from '@/lib/db/client';
 import { teams, users } from '@/lib/db/schema';
 import { ApiError, json, parseBody, withAdmin } from '@/lib/http';
@@ -54,13 +54,14 @@ export const POST = withAdmin(async (req, session) => {
       }
 
       const rows = names.map((name, i) => {
-        let username = teamCode();
-        while (usernames.has(username)) username = teamCode();
-        usernames.add(username);
+        // The login username is the team name, so it must not collide with any other login.
+        if (usernames.has(name.toLowerCase())) {
+          throw new ApiError(409, 'conflict', `"${name}" is already a login name.`);
+        }
         return {
           name,
           slug: uniqueHandle(slugify(name), slugs),
-          username,
+          username: name,
           password: passwords[i],
           passwordHash: hashes[i],
         };
@@ -86,7 +87,7 @@ export const POST = withAdmin(async (req, session) => {
         entityType: 'team',
         details: {
           count: rows.length,
-          teams: rows.map(({ name, username }) => ({ name, username })),
+          teams: rows.map(({ name }) => ({ name })),
         },
       });
       return rows;
@@ -100,15 +101,8 @@ export const POST = withAdmin(async (req, session) => {
       throw e;
     });
 
-  const credentials = created.map(({ name, username, password }) => ({
-    team: name,
-    username,
-    password,
-  }));
-  const csv = toCsv([
-    ['team', 'username', 'password'],
-    ...credentials.map((c) => [c.team, c.username, c.password]),
-  ]);
+  const credentials = created.map(({ name, password }) => ({ team: name, password }));
+  const csv = toCsv([['team', 'password'], ...credentials.map((c) => [c.team, c.password])]);
   // Shown once: the plaintext exists only in this response.
   return json({ credentials, csv }, { status: 201, headers: NO_STORE });
 });

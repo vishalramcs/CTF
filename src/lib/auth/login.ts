@@ -54,7 +54,7 @@ export function loginRoute(role: 'team' | 'admin') {
       throw new ApiError(
         401,
         'invalid_credentials',
-        "Those credentials don't match. Check the slip your organiser gave you.",
+        "Those credentials don't match. Check the team name and password.",
       );
     }
     if (!user.active) {

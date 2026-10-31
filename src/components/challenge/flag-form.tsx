@@ -7,9 +7,14 @@ import { Button } from '@/components/ui/button';
 import { apiPost } from '@/lib/api-client';
 import type { SubmitResult } from '@/lib/scoring/submit';
 
-type Solved = { points: number; fragment: string | null; orderClue: string | null };
+type Solved = {
+  points: number;
+  fragment: string | null;
+  orderClue: string | null;
+  finalCoordinates: { label: string; value: string }[] | null;
+};
 
-function SolvedPanel({ points, fragment, orderClue }: Solved) {
+function SolvedPanel({ points, fragment, orderClue, finalCoordinates }: Solved) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-success p-4">
       <p className="font-semibold text-success">
@@ -17,6 +22,16 @@ function SolvedPanel({ points, fragment, orderClue }: Solved) {
       </p>
       {fragment && <p className="font-mono text-5xl font-semibold">{fragment}</p>}
       {orderClue && <p>{orderClue}</p>}
+      {finalCoordinates && finalCoordinates.length > 0 && (
+        <ul className="flex flex-col gap-1">
+          {finalCoordinates.map((c, i) => (
+            <li key={i} className="font-mono text-2xl font-semibold">
+              {c.label && <span className="mr-2 text-sm text-muted-foreground">{c.label}</span>}
+              {c.value}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -56,6 +71,7 @@ export function FlagForm({
           points: outcome.points,
           fragment: outcome.fragment ?? null,
           orderClue: outcome.orderClue ?? null,
+          finalCoordinates: outcome.finalCoordinates ?? null,
         });
         setMessage('');
         return router.refresh();

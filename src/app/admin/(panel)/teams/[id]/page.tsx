@@ -21,12 +21,11 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const detail = await loadTeamDetail(id);
   if (!detail) notFound();
 
-  const { team, score, solved, failed, locations, keys, surprises } = detail;
+  const { team, score, solved, failed, surprises } = detail;
   const tz = env.EVENT_TIMEZONE;
   const scores: [string, string][] = [
     ['Total', score.total],
     ['Challenge', score.challengePoints],
-    ['Location', score.locationPoints],
     ['Surprise', score.surprisePoints],
     ['Adjustment', score.adjustmentPoints],
   ];
@@ -38,7 +37,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         {[!team.isActive && 'Inactive', team.isHidden && 'Hidden'].filter(Boolean).join(', ') ||
           'Active and visible'}
       </p>
-      <dl className={`${panelClass} grid gap-4 space-y-0 sm:grid-cols-5`}>
+      <dl className={`${panelClass} grid gap-4 space-y-0 sm:grid-cols-4`}>
         {scores.map(([label, value]) => (
           <div key={label}>
             <dt className="text-sm text-muted-foreground">Score: {label}</dt>
@@ -104,18 +103,18 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
       </section>
 
       <section className={panelClass}>
-        <SectionTitle>Locations, keys and surprises</SectionTitle>
+        <SectionTitle>Final location and surprises</SectionTitle>
         <ul className="list-disc space-y-1 pl-5 text-sm">
-          {locations.map((l) => (
-            <li key={l.level}>
-              Location {l.level} reached {formatTime(l.achieved_at, tz)}
-            </li>
-          ))}
-          {keys.map((k) => (
-            <li key={k.name}>
-              {k.name} acquired {formatTime(k.acquired_at, tz)}
-            </li>
-          ))}
+          <li>
+            Final location:{' '}
+            {score.coordinatesFoundAt
+              ? `found ${formatTime(score.coordinatesFoundAt, tz)}`
+              : 'not found'}
+          </li>
+          <li>
+            Main Question:{' '}
+            {score.mainSolvedAt ? `solved ${formatTime(score.mainSolvedAt, tz)}` : 'not solved'}
+          </li>
           {surprises.map((s) => (
             <li key={s.title}>
               {s.title}: discovered {formatTime(s.discovered_at, tz)},{' '}
@@ -123,9 +122,6 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             </li>
           ))}
         </ul>
-        {locations.length + keys.length + surprises.length === 0 && (
-          <p className="text-sm text-muted-foreground">Nothing yet.</p>
-        )}
       </section>
     </>
   );

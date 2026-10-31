@@ -1,11 +1,11 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { cache } from 'react';
 
+import { finalCoordinatesFor, type FinalCoordinate } from '@/lib/coordinates/state';
 import { db } from '@/lib/db/client';
 import {
   challengeHints,
   challenges,
-  coordinateFragments,
   eventState,
   solves,
   teamChallengeVariants,
@@ -58,7 +58,7 @@ export type ChallengeCard = {
   pointsEarned: number | null;
 };
 
-// What the next solve of each challenge is worth: base minus 0.5 per team that already solved it.
+// What the next solve of each challenge is worth: the two-tier position formula (docs/08 §2).
 // TRD §7.2: which challenges carry fragments is not revealed.
 export async function listChallengeCards(
   teamId: string,
@@ -88,7 +88,7 @@ export async function listChallengeCards(
 }
 
 function parseChallengeNumber(param: string): number | null {
-  return /^(10|[1-9])$/.test(param) ? Number(param) : null;
+  return /^(1[0-3]|[1-9])$/.test(param) ? Number(param) : null;
 }
 
 // What submit and hints need.
@@ -120,7 +120,12 @@ export type ChallengeView =
       files: VariantData['files'];
       hintCount: number;
       currentPoints: number;
-      solved: { points: number; fragment: string | null; orderClue: string | null } | null;
+      solved: {
+        points: number;
+        fragment: string | null;
+        orderClue: string | null;
+        finalCoordinates: FinalCoordinate[] | null;
+      } | null;
     });
 
 // Rendered per team (TRD §9). null if it doesn't exist or this team has no variant yet.
@@ -147,10 +152,10 @@ export async function getChallengeView(
       // Joined only through the team's own solve, so an unsolved challenge returns no fragment.
       fragmentValue: sql<
         string | null
-      >`CASE WHEN ${solves.id} IS NOT NULL THEN ${coordinateFragments.value} END`,
+      >`CASE WHEN ${solves.id} IS NOT NULL THEN ${challenges.fragmentValue} END`,
       orderClue: sql<
         string | null
-      >`CASE WHEN ${solves.id} IS NOT NULL THEN ${coordinateFragments.orderClue} END`,
+      >`CASE WHEN ${solves.id} IS NOT NULL THEN ${challenges.orderClue} END`,
       priorSolves: sql<number>`(SELECT count(*)::int FROM ${solves} s2
           WHERE s2.challenge_id = ${challenges.id})`,
       hintCount: sql<number>`(SELECT count(*)::int FROM ${challengeHints}
@@ -165,7 +170,6 @@ export async function getChallengeView(
       ),
     )
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
-    .leftJoin(coordinateFragments, eq(coordinateFragments.challengeId, challenges.id))
     .where(and(eq(challenges.number, number), eq(challenges.isPublished, true)));
   if (!row) return null;
 
@@ -178,6 +182,10 @@ export async function getChallengeView(
   if (access !== 'open') return { ...header, access };
   if (!row.variantData) return null;
 
+  const final =
+    row.pointsEarned !== null && row.difficulty === 'main_difficult'
+      ? await finalCoordinatesFor(db, teamId)
+      : null;
   const variant = row.variantData as VariantData;
   return {
     ...header,
@@ -197,6 +205,7 @@ export async function getChallengeView(
             points: Number(row.pointsEarned),
             fragment: row.fragmentValue,
             orderClue: row.orderClue,
+            finalCoordinates: final,
           },
   };
 }

@@ -70,4 +70,29 @@ describe('leaderboard freeze', () => {
     expect((await freeze(false)).status).toBe(200);
     expect((await board())[0]).toMatchObject({ rank: 1, teamName: 'Team teama', total: 159.5 });
   });
+
+  it('freezes by itself on the first public read after freeze_at, once, with the live shape', async () => {
+    const a = await createTeam(sql, 'teama');
+    const b = await createTeam(sql, 'teamb');
+    await score(a, 49.5);
+    await score(b, 50);
+    const live = await board();
+
+    // A finale time in the future changes nothing.
+    await sql`UPDATE app.event_state SET freeze_at = now() + interval '1 hour'`;
+    expect(await board()).toEqual(live);
+    expect((await (await state()).json()).frozen).toBe(false);
+
+    await sql`UPDATE app.event_state SET freeze_at = now() - interval '1 second'`;
+    // Two reads in a row: one snapshot, not two.
+    expect((await (await state()).json()).frozen).toBe(true);
+    expect((await (await state()).json()).frozen).toBe(true);
+    const snapshots = await sql`SELECT snapshot FROM app.scoreboard_snapshots`;
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0].snapshot).toEqual(live);
+
+    await score(a, 100);
+    expect(await board()).toEqual(live);
+    expect(await sql`SELECT 1 FROM app.scoreboard_snapshots`).toHaveLength(1);
+  });
 });

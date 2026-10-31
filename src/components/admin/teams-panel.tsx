@@ -18,7 +18,7 @@ import { send } from '@/lib/admin/client';
 import { formatTime } from '@/lib/admin/shared';
 import type { TeamRow } from '@/lib/admin/teams';
 
-type Credential = { team: string; username: string; password: string };
+type Credential = { team: string; password: string };
 type SessionRow = {
   id: string;
   ip: string | null;
@@ -79,7 +79,6 @@ export function TeamsPanel({
           <thead>
             <tr>
               <th className={thClass}>Team</th>
-              <th className={thClass}>Username</th>
               <th className={thClass}>Active</th>
               <th className={thClass}>Hidden</th>
               <th className={thClass}>Sessions</th>
@@ -96,7 +95,6 @@ export function TeamsPanel({
                     {team.name}
                   </Link>
                 </td>
-                <td className={`${tdClass} font-mono`}>{team.username}</td>
                 <td className={tdClass}>
                   <input
                     type="checkbox"
@@ -174,15 +172,13 @@ export function TeamsPanel({
               <thead>
                 <tr>
                   <th className={thClass}>Team</th>
-                  <th className={thClass}>Username</th>
                   <th className={thClass}>Password</th>
                 </tr>
               </thead>
               <tbody className="font-mono">
                 {dialog.credentials.map((c) => (
-                  <tr key={c.username}>
+                  <tr key={c.team}>
                     <td className={tdClass}>{c.team}</td>
-                    <td className={tdClass}>{c.username}</td>
                     <td className={tdClass}>{c.password}</td>
                   </tr>
                 ))}
@@ -203,7 +199,7 @@ export function TeamsPanel({
       {dialog?.kind === 'reset' && (
         <ConfirmModal
           title="Reset password"
-          word={dialog.team.username}
+          word={dialog.team.name}
           label="Reset password"
           onClose={close}
           onConfirm={async () => {
@@ -227,7 +223,7 @@ export function TeamsPanel({
             Shown once. Give it to {dialog.team.name} now.
           </p>
           <p className="font-mono text-base">
-            {dialog.username} / {dialog.password}
+            {dialog.team.name} / {dialog.password}
           </p>
           <div className="flex justify-end">
             <Button className={actionClass} onClick={close}>
@@ -321,7 +317,8 @@ function CreateTeamsModal({
     <Modal title="Create teams" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         <label className="block font-medium">
-          One team name per line. Usernames and passwords are generated.
+          One team name per line. The team name is the login; the password is that name lowercased,
+          without spaces, reversed.
           <textarea
             value={text}
             onChange={(event) => setText(event.target.value)}

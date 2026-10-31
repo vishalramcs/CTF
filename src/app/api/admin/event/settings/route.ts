@@ -1,22 +1,28 @@
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { bumpBoard, lockEvent } from '@/lib/admin/event';
-import { actor } from '@/lib/admin/http';
+import { bumpBoard, lockEvent, snapshotBoard } from '@/lib/admin/event';
+import { actor, localDateTime } from '@/lib/admin/http';
 import { notifyBoard, notifyStatus } from '@/lib/admin/notify';
 import { audit } from '@/lib/audit';
 import { db } from '@/lib/db/client';
 import { eventState } from '@/lib/db/schema';
+import { env } from '@/lib/env';
 import { json, parseBody, withAdmin } from '@/lib/http';
 
 export const runtime = 'nodejs';
 
 const body = z
-  .object({ submissionsOpen: z.boolean().optional(), leaderboardFrozen: z.boolean().optional() })
+  .object({
+    submissionsOpen: z.boolean().optional(),
+    leaderboardFrozen: z.boolean().optional(),
+    // Finale time in EVENT_TIMEZONE; null clears it. /api/public/state freezes the board after it.
+    freezeAt: localDateTime.nullable().optional(),
+  })
   .refine((b) => Object.keys(b).length > 0);
 
 export const POST = withAdmin(async (req, session) => {
-  const { submissionsOpen, leaderboardFrozen } = await parseBody(req, body);
+  const { submissionsOpen, leaderboardFrozen, freezeAt } = await parseBody(req, body);
 
   const result = await db.transaction(async (tx) => {
     const state = await lockEvent(tx);
@@ -31,27 +37,30 @@ export const POST = withAdmin(async (req, session) => {
       await tx.update(eventState).set({ submissionsOpen }).where(eq(eventState.id, 1));
     }
     if (changed.leaderboardFrozen) {
-      // The frozen board is what this snapshot holds, taken in the same transaction as the flag.
-      // Keys match BoardRow, because /api/public/state serves it as is.
-      if (froze) {
-        await tx.execute(sql`INSERT INTO app.scoreboard_snapshots (snapshot, created_by)
-          SELECT coalesce(jsonb_agg(jsonb_build_object(
-                   'rank', s.rank, 'teamName', s.team_name,
-                   'challengePoints', s.challenge_points, 'locationPoints', s.location_points,
-                   'surprisePoints', s.surprise_points, 'adjustmentPoints', s.adjustment_points,
-                   'total', s.total, 'solves', s.solves, 'locations', s.locations,
-                   'keys', s.keys, 'surprises', s.surprises
-                 ) ORDER BY s.rank, s.team_name), '[]'::jsonb), ${session.userId}::uuid
-          FROM app.v_public_scoreboard s`);
-      }
-      await tx.update(eventState).set({ leaderboardFrozen }).where(eq(eventState.id, 1));
+      if (froze) await snapshotBoard(tx, session.userId);
+      // An admin unfreeze also clears the finale time, or the next read would freeze again.
+      await tx
+        .update(eventState)
+        .set({ leaderboardFrozen, ...(leaderboardFrozen ? {} : { freezeAt: null }) })
+        .where(eq(eventState.id, 1));
+    }
+    if (freezeAt !== undefined) {
+      await tx
+        .update(eventState)
+        .set({
+          freezeAt:
+            freezeAt === null
+              ? null
+              : sql`${freezeAt}::timestamp AT TIME ZONE ${env.EVENT_TIMEZONE}`,
+        })
+        .where(eq(eventState.id, 1));
     }
     if (changed.submissionsOpen || changed.leaderboardFrozen) await bumpBoard(tx);
     await audit(tx, {
       ...actor(req, session),
       action: 'event.settings',
       entityType: 'event',
-      details: { submissionsOpen, leaderboardFrozen, changed },
+      details: { submissionsOpen, leaderboardFrozen, freezeAt, changed },
     });
     return changed;
   });

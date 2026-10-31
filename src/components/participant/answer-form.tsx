@@ -10,15 +10,14 @@ type Outcome = {
   points?: number;
   attemptsLeft?: number;
   retryAfter?: number;
-  fragmentsHeld?: number;
-  fragmentsRequired?: number;
+  winner?: boolean;
   [key: string]: unknown;
 };
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-// One answer box for locations and surprises. Both endpoints share these result names; the copy
-// follows Design Brief §9. `onCorrect` gets the full response (e.g. finalMission).
+// One answer box for the final location and surprises. Both endpoints share these result names; the copy
+// follows Design Brief §9. `onCorrect` gets the full response .
 export function AnswerForm({
   path,
   label,
@@ -46,7 +45,9 @@ export function AnswerForm({
     setMessage('');
     switch (o.result) {
       case 'correct':
-        setMessage(`Signal fragment recovered. +${o.points ?? 0}`);
+        setMessage(
+          o.points === undefined ? 'Location confirmed.' : `Signal recovered. +${o.points}`,
+        );
         return onCorrect(o);
       case 'wrong':
         return setMessage(
@@ -54,10 +55,6 @@ export function AnswerForm({
         );
       case 'rate_limited':
         return setRetryIn(o.retryAfter ?? 1);
-      case 'locked':
-        return setMessage(
-          `Locked. You hold ${o.fragmentsHeld} of ${o.fragmentsRequired} fragments.`,
-        );
       case 'already_completed':
         return setMessage('Already done. Nothing more to claim here.');
       case 'unavailable':

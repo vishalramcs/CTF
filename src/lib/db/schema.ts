@@ -93,6 +93,10 @@ export const challenges = app.table('challenges', {
   flagTemplate: text('flag_template'),
   staticFlagHash: text('static_flag_hash'),
   isPublished: boolean('is_published').notNull().default(false),
+  // Identical for every team; shown to a team only after it solves this question.
+  fragmentValue: text('fragment_value'),
+  coordinateOrder: smallint('coordinate_order'),
+  orderClue: text('order_clue'),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
 });
@@ -141,6 +145,11 @@ export const eventState = app.table('event_state', {
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
   status: text('status').notNull().default('not_started'),
   statusChangedAt: timestamptz('status_changed_at').notNull().defaultNow(),
+  coordinateAnswerHash: text('coordinate_answer_hash'),
+  coordinateAnswerEnc: text('coordinate_answer_enc'),
+  coordinateWinnerId: uuid('coordinate_winner_id'),
+  coordinateWonAt: timestamptz('coordinate_won_at'),
+  freezeAt: timestamptz('freeze_at'),
 });
 
 export const broadcastGate = app.table('broadcast_gate', {
@@ -169,7 +178,7 @@ export const solves = app.table('solves', {
   solvePosition: integer('solve_position')
     .notNull()
     .default(sql`0`),
-  pointsAwarded: numeric('points_awarded', { precision: 7, scale: 1 })
+  pointsAwarded: numeric('points_awarded', { precision: 7, scale: 2 })
     .notNull()
     .default(sql`0`),
   solvedAt: timestamptz('solved_at').notNull().defaultNow(),
@@ -179,7 +188,7 @@ export const scoreTransactions = app.table('score_transactions', {
   id: identity('id').primaryKey(),
   teamId: uuid('team_id').notNull(),
   category: text('category').notNull(),
-  points: numeric('points', { precision: 7, scale: 1 }).notNull(),
+  points: numeric('points', { precision: 7, scale: 2 }).notNull(),
   refType: text('ref_type'),
   refId: uuid('ref_id'),
   reason: text('reason'),
@@ -187,50 +196,18 @@ export const scoreTransactions = app.table('score_transactions', {
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });
 
-export const locations = app.table('locations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  level: challengeDifficulty('level').notNull(),
-  name: text('name').notNull().default(''),
-  answerHash: text('answer_hash'),
-  answerEnc: text('answer_enc'),
-  rewardPoints: numeric('reward_points', { precision: 7, scale: 1 }).notNull(),
-  fragmentsRequired: integer('fragments_required').notNull(),
-});
-
-export const coordinateFragments = app.table('coordinate_fragments', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  locationId: uuid('location_id').notNull(),
-  challengeId: uuid('challenge_id').notNull(),
-  label: text('label').notNull(),
+export const finalCoordinates = app.table('final_coordinates', {
+  position: smallint('position').primaryKey(),
+  label: text('label').notNull().default(''),
   value: text('value').notNull(),
-  orderClue: text('order_clue'),
 });
 
-export const locationSubmissions = app.table('location_submissions', {
+export const coordinateSubmissions = app.table('coordinate_submissions', {
   id: identity('id').primaryKey(),
   teamId: uuid('team_id').notNull(),
-  locationId: uuid('location_id').notNull(),
   submittedHash: text('submitted_hash').notNull(),
   isCorrect: boolean('is_correct').notNull(),
   submittedAt: timestamptz('submitted_at').notNull().defaultNow(),
-});
-
-export const locationAchievements = app.table('location_achievements', {
-  teamId: uuid('team_id').notNull(),
-  locationId: uuid('location_id').notNull(),
-  achievedAt: timestamptz('achieved_at').notNull().defaultNow(),
-});
-
-export const cosmicKeys = app.table('cosmic_keys', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  level: challengeDifficulty('level').notNull(),
-  name: text('name').notNull(),
-});
-
-export const teamCosmicKeys = app.table('team_cosmic_keys', {
-  teamId: uuid('team_id').notNull(),
-  keyId: uuid('key_id').notNull(),
-  acquiredAt: timestamptz('acquired_at').notNull().defaultNow(),
 });
 
 export const surpriseEvents = app.table('surprise_events', {
@@ -244,7 +221,7 @@ export const surpriseEvents = app.table('surprise_events', {
   assetUrl: text('asset_url'),
   answerHash: text('answer_hash'),
   answerEnc: text('answer_enc'),
-  points: numeric('points', { precision: 7, scale: 1 }).notNull(),
+  points: numeric('points', { precision: 7, scale: 2 }).notNull(),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
 });
 
@@ -290,7 +267,7 @@ export const scoreboardSnapshots = app.table('scoreboard_snapshots', {
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });
 
-const points = (name: string) => numeric(name, { precision: 7, scale: 1 }).notNull();
+const points = (name: string) => numeric(name, { precision: 7, scale: 2 }).notNull();
 
 export const vScoreboard = app
   .view('v_scoreboard', {
@@ -300,14 +277,16 @@ export const vScoreboard = app
     isActive: boolean('is_active').notNull(),
     total: points('total'),
     challengePoints: points('challenge_points'),
-    locationPoints: points('location_points'),
     surprisePoints: points('surprise_points'),
     adjustmentPoints: points('adjustment_points'),
     lastScoreAt: timestamptz('last_score_at'),
-    solves: integer('solves').notNull(),
-    locations: integer('locations').notNull(),
-    keys: integer('keys').notNull(),
+    easySolved: integer('easy_solved').notNull(),
+    mediumSolved: integer('medium_solved').notNull(),
+    difficultSolved: integer('difficult_solved').notNull(),
+    mainSolvedAt: timestamptz('main_solved_at'),
+    coordinatesFoundAt: timestamptz('coordinates_found_at'),
     surprises: integer('surprises').notNull(),
+    solves: integer('solves').notNull(),
     rankAll: integer('rank_all').notNull(),
   })
   .existing();
@@ -316,38 +295,22 @@ export const vPublicScoreboard = app
   .view('v_public_scoreboard', {
     rank: integer('rank').notNull(),
     teamName: text('team_name').notNull(),
-    challengePoints: points('challenge_points'),
-    locationPoints: points('location_points'),
-    surprisePoints: points('surprise_points'),
-    adjustmentPoints: points('adjustment_points'),
     total: points('total'),
-    solves: integer('solves').notNull(),
-    locations: integer('locations').notNull(),
-    keys: integer('keys').notNull(),
-    surprises: integer('surprises').notNull(),
-    lastScoreAt: timestamptz('last_score_at'),
+    easySolved: integer('easy_solved').notNull(),
+    mediumSolved: integer('medium_solved').notNull(),
+    difficultSolved: integer('difficult_solved').notNull(),
+    mainDone: boolean('main_done').notNull(),
+    coordinatesDone: boolean('coordinates_done').notNull(),
   })
   .existing();
 
 export const vPublicFeed = app
   .view('v_public_feed', {
-    solvedAt: timestamptz('solved_at').notNull(),
+    occurredAt: timestamptz('occurred_at').notNull(),
+    kind: text('kind').notNull(),
     teamName: text('team_name').notNull(),
-    challengeNumber: integer('challenge_number').notNull(),
-    challengeTitle: text('challenge_title').notNull(),
-    pointsAwarded: points('points_awarded'),
-  })
-  .existing();
-
-export const vTeamFragments = app
-  .view('v_team_fragments', {
-    teamId: uuid('team_id').notNull(),
-    locationId: uuid('location_id').notNull(),
-    fragmentId: uuid('fragment_id').notNull(),
-    challengeId: uuid('challenge_id').notNull(),
-    label: text('label').notNull(),
-    value: text('value').notNull(),
-    orderClue: text('order_clue'),
-    solvedAt: timestamptz('solved_at').notNull(),
+    challengeNumber: integer('challenge_number'),
+    challengeTitle: text('challenge_title'),
+    pointsAwarded: numeric('points_awarded', { precision: 7, scale: 2 }),
   })
   .existing();

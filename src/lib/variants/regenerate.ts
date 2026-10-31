@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 
 import type { db } from '@/lib/db/client';
-import { challenges, coordinateFragments, teamChallengeVariants, teams } from '@/lib/db/schema';
+import { challenges, teamChallengeVariants, teams } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 import { buildVariant } from '@/lib/variants/derive';
 
@@ -20,12 +20,6 @@ export async function regenerateVariants(
     .from(challenges)
     .where(challengeId ? eq(challenges.id, challengeId) : undefined);
 
-  // Fragments come from the mapping, so a fragment is the same for every team (docs/07 §4).
-  const fragmentRows = await executor
-    .select({ challengeId: coordinateFragments.challengeId, value: coordinateFragments.value })
-    .from(coordinateFragments);
-  const fragments = new Map(fragmentRows.map((f) => [f.challengeId, f.value]));
-
   const keys = {
     variantKey: env.VARIANT_HMAC_KEY,
     flagKey: env.FLAG_HMAC_KEY,
@@ -33,11 +27,8 @@ export async function regenerateVariants(
   };
   const rows = teamRows.flatMap((team) =>
     challengeRows.map((challenge) => {
-      const { variantData, expectedFlagHash } = buildVariant(
-        team.id,
-        { ...challenge, fragmentValue: fragments.get(challenge.id) ?? null },
-        keys,
-      );
+      // {{fragment}} is the challenge's own fragment_value, so it is the same for every team.
+      const { variantData, expectedFlagHash } = buildVariant(team.id, challenge, keys);
       return {
         teamId: team.id,
         challengeId: challenge.id,

@@ -212,14 +212,14 @@ describe('submit', () => {
       });
     }
     expect((await ledger()).map((l) => [l.category, l.points, l.ref_type])).toEqual([
-      ['surprise', '30.0', 'surprise'],
-      ['surprise', '50.0', 'surprise'],
-      ['surprise', '70.0', 'surprise'],
+      ['surprise', '30.00', 'surprise'],
+      ['surprise', '50.00', 'surprise'],
+      ['surprise', '70.00', 'surprise'],
     ]);
     const [board] = await sql`
       SELECT surprise_points::text AS surprise_points, total::text AS total, surprises
         FROM app.v_scoreboard WHERE team_id = ${teamA}`;
-    expect(board).toEqual({ surprise_points: '150.0', total: '150.0', surprises: 3 });
+    expect(board).toEqual({ surprise_points: '150.00', total: '150.00', surprises: 3 });
     expect((await list()).every((s: { completed: boolean }) => s.completed)).toBe(true);
   });
 

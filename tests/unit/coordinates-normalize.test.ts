@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeLocation } from '@/lib/locations/normalize';
+import { normalizeLocation } from '@/lib/coordinates/normalize';
 
 describe('normalizeLocation', () => {
   it.each([

@@ -100,8 +100,8 @@ describe('GET /api/challenges', () => {
       number: 1,
       title: 'Challenge 1',
       difficulty: 'easy',
-      basePoints: 60,
-      currentPoints: 60,
+      basePoints: 50,
+      currentPoints: 50,
       state: 'open',
       pointsEarned: null,
     });
@@ -118,10 +118,10 @@ describe('GET /api/challenges', () => {
     await solve(easy, teamA, authA);
     body = await cards();
     // Team A's own solve counts as one earlier solve for whoever comes next.
-    expect(body[0]).toMatchObject({ currentPoints: 59.5, state: 'solved', pointsEarned: 60 });
-    expect(body[1]).toMatchObject({ currentPoints: 110 - 50, state: 'open' });
+    expect(body[0]).toMatchObject({ currentPoints: 49.5, state: 'solved', pointsEarned: 50 });
+    expect(body[1]).toMatchObject({ currentPoints: 50, state: 'open' });
     expect((await cards(authB))[0]).toMatchObject({
-      currentPoints: 59.5,
+      currentPoints: 49.5,
       state: 'open',
       pointsEarned: null,
     });
@@ -147,17 +147,22 @@ describe('GET /api/challenges/:n', () => {
     );
     expect(a.html).not.toBe(b.html);
     expect(a.evidence).toEqual([{ type: 'code', content: tokenOf(teamA, easy) }]);
-    expect(a).toMatchObject({ hintCount: 2, currentPoints: 60, solved: null });
+    expect(a).toMatchObject({ hintCount: 2, currentPoints: 50, solved: null });
     expect(JSON.stringify(a)).not.toMatch(/Clue three|expected|x-spidey/);
     expect(a.files).toEqual(['clue.txt']);
 
     await solve(easy, teamA, authA);
     const solved = await (await getDetail(1)).json();
-    expect(solved.solved).toEqual({ points: 60, fragment: '47', orderClue: 'Clue three' });
+    expect(solved.solved).toEqual({
+      points: 50,
+      fragment: '47',
+      orderClue: 'Clue three',
+      finalCoordinates: null,
+    });
     // Same fragment for every team, and team B still hasn't earned it.
     const other = await (await getDetail(1, authB)).json();
     expect(other.solved).toBeNull();
-    expect(other.currentPoints).toBe(59.5);
+    expect(other.currentPoints).toBe(49.5);
     expect(JSON.stringify(other)).not.toMatch(/Clue three/);
   });
 
@@ -179,7 +184,7 @@ describe('GET /api/challenges/:n', () => {
     expect((await res.json()).error.code).toBe('closed');
   });
 
-  it.each(['0', '11', '99', 'abc', '01', '-1', '1.5'])('answers 404 for %s', async (number) => {
+  it.each(['0', '14', '99', 'abc', '01', '-1', '1.5'])('answers 404 for %s', async (number) => {
     expect((await getDetail(number)).status).toBe(404);
   });
 
@@ -265,12 +270,12 @@ describe('GET /api/me', () => {
     await solve(easy, teamA, authA);
     expect(await getMe()).toEqual({
       teamName: 'Team teama',
-      score: 60,
+      score: 50,
       rank: 1,
       solved: [1],
       status: 'running',
       submissionsOpen: true,
-      points: { 1: 59.5 },
+      points: { 1: 49.5 },
     });
     expect(await getMe(authB)).toMatchObject({ score: 0, rank: 2, solved: [] });
   });

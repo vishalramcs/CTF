@@ -19,6 +19,19 @@ export function bumpBoard(tx: Tx) {
     .where(eq(eventState.id, 1));
 }
 
+// The frozen board is this snapshot, taken in the same transaction as the flag. Keys match
+// BoardRow, because /api/public/state serves it as is.
+export function snapshotBoard(tx: Tx, createdBy: string | null) {
+  return tx.execute(sql`INSERT INTO app.scoreboard_snapshots (snapshot, created_by)
+    SELECT coalesce(jsonb_agg(jsonb_build_object(
+             'rank', s.rank, 'teamName', s.team_name, 'total', s.total,
+             'easySolved', s.easy_solved, 'mediumSolved', s.medium_solved,
+             'difficultSolved', s.difficult_solved, 'mainDone', s.main_done,
+             'coordinatesDone', s.coordinates_done
+           ) ORDER BY s.rank, s.team_name), '[]'::jsonb), ${createdBy}::uuid
+    FROM app.v_public_scoreboard s`);
+}
+
 export async function loadEventState() {
   const [state] = await db
     .select({
@@ -26,6 +39,7 @@ export async function loadEventState() {
       statusChangedAt: eventState.statusChangedAt,
       submissionsOpen: eventState.submissionsOpen,
       leaderboardFrozen: eventState.leaderboardFrozen,
+      freezeAt: eventState.freezeAt,
     })
     .from(eventState)
     .where(eq(eventState.id, 1));

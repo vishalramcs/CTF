@@ -8,7 +8,6 @@ import { GET as challenges } from '@/app/api/admin/challenges/route';
 import { GET as developers } from '@/app/api/admin/developers/route';
 import { GET as event } from '@/app/api/admin/event/route';
 import { GET as exportCsv } from '@/app/api/admin/export/route';
-import { GET as locations } from '@/app/api/admin/locations/route';
 import { GET as monitor } from '@/app/api/admin/monitor/route';
 import { GET as overview } from '@/app/api/admin/overview/route';
 import { GET as surprises } from '@/app/api/admin/surprises/route';
@@ -114,15 +113,15 @@ describe('secrets', () => {
   it('no response carries a hash, a ciphertext or a password hash', async () => {
     const challenge = await createChallenge(sql, 1);
     await sql`UPDATE app.challenges SET flag_mode = 'static', flag_template = NULL, static_flag_hash = 'MARKER-STATIC-HASH' WHERE id = ${challenge.id}`;
-    await sql`UPDATE app.locations SET answer_hash = 'MARKER-LOC-HASH', answer_enc = 'MARKER-LOC-ENC'
-      WHERE level = 'easy'`;
+    await sql`UPDATE app.event_state SET coordinate_answer_hash = 'MARKER-LOC-HASH',
+      coordinate_answer_enc = 'MARKER-LOC-ENC'`;
     await sql`UPDATE app.surprise_events SET answer_hash = 'MARKER-SUR-HASH', answer_enc = 'MARKER-SUR-ENC'
       WHERE kind = 'spidey_signal'`;
     await sql`UPDATE app.users SET password_hash = 'MARKER-PASSWORD-HASH' WHERE username = 'teama'`;
     await sql`INSERT INTO app.submissions (team_id, challenge_id, submitted_hash, is_correct, result)
       VALUES (${teamId}, ${challenge.id}, 'MARKER-SUBMITTED-HASH', false, 'wrong')`;
-    await sql`INSERT INTO app.location_submissions (team_id, location_id, submitted_hash, is_correct)
-      SELECT ${teamId}, id, 'MARKER-SUBMITTED-HASH', false FROM app.locations LIMIT 1`;
+    await sql`INSERT INTO app.coordinate_submissions (team_id, submitted_hash, is_correct)
+      VALUES (${teamId}, 'MARKER-SUBMITTED-HASH', false)`;
 
     const bodies = [
       await call(teams, '/api/admin/teams', { auth: superAdmin }),
@@ -132,7 +131,6 @@ describe('secrets', () => {
         auth: superAdmin,
         ctx: { id: challenge.id },
       }),
-      await call(locations, '/api/admin/locations', { auth: superAdmin }),
       await call(surprises, '/api/admin/surprises', { auth: superAdmin }),
       await call(overview, '/api/admin/overview', { auth: superAdmin }),
       await call(monitor, '/api/admin/monitor', { auth: superAdmin }),

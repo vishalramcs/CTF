@@ -8,6 +8,7 @@ import type postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SESSION_COOKIE } from '@/lib/auth/shared';
+import { normalizeLocation } from '@/lib/coordinates/normalize';
 import { hmacHex } from '@/lib/crypto/hmac';
 import { db } from '@/lib/db/client';
 import { wipeAppTables } from '@/lib/db/wipe';
@@ -19,14 +20,18 @@ import {
   flagOf,
   openSql,
   sessionFor,
+  setFinalAnswer,
   setStatus,
   tokenOf,
   type Auth,
   type TestChallenge,
 } from './challenge-helpers';
 
-// Stands in for a location's expected answer, which must never leave the server.
-const LOCATION_ANSWER = 'secret-city-xyz';
+// Stand-ins that must never leave the server before they are earned (docs/08): the final location
+// answer is never sent at all.
+const FINAL_ANSWER = 'secret-city-xyz';
+const FRAGMENTS = { 1: 'FRAGVAL-ONE-771', 2: 'FRAGVAL-TWO-882' } as const;
+const FINAL_COORDINATES = ['FINALCOORD-LAT-4410', 'FINALCOORD-LON-5521', 'FINALCOORD-ALT-6632'];
 const ENV_SECRETS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'DATABASE_URL',
@@ -93,7 +98,7 @@ beforeAll(async () => {
   };
   challenges = [
     await createChallenge(sql, 1, {
-      fragment: { value: '47', order: 3, clue: 'ORDER-CLUE-1' },
+      fragment: { value: FRAGMENTS[1], order: 3, clue: 'ORDER-CLUE-1' },
       hints: ['HINT-TEXT-1'],
       evidence: [
         { type: 'code', content: '{{flag|hex}}' },
@@ -101,19 +106,23 @@ beforeAll(async () => {
       ],
       generatorConfig: { surfaces, files: [{ name: 'clue.txt', content: '{{flag|rot13}}' }] },
     }),
-    await createChallenge(sql, 2, { fragment: { value: '00', order: 5, clue: 'ORDER-CLUE-2' } }),
-    await createChallenge(sql, 10, { fragment: { value: '11', order: 1, clue: 'ORDER-CLUE-10' } }),
+    await createChallenge(sql, 2, {
+      fragment: { value: FRAGMENTS[2], order: 5, clue: 'ORDER-CLUE-2' },
+    }),
+    await createChallenge(sql, 13),
   ];
   await regenerateVariants(db, {});
-  await sql`
-    UPDATE app.locations
-    SET answer_hash = ${hmacHex(env.COORD_HMAC_KEY, LOCATION_ANSWER)},
-        answer_enc = 'encrypted-answer-placeholder'`;
+  await setFinalAnswer(sql, FINAL_ANSWER);
+  await sql`UPDATE app.event_state SET coordinate_answer_enc = 'encrypted-answer-placeholder'`;
+  for (const [i, value] of FINAL_COORDINATES.entries()) {
+    await sql`INSERT INTO app.final_coordinates (position, label, value)
+      VALUES (${i + 1}, ${`L${i + 1}`}, ${value})`;
+  }
 
   alwaysForbidden = new Map([
-    ['location answer', LOCATION_ANSWER],
-    ['location answer hash', hmacHex(env.COORD_HMAC_KEY, LOCATION_ANSWER)],
-    ['location answer ciphertext', 'encrypted-answer-placeholder'],
+    ['final answer', FINAL_ANSWER],
+    ['final answer hash', hmacHex(env.COORD_HMAC_KEY, normalizeLocation(FINAL_ANSWER)!)],
+    ['final answer ciphertext', 'encrypted-answer-placeholder'],
   ]);
   for (const name of ENV_SECRETS) {
     const value = process.env[name];
@@ -161,9 +170,15 @@ afterAll(async () => {
 
 type Team = (typeof teams)[number];
 
-function forbiddenFor(team: Team, solved: number[]): Map<string, string> {
+// What a team may see depends on what it earned: a fragment and its order clue come with the
+// question's solve, the final coordinates with the Main Question's.
+function forbiddenFor(team: Team, solved: number[], main = false): Map<string, string> {
   const forbidden = new Map(alwaysForbidden);
   const other = teams.find((t) => t.id !== team.id)!;
+  if (!main) FINAL_COORDINATES.forEach((v, i) => forbidden.set(`final coordinate ${i + 1}`, v));
+  for (const n of [1, 2] as const) {
+    if (!solved.includes(n)) forbidden.set(`unearned fragment #${n}`, FRAGMENTS[n]);
+  }
   for (const challenge of challenges) {
     forbidden.set(`other team's token on #${challenge.number}`, tokenOf(other.id, challenge));
     forbidden.set(
@@ -229,7 +244,15 @@ async function crawl(team: Team, paths: string[]): Promise<Fetched[]> {
 }
 
 const PUBLIC_FILES = ['/robots.txt', '/challenges/clue.js'];
-const API = ['/api/me', '/api/challenges', '/api/time', '/api/locations', '/api/surprises'];
+const API = [
+  '/api/me',
+  '/api/challenges',
+  '/api/time',
+  '/api/coordinates',
+  '/api/surprises',
+  '/api/public/state',
+  '/api/public/feed',
+];
 
 describe('secret-leak scan', () => {
   it(
@@ -243,7 +266,7 @@ describe('secret-leak scan', () => {
           '/dashboard',
           '/challenge/1',
           '/challenge/2',
-          '/challenge/10',
+          '/challenge/13',
         ]);
         expect(pages.map((page) => page.status)).toEqual([200, 200, 200, 200]);
 
@@ -286,7 +309,35 @@ describe('secret-leak scan', () => {
         expect(correct.text).toContain('"result":"correct"');
         const after = [correct, ...(await crawl(team, ['/dashboard', '/challenge/1', '/api/me']))];
         expect(after[2].text).toContain('ORDER-CLUE-1');
+        expect(after[2].text).toContain(FRAGMENTS[1]);
         expect(hits(after, forbiddenFor(team, [1]))).toEqual([]);
+
+        // The Main Question earns the three final coordinates, and only this team's solve does.
+        const main = challenges[2];
+        const mainSolve = await fetchAs(team, '/api/challenges/13/submit', {
+          method: 'POST',
+          body: { flag: flagOf(team.id, main) },
+        });
+        for (const value of FINAL_COORDINATES) expect(mainSolve.text).toContain(value);
+        // Finding the location wins the coordinate race. Neither answer nor hash reaches anyone.
+        const found = await fetchAs(team, '/api/coordinates/submit', {
+          method: 'POST',
+          body: { answer: FINAL_ANSWER },
+        });
+        expect(found.text).toContain('"result":"correct"');
+        const finale = [
+          mainSolve,
+          found,
+          ...(await crawl(team, [
+            '/dashboard',
+            '/challenge/13',
+            '/api/coordinates',
+            '/api/public/state',
+            '/api/public/feed',
+          ])),
+        ];
+        expect(finale[3].text).toContain(FINAL_COORDINATES[0]);
+        expect(hits(finale, forbiddenFor(team, [1], true))).toEqual([]);
       }
     },
   );
@@ -307,7 +358,7 @@ describe('secret-leak scan', () => {
         '/api/challenges',
         '/vault/challenge-1',
       ]);
-      expect(hits(fetched, forbiddenFor(team, [1]))).toEqual([]);
+      expect(hits(fetched, forbiddenFor(team, [1], true))).toEqual([]);
 
       // Nothing of a locked or closed challenge's variant, not even this team's own.
       const token = tokenOf(team.id, challenges[1]);
@@ -316,7 +367,10 @@ describe('secret-leak scan', () => {
   );
 
   it('wrote no secret to the server log', () => {
-    const logged = hits([{ path: 'server log', status: 0, text: serverLog }], alwaysForbidden);
+    const everything = new Map(alwaysForbidden);
+    Object.values(FRAGMENTS).forEach((v, i) => everything.set(`fragment ${i}`, v));
+    FINAL_COORDINATES.forEach((v, i) => everything.set(`final coordinate ${i}`, v));
+    const logged = hits([{ path: 'server log', status: 0, text: serverLog }], everything);
     expect(logged).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-// R7: event controls, challenges, locations, surprises, scores, reset and developer access.
+// R7/R9: event controls, challenges, coordinates, surprises, scores, reset and developer access.
 import type postgres from 'postgres';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -22,12 +22,11 @@ import { POST as developersPost } from '@/app/api/admin/developers/route';
 import { POST as reset } from '@/app/api/admin/event/reset/route';
 import { POST as settings } from '@/app/api/admin/event/settings/route';
 import { POST as transition } from '@/app/api/admin/event/transition/route';
-import {
-  DELETE as fragmentDelete,
-  POST as fragmentPost,
-} from '@/app/api/admin/locations/[level]/fragments/route';
-import { POST as locationReveal } from '@/app/api/admin/locations/[level]/reveal/route';
-import { PATCH as locationPatch } from '@/app/api/admin/locations/[level]/route';
+import { POST as answerPost } from '@/app/api/admin/coordinates/answer/route';
+import { POST as answerReveal } from '@/app/api/admin/coordinates/answer/reveal/route';
+import { POST as finalPost } from '@/app/api/admin/coordinates/final/route';
+import { POST as fragmentsPost } from '@/app/api/admin/coordinates/fragments/route';
+import { POST as resetSolves } from '@/app/api/admin/challenges/[id]/reset-solves/route';
 import { POST as surpriseActivate } from '@/app/api/admin/surprises/[kind]/activate/route';
 import { POST as surpriseReveal } from '@/app/api/admin/surprises/[kind]/reveal/route';
 import { PATCH as surprisePatch } from '@/app/api/admin/surprises/[kind]/route';
@@ -36,7 +35,7 @@ import { hmacHex } from '@/lib/crypto/hmac';
 import { db } from '@/lib/db/client';
 import { wipeAppTables } from '@/lib/db/wipe';
 import { env } from '@/lib/env';
-import { submitLocation } from '@/lib/locations/submit';
+import { submitCoordinates } from '@/lib/coordinates/submit';
 import { discoverSurprise, submitSurprise } from '@/lib/surprises/submit';
 import {
   auditActions,
@@ -66,7 +65,7 @@ beforeEach(async () => {
   admin = await createAdmin(sql, 'root1', 'super_admin');
   teamId = await createTeam(sql, 'teama');
   c = {};
-  for (let n = 1; n <= 10; n++) c[n] = await createChallenge(sql, n);
+  for (let n = 1; n <= 13; n++) c[n] = await createChallenge(sql, n);
 });
 
 afterAll(async () => {
@@ -137,6 +136,7 @@ describe('event controls', () => {
     expect(await sql`SELECT 1 FROM app.scoreboard_snapshots`).toHaveLength(1);
     await ok(await freeze(false));
     expect((await sql`SELECT leaderboard_frozen AS f FROM app.event_state`)[0].f).toBe(false);
+    expect((await sql`SELECT coordinate_winner_id AS w FROM app.event_state`)[0].w).toBeNull();
 
     await audited('event.settings', async () =>
       ok(await post(settings, '/api/admin/event/settings', { submissionsOpen: false })),
@@ -241,7 +241,7 @@ describe('challenges', () => {
   it('validates the form and keeps solved challenges', async () => {
     const create = (f: object, flagTemplate = '{{token}}') =>
       post(challengesPost, '/api/admin/challenges', { fields: f, flagTemplate });
-    expect((await create(fields(11))).status).toBe(400);
+    expect((await create(fields(14))).status).toBe(400);
     expect((await create(fields(0))).status).toBe(400);
     expect((await create(fields(2, { title: '' }))).status).toBe(400);
     expect((await create(fields(2), 'plain')).status).toBe(400);
@@ -252,79 +252,140 @@ describe('challenges', () => {
   });
 });
 
-describe('locations and fragments', () => {
-  const map = (n: number, label: string, level = 'easy') =>
-    post(
-      fragmentPost,
-      '/api/admin/x',
-      { challengeId: c[n].id, label, value: `VALUE${n}` },
-      { level },
-    );
+// Placeholder plan: 2 Easy, 2 Medium, 2 Difficult, orders 1-6.
+const PLAN = (swap = false) =>
+  [1, 2, 5, 6, 9, 10].map((n, i) => ({
+    challengeId: c[n].id,
+    value: `VALUE${n}`,
+    order: swap ? 6 - i : i + 1,
+    orderClue: `Clue ${n}`,
+  }));
+const FINAL = [
+  { label: 'A', value: '11' },
+  { label: 'B', value: '22' },
+  { label: 'C', value: '33' },
+];
 
-  it('maps fragments to challenges of the level only', async () => {
-    await audited('fragment.save', async () => ok(await map(1, 'A')));
+describe('coordinates and fragments', () => {
+  const save = (plan: unknown) => post(fragmentsPost, '/api/admin/x', { plan });
+
+  it('accepts exactly 2/2/2 with orders 1-6 once each, and regenerates variants', async () => {
+    await audited('fragments.save', async () => ok(await save(PLAN())));
     const version = async (n: number) =>
       (await sql`SELECT generator_version AS v FROM app.challenges WHERE id = ${c[n].id}`)[0].v;
-    expect(await version(1)).toBe(2); // saving regenerates the challenge's variants
-
-    const wrongLevel = await map(5, 'B'); // challenge 5 is medium
-    expect(wrongLevel.status).toBe(400);
-    expect((await wrongLevel.json()).error.code).toBe('wrong_level');
-    expect((await map(2, 'A')).status).toBe(409); // label already used on this location
-    await ok(await map(1, 'A')); // the same challenge can be edited
-    await ok(await map(2, 'B'));
-    const unknown = await post(
-      fragmentPost,
-      '/api/admin/x',
-      { challengeId: c[1].id, label: 'A', value: 'v' },
-      { level: 'nope' },
-    );
-    expect(unknown.status).toBe(404);
-
-    await audited('fragment.delete', async () =>
-      ok(await del(fragmentDelete, '/api/admin/x', { challengeId: c[2].id }, { level: 'easy' })),
-    );
-    expect(await sql`SELECT 1 FROM app.coordinate_fragments`).toHaveLength(1);
+    expect(await version(1)).toBe(2);
+    expect(await version(3)).toBe(1);
+    const rows = await sql`SELECT number, fragment_value, coordinate_order FROM app.challenges
+      WHERE fragment_value IS NOT NULL ORDER BY coordinate_order`;
+    expect(rows.map((r) => r.number)).toEqual([1, 2, 5, 6, 9, 10]);
+    // Reordering in one save works, and the log never carries values.
+    await ok(await save(PLAN(true)));
+    const log =
+      await sql`SELECT details::text AS d FROM app.audit_log WHERE action = 'fragments.save'`;
+    expect(log.map((l) => l.d).join()).not.toMatch(/VALUE/);
   });
 
-  it('a saved answer is hashed, encrypted, viewable on request, and works for a team', async () => {
-    const ctx = { level: 'easy' };
-    await ok(await map(1, 'A'));
-    await ok(await map(2, 'B'));
-    expect((await patch(locationPatch, '/api/admin/x', { answer: '!!!' }, ctx)).status).toBe(400);
-    await audited('location.update', async () =>
-      ok(
-        await patch(
-          locationPatch,
-          '/api/admin/x',
-          { name: 'Codename Alpha', answer: 'Zyxwopolis' },
-          ctx,
-        ),
-      ),
+  it('refuses every plan that is not 2 Easy, 2 Medium, 2 Difficult with unique orders', async () => {
+    const plan = PLAN();
+    const bad: [string, unknown][] = [
+      ['five', plan.slice(0, 5)],
+      ['three easy', [{ ...plan[2], challengeId: c[3].id }, ...plan.filter((_, i) => i !== 2)]],
+      ['duplicate order', plan.map((p, i) => (i === 1 ? { ...p, order: 1 } : p))],
+      ['order 7', plan.map((p, i) => (i === 1 ? { ...p, order: 7 } : p))],
+      ['the Main Question', [...plan.slice(0, 5), { ...plan[5], challengeId: c[13].id }]],
+      ['a repeated question', plan.map((p, i) => (i === 1 ? { ...p, challengeId: c[1].id } : p))],
+    ];
+    for (const [name, body] of bad) {
+      expect((await save(body)).status, name).toBe(400);
+    }
+    expect(await sql`SELECT 1 FROM app.challenges WHERE fragment_value IS NOT NULL`).toHaveLength(
+      0,
     );
-    const [row] =
-      await sql`SELECT name, answer_hash, answer_enc FROM app.locations WHERE level = 'easy'`;
-    expect(row.name).toBe('Codename Alpha');
-    expect(row.answer_hash).toBe(hmacHex(env.COORD_HMAC_KEY, 'zyxwopolis'));
-    expect(row.answer_enc).not.toContain('Zyxwopolis');
+    await ok(await save(plan));
+    await ok(await save([])); // clears
+    expect(await sql`SELECT 1 FROM app.challenges WHERE fragment_value IS NOT NULL`).toHaveLength(
+      0,
+    );
+  });
 
+  it('stores three final coordinates and refuses any other count', async () => {
+    expect((await post(finalPost, '/api/admin/x', { coordinates: FINAL.slice(0, 2) })).status).toBe(
+      400,
+    );
+    await audited('final_coordinates.save', async () =>
+      ok(await post(finalPost, '/api/admin/x', { coordinates: FINAL })),
+    );
+    expect(await sql`SELECT value FROM app.final_coordinates ORDER BY position`).toEqual([
+      { value: '11' },
+      { value: '22' },
+      { value: '33' },
+    ]);
     const log =
-      await sql`SELECT details::text AS d FROM app.audit_log WHERE action = 'location.update'`;
+      await sql`SELECT details::text AS d FROM app.audit_log WHERE action = 'final_coordinates.save'`;
+    expect(log[0].d).not.toMatch(/11|22|33/);
+  });
+
+  it('a saved final answer is hashed, encrypted, viewable on request, and works for a team', async () => {
+    expect((await post(answerPost, '/api/admin/x', { answer: '!!!' })).status).toBe(400);
+    await audited('final_answer.save', async () =>
+      ok(await post(answerPost, '/api/admin/x', { answer: 'Zyxwopolis' })),
+    );
+    const [row] = await sql`SELECT coordinate_answer_hash AS h, coordinate_answer_enc AS e
+      FROM app.event_state`;
+    expect(row.h).toBe(hmacHex(env.COORD_HMAC_KEY, 'zyxwopolis'));
+    expect(row.e).not.toContain('Zyxwopolis');
+    const log =
+      await sql`SELECT details::text AS d FROM app.audit_log WHERE action = 'final_answer.save'`;
     expect(log[0].d).not.toMatch(/Zyxwopolis/i);
 
-    const shown = await audited('location.reveal_answer', async () =>
-      ok(await post(locationReveal, '/api/admin/x', {}, ctx)),
+    const shown = await audited('final_answer.reveal', async () =>
+      ok(await post(answerReveal, '/api/admin/x', {})),
     );
     expect(shown.answer).toBe('Zyxwopolis');
 
     await ok(await transit('start'));
-    for (const n of [1, 2]) {
-      await sql`INSERT INTO app.solves (team_id, challenge_id) VALUES (${teamId}, ${c[n].id})`;
-    }
-    expect(await submitLocation({ teamId }, 'easy', '  ZYXWOPOLIS ')).toMatchObject({
+    expect(await submitCoordinates(teamId, '  ZYXWOPOLIS ')).toEqual({
       result: 'correct',
-      points: 180,
+      winner: true,
     });
+  });
+
+  it('resets one question only, deleting its solves and ledger rows in one audited action', async () => {
+    const other = await createTeam(sql, 'teamb');
+    for (const [team, n] of [
+      [teamId, 1],
+      [other, 1],
+      [teamId, 2],
+    ] as const) {
+      await sql`INSERT INTO app.solves (team_id, challenge_id) VALUES (${team}, ${c[n].id})`;
+    }
+    expect(await sql`SELECT 1 FROM app.score_transactions`).toHaveLength(3);
+    const ctx = { id: c[1].id };
+    expect((await post(resetSolves, '/api/admin/x', {}, ctx)).status).toBe(400);
+    const done = await audited('challenge.reset_solves', async () =>
+      ok(await post(resetSolves, '/api/admin/x', { confirm: 'RESET' }, ctx)),
+    );
+    expect(done.removed).toBe(2);
+    const left =
+      await sql`SELECT c.number FROM app.solves s JOIN app.challenges c ON c.id = s.challenge_id`;
+    expect(left).toEqual([{ number: 2 }]);
+    expect(await sql`SELECT 1 FROM app.score_transactions`).toHaveLength(1);
+    // The next solver is position 1 again.
+    await sql`INSERT INTO app.solves (team_id, challenge_id) VALUES (${other}, ${c[1].id})`;
+    expect(
+      (await sql`SELECT solve_position FROM app.solves WHERE challenge_id = ${c[1].id}`)[0]
+        .solve_position,
+    ).toBe(1);
+  });
+
+  it('freezes at a finale time set by an admin, and an unfreeze clears it', async () => {
+    await ok(await post(settings, '/api/admin/x', { freezeAt: '2030-01-01T10:00:00' }));
+    const [{ at }] = await sql`SELECT freeze_at AS at FROM app.event_state`;
+    expect(at).not.toBeNull();
+    expect((await post(settings, '/api/admin/x', { freezeAt: 'soon' })).status).toBe(400);
+    await ok(await post(settings, '/api/admin/x', { leaderboardFrozen: true }));
+    await ok(await post(settings, '/api/admin/x', { leaderboardFrozen: false }));
+    expect((await sql`SELECT freeze_at AS at FROM app.event_state`)[0].at).toBeNull();
   });
 });
 
@@ -415,7 +476,7 @@ describe('scores', () => {
     await audited('score.adjust', async () => ok(await give(25.5), 201));
     await ok(await give(-5), 201);
     const [board] = await sql`SELECT total::text, adjustment_points::text FROM app.v_scoreboard`;
-    expect(board).toEqual({ total: '20.5', adjustment_points: '20.5' });
+    expect(board).toEqual({ total: '20.50', adjustment_points: '20.50' });
     const [ledger] =
       await sql`SELECT category, admin_id, reason FROM app.score_transactions ORDER BY id LIMIT 1`;
     expect(ledger).toEqual({ category: 'adjustment', admin_id: admin.id, reason: 'Judge call' });
@@ -494,17 +555,9 @@ describe('developer access', () => {
 describe('reset test data', () => {
   it('needs the word RESET, clears progress, keeps configuration, and audits', async () => {
     // Configuration that must survive.
-    await ok(
-      await post(
-        fragmentPost,
-        '/api/admin/x',
-        { challengeId: c[1].id, label: 'A', value: 'V1' },
-        { level: 'easy' },
-      ),
-    );
-    await ok(
-      await patch(locationPatch, '/api/admin/x', { name: 'Codename Alpha' }, { level: 'easy' }),
-    );
+    await ok(await post(fragmentsPost, '/api/admin/x', { plan: PLAN() }));
+    await ok(await post(finalPost, '/api/admin/x', { coordinates: FINAL }));
+    await ok(await post(answerPost, '/api/admin/x', { answer: 'Zyxwopolis' }));
     await ok(
       await patch(
         surprisePatch,
@@ -521,12 +574,9 @@ describe('reset test data', () => {
     await sql`INSERT INTO app.solves (team_id, challenge_id) VALUES (${teamId}, ${c[1].id})`;
     await sql`INSERT INTO app.submissions (team_id, challenge_id, submitted_hash, is_correct, result)
       VALUES (${teamId}, ${c[1].id}, 'h', false, 'wrong')`;
-    await sql`INSERT INTO app.location_submissions (team_id, location_id, submitted_hash, is_correct)
-      SELECT ${teamId}, id, 'h', true FROM app.locations WHERE level = 'easy'`;
-    await sql`INSERT INTO app.location_achievements (team_id, location_id)
-      SELECT ${teamId}, id FROM app.locations WHERE level = 'easy'`;
-    await sql`INSERT INTO app.team_cosmic_keys (team_id, key_id)
-      SELECT ${teamId}, id FROM app.cosmic_keys WHERE level = 'easy'`;
+    await sql`INSERT INTO app.coordinate_submissions (team_id, submitted_hash, is_correct)
+      VALUES (${teamId}, 'h', true)`;
+    await sql`UPDATE app.event_state SET coordinate_winner_id = ${teamId}, coordinate_won_at = now()`;
     await sql`INSERT INTO app.surprise_progress (team_id, event_id, completed_at)
       SELECT ${teamId}, id, now() FROM app.surprise_events WHERE kind = 'spidey_signal'`;
     await sql`INSERT INTO app.surprise_submissions (event_id, team_id, submitted_hash, is_correct)
@@ -544,9 +594,7 @@ describe('reset test data', () => {
       'solves',
       'submissions',
       'score_transactions',
-      'location_submissions',
-      'location_achievements',
-      'team_cosmic_keys',
+      'coordinate_submissions',
       'surprise_progress',
       'surprise_submissions',
       'hint_reveals',
@@ -556,19 +604,23 @@ describe('reset test data', () => {
     }
     expect(await status()).toBe('not_started');
     expect((await sql`SELECT leaderboard_frozen AS f FROM app.event_state`)[0].f).toBe(false);
+    expect((await sql`SELECT coordinate_winner_id AS w FROM app.event_state`)[0].w).toBeNull();
 
     expect(await sql`SELECT 1 FROM app.teams`).toHaveLength(1);
-    expect(await sql`SELECT 1 FROM app.challenges`).toHaveLength(10);
-    expect(await sql`SELECT 1 FROM app.coordinate_fragments`).toHaveLength(1);
-    expect((await sql`SELECT name FROM app.locations WHERE level = 'easy'`)[0].name).toBe(
-      'Codename Alpha',
+    expect(await sql`SELECT 1 FROM app.challenges`).toHaveLength(13);
+    expect(await sql`SELECT 1 FROM app.challenges WHERE fragment_value IS NOT NULL`).toHaveLength(
+      6,
     );
+    expect(await sql`SELECT 1 FROM app.final_coordinates`).toHaveLength(3);
+    expect(
+      (await sql`SELECT coordinate_answer_hash AS h FROM app.event_state`)[0].h,
+    ).not.toBeNull();
     expect(
       (
         await sql`SELECT title, answer_hash FROM app.surprise_events WHERE kind = 'spidey_signal'`
       )[0],
     ).toMatchObject({ title: 'Kept' });
     expect(await sql`SELECT 1 FROM app.announcements`).toHaveLength(1);
-    expect((await sql`SELECT total::text FROM app.v_scoreboard`)[0].total).toBe('0.0');
+    expect((await sql`SELECT total::text FROM app.v_scoreboard`)[0].total).toBe('0.00');
   });
 });

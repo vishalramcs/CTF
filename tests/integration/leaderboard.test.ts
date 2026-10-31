@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { GET as feedRoute } from '@/app/api/public/feed/route';
 import { GET as stateRoute } from '@/app/api/public/state/route';
 import { POST as flagRoute } from '@/app/api/challenges/[number]/submit/route';
-import { POST as locationRoute } from '@/app/api/locations/[level]/submit/route';
+import { POST as coordinateRoute } from '@/app/api/coordinates/submit/route';
 import { POST as discoverRoute } from '@/app/api/surprises/[kind]/discover/route';
 import { POST as surpriseRoute } from '@/app/api/surprises/[kind]/submit/route';
 import { requireAdmin, requireTeam } from '@/lib/auth/guards';
@@ -15,7 +15,6 @@ import { hmacHex } from '@/lib/crypto/hmac';
 import { db } from '@/lib/db/client';
 import { wipeAppTables } from '@/lib/db/wipe';
 import { env } from '@/lib/env';
-import { normalizeLocation } from '@/lib/locations/normalize';
 import { regenerateVariants } from '@/lib/variants/regenerate';
 import {
   createAdminSession,
@@ -26,6 +25,7 @@ import {
   params,
   request,
   sessionFor,
+  setFinalAnswer,
   setStatus,
   type Auth,
   type TestChallenge,
@@ -53,7 +53,7 @@ vi.mock('next/navigation', () => ({
   },
 }));
 
-const LOCATION_ANSWER = 'Zyxwopolis';
+const FINAL_ANSWER = 'Zyxwopolis';
 const SURPRISE_ANSWER = 'zephyr quartz lantern';
 
 let sql: postgres.Sql;
@@ -88,7 +88,7 @@ async function score(team: string, points: number, at = 'now()') {
 const state = async () => (await stateRoute()).json();
 
 describe('/api/public/state', () => {
-  it('needs no session, ranks by total, shares ranks on ties and keeps half-points', async () => {
+  it('needs no session, ranks by total, shares ranks on ties and keeps fractions', async () => {
     const b = await createTeam(sql, 'tb');
     const c = await createTeam(sql, 'tc');
     const d = await createTeam(sql, 'td');
@@ -109,12 +109,12 @@ describe('/api/public/state', () => {
     ]);
     expect(body.leaderboard.map((r: { rank: number }) => r.rank)).toEqual([1, 2, 2, 4]);
     expect(body.leaderboard[1].total).toBe(59.5);
-    expect(body.leaderboard[1].challengePoints).toBe(59.5);
+    expect(body.leaderboard[1]).toMatchObject({ mainDone: false, coordinatesDone: false });
     expect(body).toMatchObject({ status: 'running', frozen: false });
     expect(typeof body.serverTime).toBe('number');
   });
 
-  it('hides hidden and inactive teams, and carries no team id or username', async () => {
+  it('hides hidden and inactive teams, and carries no team id or password hash', async () => {
     const hidden = await createTeam(sql, 'hiddenteam');
     const inactive = await createTeam(sql, 'inactiveteam');
     await sql`UPDATE app.teams SET is_hidden = true WHERE id = ${hidden}`;
@@ -122,25 +122,16 @@ describe('/api/public/state', () => {
     await score(hidden, 500);
     await score(inactive, 400);
     await score(teamA, 5);
-    // The helper builds the name from the username; a real team's name is unrelated to its code.
     await sql`UPDATE app.teams SET name = 'Web Slingers' WHERE id = ${teamA}`;
 
     const raw = await (await stateRoute()).text();
     expect(JSON.parse(raw).leaderboard).toHaveLength(1);
     expect(raw).toContain('Web Slingers');
-    for (const secret of [
-      'secretcode7',
-      hidden,
-      inactive,
-      teamA,
-      'hiddenteam',
-      'team_id',
-      'username',
-    ]) {
+    for (const secret of [hidden, inactive, teamA, 'hiddenteam', 'team_id', 'password_hash']) {
       expect(raw).not.toContain(secret);
     }
     const feedRaw = await (await feedRoute()).text();
-    for (const secret of ['secretcode7', teamA, 'team_id']) expect(feedRaw).not.toContain(secret);
+    for (const secret of [teamA, 'team_id', 'password_hash']) expect(feedRaw).not.toContain(secret);
   });
 
   it('serves the snapshot while frozen, and the live board again after', async () => {
@@ -194,27 +185,18 @@ describe('the board ping', () => {
     expect(spy.seen).toEqual([1]); // the ledger row was already visible to another connection
   });
 
-  it('fires for a correct location answer, not a wrong one', async () => {
-    for (const n of [1, 2]) {
-      const c = await createChallenge(sql, n, {
-        fragment: { value: `F${n}`, order: n, clue: `C${n}` },
-      });
-      await sql`INSERT INTO app.solves (team_id, challenge_id) VALUES (${teamA}, ${c.id})`;
-    }
-    await sql`UPDATE app.locations
-      SET answer_hash = ${hmacHex(env.COORD_HMAC_KEY, normalizeLocation(LOCATION_ANSWER)!)},
-          answer_enc = 'x' WHERE level = 'easy'::app.challenge_difficulty`;
-    const before = (await spy.probe!()) as number;
+  it('fires for a correct final location, not a wrong one', async () => {
+    await setFinalAnswer(sql, FINAL_ANSWER);
     const send = (answer: string) =>
-      locationRoute(
-        request('/api/locations/easy/submit', { method: 'POST', auth: authA, body: { answer } }),
-        params({ level: 'easy' }),
+      coordinateRoute(
+        request('/api/coordinates/submit', { method: 'POST', auth: authA, body: { answer } }),
+        params({}),
       );
 
     expect((await (await send('Nowhere')).json()).result).toBe('wrong');
     expect(spy.seen).toEqual([]);
-    expect((await (await send(LOCATION_ANSWER)).json()).result).toBe('correct');
-    expect(spy.seen).toEqual([before + 1]);
+    expect((await (await send(FINAL_ANSWER)).json()).result).toBe('correct');
+    expect(spy.seen).toHaveLength(1);
   });
 
   it('fires for a correct surprise answer, not a wrong one', async () => {
