@@ -229,7 +229,7 @@ async function crawl(team: Team, paths: string[]): Promise<Fetched[]> {
 }
 
 const PUBLIC_FILES = ['/robots.txt', '/challenges/clue.js'];
-const API = ['/api/me', '/api/challenges', '/api/time'];
+const API = ['/api/me', '/api/challenges', '/api/time', '/api/locations', '/api/surprises'];
 
 describe('secret-leak scan', () => {
   it(
