@@ -157,6 +157,7 @@ describe('GET /api/challenges/:n', () => {
       points: 50,
       fragment: '47',
       orderClue: 'Clue three',
+      needsFragmentEntry: false,
       finalCoordinates: null,
     });
     // Same fragment for every team, and team B still hasn't earned it.

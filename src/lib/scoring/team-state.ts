@@ -7,6 +7,7 @@ import {
   challengeHints,
   challenges,
   eventState,
+  fragmentClaims,
   solves,
   teamChallengeUnlocks,
   teamChallengeVariants,
@@ -67,6 +68,12 @@ const sealedFor = (teamId: string) => sql<boolean>`(${challenges.requiresUnlock}
     WHERE u.team_id = ${teamId} AND u.challenge_id = ${challenges.id})
   AND NOT EXISTS (SELECT 1 FROM ${solves} s3
     WHERE s3.team_id = ${teamId} AND s3.challenge_id = ${challenges.id}))`;
+
+// A fragment is earned by the solve, or for a question that hides it in the flag, by also typing it.
+const fragmentClaimed = (teamId: string) => sql`EXISTS (SELECT 1 FROM ${fragmentClaims} fc
+  WHERE fc.team_id = ${teamId} AND fc.challenge_id = ${challenges.id})`;
+const fragmentEarned = (teamId: string) => sql`(${solves.id} IS NOT NULL
+  AND (NOT ${challenges.fragmentNeedsEntry} OR ${fragmentClaimed(teamId)}))`;
 
 // What the next solve of each challenge is worth: the two-tier position formula (docs/08 §2).
 // TRD §7.2: which challenges carry fragments is not revealed.
@@ -143,6 +150,7 @@ export type ChallengeView =
         points: number;
         fragment: string | null;
         orderClue: string | null;
+        needsFragmentEntry: boolean;
         finalCoordinates: FinalCoordinate[] | null;
       } | null;
     });
@@ -173,10 +181,13 @@ export async function getChallengeView(
       // Joined only through the team's own solve, so an unsolved challenge returns no fragment.
       fragmentValue: sql<
         string | null
-      >`CASE WHEN ${solves.id} IS NOT NULL THEN ${challenges.fragmentValue} END`,
+      >`CASE WHEN ${fragmentEarned(teamId)} THEN ${challenges.fragmentValue} END`,
       orderClue: sql<
         string | null
-      >`CASE WHEN ${solves.id} IS NOT NULL THEN ${challenges.orderClue} END`,
+      >`CASE WHEN ${fragmentEarned(teamId)} THEN ${challenges.orderClue} END`,
+      needsFragmentEntry: sql<boolean>`(${solves.id} IS NOT NULL
+        AND ${challenges.fragmentNeedsEntry} AND ${challenges.fragmentValue} IS NOT NULL
+        AND NOT ${fragmentClaimed(teamId)})`,
       priorSolves: sql<number>`(SELECT count(*)::int FROM ${solves} s2
           WHERE s2.challenge_id = ${challenges.id})`,
       hintCount: sql<number>`(SELECT count(*)::int FROM ${challengeHints}
@@ -235,6 +246,7 @@ export async function getChallengeView(
             points: Number(row.pointsEarned),
             fragment: row.fragmentValue,
             orderClue: row.orderClue,
+            needsFragmentEntry: row.needsFragmentEntry,
             finalCoordinates: final,
           },
   };

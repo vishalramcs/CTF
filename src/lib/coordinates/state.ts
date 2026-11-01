@@ -1,7 +1,13 @@
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
-import { challenges, coordinateSubmissions, finalCoordinates, solves } from '@/lib/db/schema';
+import {
+  challenges,
+  coordinateSubmissions,
+  finalCoordinates,
+  fragmentClaims,
+  solves,
+} from '@/lib/db/schema';
 
 export const FRAGMENT_SLOTS = 6;
 
@@ -38,7 +44,15 @@ export async function getCoordinateBoard(teamId: string) {
     })
     .from(solves)
     .innerJoin(challenges, eq(challenges.id, solves.challengeId))
-    .where(and(eq(solves.teamId, teamId), isNotNull(challenges.fragmentValue)))
+    .where(
+      and(
+        eq(solves.teamId, teamId),
+        isNotNull(challenges.fragmentValue),
+        // A question that hides its coordinate in the flag needs the team to have typed it in.
+        sql`(NOT ${challenges.fragmentNeedsEntry} OR EXISTS (SELECT 1 FROM ${fragmentClaims} fc
+          WHERE fc.team_id = ${teamId} AND fc.challenge_id = ${challenges.id}))`,
+      ),
+    )
     .orderBy(asc(challenges.number));
   const final = await finalCoordinatesFor(db, teamId);
   const [found] = await db

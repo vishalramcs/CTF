@@ -19,6 +19,8 @@ export type SubmitResult =
       position: number;
       fragment?: string;
       orderClue?: string;
+      // The coordinate is hidden in the flag: it stays withheld until the team types it in.
+      needsFragmentEntry?: boolean;
       finalCoordinates?: FinalCoordinate[];
     }
   | { result: 'wrong'; attemptsLeft: number }
@@ -103,6 +105,7 @@ async function submitFlagTx(
         value: challenges.fragmentValue,
         orderClue: challenges.orderClue,
         difficulty: challenges.difficulty,
+        needsEntry: challenges.fragmentNeedsEntry,
       })
       .from(challenges)
       .where(eq(challenges.id, challenge.id));
@@ -113,8 +116,11 @@ async function submitFlagTx(
       result: 'correct',
       points: Number(solve.points),
       position: solve.position,
-      ...(earned.value ? { fragment: earned.value } : {}),
-      ...(earned.value && earned.orderClue ? { orderClue: earned.orderClue } : {}),
+      ...(earned.value && earned.needsEntry ? { needsFragmentEntry: true } : {}),
+      ...(earned.value && !earned.needsEntry ? { fragment: earned.value } : {}),
+      ...(earned.value && !earned.needsEntry && earned.orderClue
+        ? { orderClue: earned.orderClue }
+        : {}),
       ...(final ? { finalCoordinates: final } : {}),
     };
   });
