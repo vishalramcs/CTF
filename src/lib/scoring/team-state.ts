@@ -8,6 +8,7 @@ import {
   challenges,
   eventState,
   solves,
+  teamChallengeUnlocks,
   teamChallengeVariants,
   vPublicScoreboard,
   vScoreboard,
@@ -54,9 +55,18 @@ export type ChallengeCard = {
   difficulty: 'easy' | 'medium' | 'difficult' | 'main_difficult';
   basePoints: number;
   currentPoints: number;
-  state: ChallengeAccess | 'solved';
+  state: ChallengeAccess | 'solved' | 'sealed';
   pointsEarned: number | null;
 };
+
+// A sealed question hides its title and content until this team unlocks it. A team that somehow
+// solved it first keeps access. Every read path uses this, so hiding it is never only a UI matter.
+const SEALED_TITLE = 'Sealed trail';
+const sealedFor = (teamId: string) => sql<boolean>`(${challenges.requiresUnlock}
+  AND NOT EXISTS (SELECT 1 FROM ${teamChallengeUnlocks} u
+    WHERE u.team_id = ${teamId} AND u.challenge_id = ${challenges.id})
+  AND NOT EXISTS (SELECT 1 FROM ${solves} s3
+    WHERE s3.team_id = ${teamId} AND s3.challenge_id = ${challenges.id}))`;
 
 // What the next solve of each challenge is worth: the two-tier position formula (docs/08 §2).
 // TRD §7.2: which challenges carry fragments is not revealed.
@@ -71,6 +81,7 @@ export async function listChallengeCards(
       difficulty: challenges.difficulty,
       basePoints: challenges.basePoints,
       pointsEarned: solves.pointsAwarded,
+      sealed: sealedFor(teamId),
       priorSolves: sql<number>`(SELECT count(*)::int FROM ${solves} s2
         WHERE s2.challenge_id = ${challenges.id})`,
     })
@@ -79,10 +90,11 @@ export async function listChallengeCards(
     .where(eq(challenges.isPublished, true))
     .orderBy(asc(challenges.number));
 
-  return rows.map(({ pointsEarned, priorSolves, ...card }) => ({
+  return rows.map(({ pointsEarned, priorSolves, sealed, ...card }) => ({
     ...card,
+    title: sealed ? SEALED_TITLE : card.title,
     currentPoints: nextPoints(card.basePoints, priorSolves),
-    state: pointsEarned !== null ? 'solved' : challengeAccess(status),
+    state: pointsEarned !== null ? 'solved' : sealed ? 'sealed' : challengeAccess(status),
     pointsEarned: pointsEarned === null ? null : Number(pointsEarned),
   }));
 }
@@ -91,14 +103,20 @@ function parseChallengeNumber(param: string): number | null {
   return /^(1[0-3]|[1-9])$/.test(param) ? Number(param) : null;
 }
 
-// What submit and hints need.
-export async function findPublishedChallenge(param: string) {
+// What submit and hints need. A question sealed for this team doesn't exist as far as they can tell.
+export async function findPublishedChallenge(param: string, teamId: string) {
   const number = parseChallengeNumber(param);
   if (number === null) return null;
   const [challenge] = await db
     .select({ id: challenges.id })
     .from(challenges)
-    .where(and(eq(challenges.number, number), eq(challenges.isPublished, true)));
+    .where(
+      and(
+        eq(challenges.number, number),
+        eq(challenges.isPublished, true),
+        sql`NOT ${sealedFor(teamId)}`,
+      ),
+    );
   return challenge ?? null;
 }
 
@@ -109,9 +127,10 @@ type ChallengeHeader = {
 };
 
 export type ChallengeView =
-  | (ChallengeHeader & { access: 'locked' | 'closed' })
+  | (ChallengeHeader & { access: 'locked' | 'closed' | 'sealed' })
   | (ChallengeHeader & {
       access: 'open';
+      workspace: string | null;
       category: string;
       story: string;
       html: string;
@@ -148,6 +167,8 @@ export async function getChallengeView(
       basePoints: challenges.basePoints,
       story: challenges.storyMd,
       variantData: teamChallengeVariants.variantData,
+      generatorConfig: challenges.generatorConfig,
+      sealed: sealedFor(teamId),
       pointsEarned: solves.pointsAwarded,
       // Joined only through the team's own solve, so an unsolved challenge returns no fragment.
       fragmentValue: sql<
@@ -172,6 +193,14 @@ export async function getChallengeView(
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
     .where(and(eq(challenges.number, number), eq(challenges.isPublished, true)));
   if (!row) return null;
+  if (row.sealed) {
+    return {
+      number: row.number,
+      title: SEALED_TITLE,
+      difficulty: row.difficulty,
+      access: 'sealed',
+    };
+  }
 
   const header: ChallengeHeader = {
     number: row.number,
@@ -190,6 +219,7 @@ export async function getChallengeView(
   return {
     ...header,
     access,
+    workspace: (row.generatorConfig as { workspace?: string }).workspace ?? null,
     category: row.category,
     story: row.story,
     html: sanitizeHtml(variant.html),

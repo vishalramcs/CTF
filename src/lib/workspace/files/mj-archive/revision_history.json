@@ -1,0 +1,23 @@
+{
+  "system": "newsroom-archive",
+  "revisions": [
+    {
+      "article": "NY-198",
+      "session": "S-031",
+      "timestamp": "09:04",
+      "action": "METADATA_SYNCED"
+    },
+    {
+      "article": "NY-201",
+      "session": "S-031",
+      "timestamp": "09:11",
+      "action": "METADATA_SYNCED"
+    },
+    {
+      "article": "NY-204",
+      "session": "S-044",
+      "timestamp": "09:22",
+      "action": "CONTENT_MODIFIED"
+    }
+  ]
+}

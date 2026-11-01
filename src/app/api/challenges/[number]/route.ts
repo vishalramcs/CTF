@@ -10,7 +10,11 @@ export const GET = withTeam<{ number: string }>(async (_req, session, { params }
     throw new ApiError(
       423,
       view.access,
-      view.access === 'locked' ? 'This trail opens with the Main CTF.' : 'The event has closed.',
+      view.access === 'locked'
+        ? 'This trail opens with the Main CTF.'
+        : view.access === 'sealed'
+          ? 'This trail is sealed.'
+          : 'The event has closed.',
     );
   }
   // Inspect surfaces belong to the page, and files have their own route.

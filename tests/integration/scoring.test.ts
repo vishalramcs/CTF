@@ -180,7 +180,7 @@ describe('rate limit', () => {
     expect(limited.retryAfter).toBeLessThanOrEqual(60);
     expect((await send(easy, flagOf(teamA, easy))).result).toBe('rate_limited');
     // A blocked attempt writes no row, so hammering can't extend the lockout.
-    expect(await attempts()).toHaveLength(5);
+    expect(await attempts()).toHaveLength(8);
     expect(await solves()).toHaveLength(0);
 
     // Another challenge and another team keep their own counters.

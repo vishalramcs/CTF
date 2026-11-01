@@ -330,7 +330,7 @@ describe('rate limit', () => {
     expect(limited.retryAfter).toBeGreaterThanOrEqual(1);
     expect(limited.retryAfter).toBeLessThanOrEqual(60);
     expect((await submit('spidey_signal', ANSWERS.spidey_signal)).result).toBe('rate_limited');
-    expect(await attempts()).toHaveLength(5);
+    expect(await attempts()).toHaveLength(8);
     expect(await ledger()).toHaveLength(0);
 
     // Another surprise and another team keep their own counters.

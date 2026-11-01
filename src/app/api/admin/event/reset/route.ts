@@ -16,6 +16,8 @@ import {
   submissions,
   surpriseProgress,
   surpriseSubmissions,
+  teamChallengeUnlocks,
+  workspaceDeletions,
 } from '@/lib/db/schema';
 import { json, parseBody, withSuperAdmin } from '@/lib/http';
 
@@ -37,6 +39,8 @@ export const POST = withSuperAdmin(async (req, session) => {
     await tx.delete(surpriseProgress);
     await tx.delete(surpriseSubmissions);
     await tx.delete(hintReveals);
+    await tx.delete(teamChallengeUnlocks);
+    await tx.delete(workspaceDeletions);
     await tx.delete(scoreboardSnapshots);
     // A freeze with no snapshot left would show nothing, so it ends with the reset.
     await tx

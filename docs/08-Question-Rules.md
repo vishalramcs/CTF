@@ -57,3 +57,4 @@ Create/edit all 13 questions; assign fragments; final coordinates; final locatio
 
 - Every answer type (flags, coordinates, surprises, Morse, signal codes) allows 8 wrong attempts per 60 s, on the same per-team scopes as before.
 - Flags have the form `EYE{...}`, set by `FLAG_PREFIX`. The event name stays SPIDEY tracXer. Changing the prefix requires regenerating every team's variants, because the stored flag hashes include it.
+- Organiser decision: each question uses one static flag shared by all teams (`flag_mode = static`), not per-team flags. Teams can pass a flag to each other. `{{flag}}` is not available in static mode, so any encoded clue is written into the question text by hand.

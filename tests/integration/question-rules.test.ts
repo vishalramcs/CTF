@@ -399,10 +399,10 @@ describe('the coordinate race', () => {
     const limited = await location(team[0]);
     expect(limited.result).toBe('rate_limited');
     expect(limited.retryAfter).toBeGreaterThanOrEqual(1);
-    expect(await sql`SELECT 1 FROM app.coordinate_submissions`).toHaveLength(5);
+    expect(await sql`SELECT 1 FROM app.coordinate_submissions`).toHaveLength(8);
     // Another team has its own counter, and a correct answer writes its row too.
     expect(await location(team[1])).toMatchObject({ result: 'correct' });
-    expect(await sql`SELECT 1 FROM app.coordinate_submissions`).toHaveLength(6);
+    expect(await sql`SELECT 1 FROM app.coordinate_submissions`).toHaveLength(9);
   });
 
   it('needs a running event and a configured answer, and works without any solve', async () => {

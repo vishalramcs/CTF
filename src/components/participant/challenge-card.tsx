@@ -21,6 +21,8 @@ function stateLabel(card: Card): string {
   switch (card.state) {
     case 'solved':
       return `✓ Solved +${card.pointsEarned}`;
+    case 'sealed':
+      return '🔒 Sealed';
     case 'locked':
       return '🔒 Opens when the event starts';
     case 'closed':

@@ -89,6 +89,7 @@ export const challenges = app.table('challenges', {
   generatorKey: text('generator_key').notNull().default('template'),
   generatorConfig: jsonb('generator_config').notNull().default({}),
   generatorVersion: integer('generator_version').notNull().default(1),
+  requiresUnlock: boolean('requires_unlock').notNull().default(false),
   flagMode: text('flag_mode').notNull().default('team'),
   flagTemplate: text('flag_template'),
   staticFlagHash: text('static_flag_hash'),
@@ -128,6 +129,20 @@ export const teamChallengeVariants = app.table('team_challenge_variants', {
   expectedFlagHash: text('expected_flag_hash').notNull(),
   generatorVersion: integer('generator_version').notNull(),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
+});
+
+export const teamChallengeUnlocks = app.table('team_challenge_unlocks', {
+  teamId: uuid('team_id').notNull(),
+  challengeId: uuid('challenge_id').notNull(),
+  source: text('source').notNull(),
+  unlockedAt: timestamptz('unlocked_at').notNull().defaultNow(),
+});
+
+export const workspaceDeletions = app.table('workspace_deletions', {
+  teamId: uuid('team_id').notNull(),
+  workspace: text('workspace').notNull(),
+  fileKey: text('file_key').notNull(),
+  deletedAt: timestamptz('deleted_at').notNull().defaultNow(),
 });
 
 export const hintReveals = app.table('hint_reveals', {

@@ -8,7 +8,6 @@ import { Feed } from '@/components/leaderboard/feed';
 import { Podium } from '@/components/leaderboard/podium';
 import { LeaderTakeover, RankToasts } from '@/components/leaderboard/rank-toasts';
 import { StatusBar } from '@/components/leaderboard/status-bar';
-import { WebSlinger } from '@/components/leaderboard/web-slinger';
 import { useLiveState } from '@/hooks/use-live-state';
 import { useRankTracker } from '@/hooks/use-rank-tracker';
 
@@ -50,21 +49,14 @@ export function LiveLeaderboard({ ownTeam, large }: { ownTeam?: string; large?: 
         ) : (
           <>
             <StatusBar state={state} large={large} />
-            <div className="grid items-end gap-4 lg:grid-cols-[1fr_minmax(0,3fr)_1fr]">
-              <WebSlinger pose="swing" className="hidden max-h-80 w-full lg:block" />
-              <div className="min-w-0">
-                <WebSlinger pose="swing" className="mx-auto mb-2 h-24 lg:hidden" />
-                <Podium
-                  rows={state.leaderboard}
-                  ownTeam={ownTeam}
-                  large={large}
-                  changes={changes}
-                  version={state.v}
-                  takeover={newLeader !== null}
-                />
-              </div>
-              <WebSlinger pose="crouch" className="hidden max-h-80 w-full lg:block" />
-            </div>
+            <Podium
+              rows={state.leaderboard}
+              ownTeam={ownTeam}
+              large={large}
+              changes={changes}
+              version={state.v}
+              takeover={newLeader !== null}
+            />
             <div className="web-divider" aria-hidden />
             <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
               <div className="mission-panel min-w-0 rounded-lg p-4">
