@@ -177,7 +177,7 @@ describe('position scoring', () => {
   });
 
   it('awards nothing for a wrong submission', async () => {
-    expect(await flag(1, team[0], 'SPIDEY{nope}')).toMatchObject({ result: 'wrong' });
+    expect(await flag(1, team[0], 'EYE{nope}')).toMatchObject({ result: 'wrong' });
     expect(await sql`SELECT 1 FROM app.solves`).toHaveLength(0);
     expect(await ledgerTotal()).toBe('0');
     expect((await board()).find((r: { teamName: string }) => r.teamName === 'Team t0').total).toBe(
@@ -312,7 +312,7 @@ describe('the Main Question', () => {
       (await coordinatesGet(request('/api/coordinates', { auth: who.auth }), params({}))).json();
 
     // Wrong flag and unsolved teams get nothing.
-    const wrong = await flag(13, team[1], 'SPIDEY{nope}');
+    const wrong = await flag(13, team[1], 'EYE{nope}');
     expect(JSON.stringify(wrong)).not.toContain(FINAL[0]);
     expect((await coordinates(team[1])).finalCoordinates).toBeNull();
 
@@ -389,8 +389,8 @@ describe('the coordinate race', () => {
     expect(JSON.stringify(await (await stateGet()).text())).not.toContain(ANSWER);
   });
 
-  it('writes an attempt row for every checked submit, and rate-limits 5 wrong per 60 s', async () => {
-    for (const left of [4, 3, 2, 1, 0]) {
+  it('writes an attempt row for every checked submit, and rate-limits 8 wrong per 60 s', async () => {
+    for (const left of [7, 6, 5, 4, 3, 2, 1, 0]) {
       expect(await location(team[0], `nope ${left}`)).toEqual({
         result: 'wrong',
         attemptsLeft: left,
@@ -490,8 +490,8 @@ describe('leaderboard', () => {
     for (const secret of [...FINAL, ...Object.values(FRAGMENTS), ANSWER, team[0].id]) {
       expect(raw).not.toContain(secret);
     }
-    await flag(2, team[1], 'SPIDEY{wrong}');
-    expect(raw).not.toContain('SPIDEY{wrong}');
+    await flag(2, team[1], 'EYE{wrong}');
+    expect(raw).not.toContain('EYE{wrong}');
   });
 });
 

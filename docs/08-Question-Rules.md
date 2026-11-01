@@ -28,7 +28,7 @@ Public board: rank, team, total, Easy/Medium/Difficult solved, Main done, coordi
 
 - Solving the Main Question returns the three `final_coordinates` (only to that team), and records who solved first and when. These are the same three coordinates the 6 fragments build, so it is a shortcut: a team needs either all 6 fragments or the Main Question. Fragments stay available after it.
 - Final location: a team submits it in a box. The first correct submission is the coordinate winner (`event_state.coordinate_winner_id`), announced in the feed, with no bonus points. Later correct submissions only set that team's coordinates-done status.
-- The answer is stored as an HMAC of the normalised text (`COORD_HMAC_KEY`) plus an encrypted copy. Requires the event running; 5 wrong per 60 s; every checked attempt writes a row; team advisory lock, then `event_state ... FOR UPDATE` so exactly one team wins. A team need not have solved anything to submit.
+- The answer is stored as an HMAC of the normalised text (`COORD_HMAC_KEY`) plus an encrypted copy. Requires the event running; 8 wrong per 60 s; every checked attempt writes a row; team advisory lock, then `event_state ... FOR UPDATE` so exactly one team wins. A team need not have solved anything to submit.
 - The coordinate winner and the overall leader are tracked separately and may differ.
 
 ## 6. Admin
@@ -52,3 +52,8 @@ Create/edit all 13 questions; assign fragments; final coordinates; final locatio
 - Word: letters, digits and spaces, 30 characters at most. Timing is fixed: 400 ms unit, 5 s pause before it repeats.
 - `GET /api/surprises` sends the blink timings only, only while the surprise is available and the team has not completed it. The plain word never reaches a browser, but the timings can be read by anyone who is decoding them, which is the puzzle. This narrows CLAUDE.md's rule against sending Morse values.
 - It works whatever the event status, but answers are accepted only while submissions are open.
+
+## Attempt limit and flag format (overrides 01, 02, 03, 06)
+
+- Every answer type (flags, coordinates, surprises, Morse, signal codes) allows 8 wrong attempts per 60 s, on the same per-team scopes as before.
+- Flags have the form `EYE{...}`, set by `FLAG_PREFIX`. The event name stays SPIDEY tracXer. Changing the prefix requires regenerating every team's variants, because the stored flag hashes include it.

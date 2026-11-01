@@ -179,7 +179,7 @@ describe('the board ping', () => {
         params({ number: '1' }),
       );
 
-    expect((await (await send('SPIDEY{wrong}')).json()).result).toBe('wrong');
+    expect((await (await send('EYE{wrong}')).json()).result).toBe('wrong');
     expect(spy.seen).toEqual([]);
     expect((await (await send(flagOf(teamA, challenge1))).json()).result).toBe('correct');
     expect(spy.seen).toEqual([1]); // the ledger row was already visible to another connection

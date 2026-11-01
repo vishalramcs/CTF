@@ -216,7 +216,7 @@ describe('challenges', () => {
         )
       ).match;
     expect(await test(flagOf(teamId, challenge))).toBe(true);
-    expect(await test('SPIDEY{nope}')).toBe(false);
+    expect(await test('EYE{nope}')).toBe(false);
 
     // A static flag is stored hashed and never returned.
     const flag = `${env.FLAG_PREFIX}{shared-secret}`;

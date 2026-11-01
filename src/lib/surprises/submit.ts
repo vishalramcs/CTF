@@ -10,7 +10,7 @@ import { sanitizeHtml } from '@/lib/variants/sanitize';
 
 import { AVAILABLE, type SurpriseKind } from './state';
 
-const WRONG_LIMIT = 5;
+const WRONG_LIMIT = 8;
 
 export type DiscoverResult =
   | {

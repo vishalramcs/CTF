@@ -296,7 +296,7 @@ describe('secret-leak scan', () => {
           await fetchAs(team, '/api/challenges/1/hints', { method: 'POST', body: { index: 1 } }),
           await fetchAs(team, '/api/challenges/1/submit', {
             method: 'POST',
-            body: { flag: 'SPIDEY{nope}' },
+            body: { flag: 'EYE{nope}' },
           }),
         ];
         expect(hits(before, forbiddenFor(team, []))).toEqual([]);

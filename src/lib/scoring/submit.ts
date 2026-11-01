@@ -9,7 +9,7 @@ import { checkFlag } from '@/lib/flags/verify';
 import { notifyBoard } from '@/lib/realtime/broadcast';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
 
-const WRONG_LIMIT = 5;
+const WRONG_LIMIT = 8;
 const PREVIEW_LENGTH = 12;
 
 export type SubmitResult =

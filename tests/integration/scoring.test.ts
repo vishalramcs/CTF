@@ -102,7 +102,7 @@ describe('correct flag', () => {
   });
 
   it('does not change what a wrong flag costs: nothing', async () => {
-    await send(easy, 'SPIDEY{nope}');
+    await send(easy, 'EYE{nope}');
     expect(await send(easy, flagOf(teamA, easy))).toMatchObject({ points: 50 });
   });
 
@@ -147,7 +147,7 @@ describe('correct flag', () => {
 describe('wrong flag', () => {
   it("rejects another team's flag and stores only its hash and a short preview", async () => {
     const stolen = flagOf(teamB, easy);
-    expect(await send(easy, stolen)).toEqual({ result: 'wrong', attemptsLeft: 4 });
+    expect(await send(easy, stolen)).toEqual({ result: 'wrong', attemptsLeft: 7 });
     expect(await solves()).toHaveLength(0);
     const [attempt] = await attempts();
     expect(attempt).toMatchObject({ result: 'wrong', is_correct: false });
@@ -155,26 +155,26 @@ describe('wrong flag', () => {
     expect(attempt.submitted_preview).toBe(stolen.slice(0, 12));
   });
 
-  it.each(['no braces', 'OTHER{abc}', 'SPIDEY{abc', ''])(
+  it.each(['no braces', 'OTHER{abc}', 'EYE{abc', ''])(
     'logs %j as malformed with no hash',
     async (flag) => {
-      expect(await send(easy, flag)).toEqual({ result: 'wrong', attemptsLeft: 4 });
+      expect(await send(easy, flag)).toEqual({ result: 'wrong', attemptsLeft: 7 });
       expect((await attempts())[0]).toMatchObject({ result: 'malformed', submitted_hash: '' });
     },
   );
 
   it('survives a NUL byte, which Postgres text cannot hold', async () => {
-    expect(await send(easy, 'SPIDEY{a\0b}')).toMatchObject({ result: 'wrong' });
-    expect((await attempts())[0].submitted_preview).toBe('SPIDEY{ab}');
+    expect(await send(easy, 'EYE{a\0b}')).toMatchObject({ result: 'wrong' });
+    expect((await attempts())[0].submitted_preview).toBe('EYE{ab}');
   });
 });
 
 describe('rate limit', () => {
-  it('limits the 6th wrong attempt in 60 s, even for the right flag, per challenge', async () => {
-    for (const left of [4, 3, 2, 1, 0]) {
-      expect(await send(easy, 'SPIDEY{nope}')).toEqual({ result: 'wrong', attemptsLeft: left });
+  it('limits the 9th wrong attempt in 60 s, even for the right flag, per challenge', async () => {
+    for (const left of [7, 6, 5, 4, 3, 2, 1, 0]) {
+      expect(await send(easy, 'EYE{nope}')).toEqual({ result: 'wrong', attemptsLeft: left });
     }
-    const limited = await send(easy, 'SPIDEY{nope}');
+    const limited = await send(easy, 'EYE{nope}');
     expect(limited.result).toBe('rate_limited');
     expect(limited.retryAfter).toBeGreaterThanOrEqual(1);
     expect(limited.retryAfter).toBeLessThanOrEqual(60);
@@ -184,12 +184,12 @@ describe('rate limit', () => {
     expect(await solves()).toHaveLength(0);
 
     // Another challenge and another team keep their own counters.
-    expect((await send(main, 'SPIDEY{nope}')).result).toBe('wrong');
-    expect((await send(easy, 'SPIDEY{nope}', authB)).result).toBe('wrong');
+    expect((await send(main, 'EYE{nope}')).result).toBe('wrong');
+    expect((await send(easy, 'EYE{nope}', authB)).result).toBe('wrong');
   });
 
   it('frees up once the attempts leave the 60 s window', async () => {
-    for (let i = 0; i < 5; i++) await send(easy, 'SPIDEY{nope}');
+    for (let i = 0; i < 8; i++) await send(easy, 'EYE{nope}');
     await sql`UPDATE app.submissions SET submitted_at = now() - interval '61 seconds'`;
     expect(await send(easy, flagOf(teamA, easy))).toMatchObject({ result: 'correct' });
   });
@@ -280,16 +280,16 @@ describe('races across separate server instances', () => {
   );
 
   it(
-    '8 parallel wrong submits slip no 6th attempt past the limit',
+    '11 parallel wrong submits slip no 9th attempt past the limit',
     { timeout: 240_000 },
     async () => {
       const results = await sendAll(
-        Array.from({ length: 8 }, () => ({ auth: authA, flag: 'SPIDEY{nope}' })),
+        Array.from({ length: 11 }, () => ({ auth: authA, flag: 'EYE{nope}' })),
       );
       const counts = Object.groupBy(results, (r) => r.result);
-      expect(counts.wrong).toHaveLength(5);
+      expect(counts.wrong).toHaveLength(8);
       expect(counts.rate_limited).toHaveLength(3);
-      expect(await attempts()).toHaveLength(5);
+      expect(await attempts()).toHaveLength(8);
     },
   );
 });

@@ -259,10 +259,10 @@ describe('submit', () => {
   it('treats empty input as wrong and stores a hash, never the text', async () => {
     await enable('spidey_signal');
     await discover('spidey_signal');
-    expect(await submit('spidey_signal', '   ')).toEqual({ result: 'wrong', attemptsLeft: 4 });
+    expect(await submit('spidey_signal', '   ')).toEqual({ result: 'wrong', attemptsLeft: 7 });
     expect(await submit('spidey_signal', 'bad\0guess')).toEqual({
       result: 'wrong',
-      attemptsLeft: 3,
+      attemptsLeft: 6,
     });
     const rows = await attempts();
     expect(rows.map((r) => r.is_correct)).toEqual([false, false]);
@@ -318,8 +318,8 @@ describe('rate limit', () => {
     await discover('spidey_signal', authB);
   });
 
-  it('wrong costs nothing; the 6th wrong in 60 s is limited and writes no row', async () => {
-    for (const left of [4, 3, 2, 1, 0]) {
+  it('wrong costs nothing; the 9th wrong in 60 s is limited and writes no row', async () => {
+    for (const left of [7, 6, 5, 4, 3, 2, 1, 0]) {
       expect(await submit('spidey_signal', 'nope')).toEqual({
         result: 'wrong',
         attemptsLeft: left,
@@ -339,7 +339,7 @@ describe('rate limit', () => {
   });
 
   it('frees up once the attempts leave the 60 s window', async () => {
-    for (let i = 0; i < 5; i++) await submit('spidey_signal', 'nope');
+    for (let i = 0; i < 8; i++) await submit('spidey_signal', 'nope');
     await sql`UPDATE app.surprise_submissions SET submitted_at = now() - interval '61 seconds'`;
     expect(await submit('spidey_signal', ANSWERS.spidey_signal)).toMatchObject({
       result: 'correct',

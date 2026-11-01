@@ -8,7 +8,7 @@ import { env } from '@/lib/env';
 import { notifyBoard } from '@/lib/realtime/broadcast';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
 
-const WRONG_LIMIT = 5;
+const WRONG_LIMIT = 8;
 
 export type CoordinateResult =
   | { result: 'correct'; winner: boolean }
