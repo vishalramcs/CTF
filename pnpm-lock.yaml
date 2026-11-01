@@ -41,9 +41,6 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
-      shadcn:
-        specifier: ^4.23.0
-        version: 4.23.0(supports-color@7.2.0)
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -75,6 +72,9 @@ importers:
       prettier:
         specifier: ^3.9.10
         version: 3.9.10
+      shadcn:
+        specifier: ^4.23.0
+        version: 4.23.0(supports-color@7.2.0)
       supabase:
         specifier: ^2.122.0
         version: 2.122.0
