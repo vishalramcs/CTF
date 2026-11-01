@@ -12,13 +12,12 @@ export type WorkspaceFile = {
   unlocksQuestion?: number;
 };
 
-export type Workspace = { dir: string; files: WorkspaceFile[] };
+export type Workspace = { files: WorkspaceFile[] };
 
 const TEXT = 'text/plain; charset=utf-8';
 
 export const WORKSPACES: Record<string, Workspace> = {
   'mj-archive': {
-    dir: 'src/lib/workspace/files/mj-archive',
     files: [
       { key: 'MJ_Newspaper.pdf', kind: 'pdf', contentType: 'application/pdf' },
       { key: 'archive_access.csv', kind: 'csv', contentType: TEXT },
