@@ -8,8 +8,6 @@ import { audit } from '@/lib/audit';
 import { db } from '@/lib/db/client';
 import {
   eventState,
-  fragmentClaimAttempts,
-  fragmentClaims,
   hintReveals,
   coordinateSubmissions,
   scoreboardSnapshots,
@@ -41,8 +39,6 @@ export const POST = withSuperAdmin(async (req, session) => {
     await tx.delete(surpriseProgress);
     await tx.delete(surpriseSubmissions);
     await tx.delete(hintReveals);
-    await tx.delete(fragmentClaims);
-    await tx.delete(fragmentClaimAttempts);
     await tx.delete(teamChallengeUnlocks);
     await tx.delete(workspaceDeletions);
     await tx.delete(scoreboardSnapshots);

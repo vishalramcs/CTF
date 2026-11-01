@@ -90,7 +90,6 @@ export const challenges = app.table('challenges', {
   generatorConfig: jsonb('generator_config').notNull().default({}),
   generatorVersion: integer('generator_version').notNull().default(1),
   requiresUnlock: boolean('requires_unlock').notNull().default(false),
-  fragmentNeedsEntry: boolean('fragment_needs_entry').notNull().default(false),
   flagMode: text('flag_mode').notNull().default('team'),
   flagTemplate: text('flag_template'),
   staticFlagHash: text('static_flag_hash'),
@@ -130,20 +129,6 @@ export const teamChallengeVariants = app.table('team_challenge_variants', {
   expectedFlagHash: text('expected_flag_hash').notNull(),
   generatorVersion: integer('generator_version').notNull(),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
-});
-
-export const fragmentClaims = app.table('fragment_claims', {
-  teamId: uuid('team_id').notNull(),
-  challengeId: uuid('challenge_id').notNull(),
-  claimedAt: timestamptz('claimed_at').notNull().defaultNow(),
-});
-
-export const fragmentClaimAttempts = app.table('fragment_claim_attempts', {
-  id: identity('id').primaryKey(),
-  teamId: uuid('team_id').notNull(),
-  challengeId: uuid('challenge_id').notNull(),
-  isCorrect: boolean('is_correct').notNull(),
-  submittedAt: timestamptz('submitted_at').notNull().defaultNow(),
 });
 
 export const teamChallengeUnlocks = app.table('team_challenge_unlocks', {

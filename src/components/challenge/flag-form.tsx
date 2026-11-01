@@ -3,7 +3,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { CoordinateEntry } from '@/components/challenge/coordinate-entry';
 import { Button } from '@/components/ui/button';
 import { apiPost } from '@/lib/api-client';
 import type { SubmitResult } from '@/lib/scoring/submit';
@@ -13,17 +12,9 @@ type Solved = {
   fragment: string | null;
   orderClue: string | null;
   finalCoordinates: { label: string; value: string }[] | null;
-  needsFragmentEntry: boolean;
 };
 
-function SolvedPanel({
-  number,
-  points,
-  fragment,
-  orderClue,
-  finalCoordinates,
-  needsFragmentEntry,
-}: Solved & { number: number }) {
+function SolvedPanel({ points, fragment, orderClue, finalCoordinates }: Solved) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-success p-4">
       <p className="font-semibold text-success">
@@ -31,7 +22,6 @@ function SolvedPanel({
       </p>
       {fragment && <p className="font-mono text-5xl font-semibold">{fragment}</p>}
       {orderClue && <p>{orderClue}</p>}
-      {needsFragmentEntry && <CoordinateEntry number={number} />}
       {finalCoordinates && finalCoordinates.length > 0 && (
         <ul className="flex flex-col gap-1">
           {finalCoordinates.map((c, i) => (
@@ -82,7 +72,6 @@ export function FlagForm({
           fragment: outcome.fragment ?? null,
           orderClue: outcome.orderClue ?? null,
           finalCoordinates: outcome.finalCoordinates ?? null,
-          needsFragmentEntry: outcome.needsFragmentEntry ?? false,
         });
         setMessage('');
         return router.refresh();
@@ -149,7 +138,7 @@ export function FlagForm({
         </form>
       )}
       <div role="status">
-        {shown && <SolvedPanel {...shown} number={number} />}
+        {shown && <SolvedPanel {...shown} />}
         {limited && !shown && (
           <p className="text-warn">Spider-sense overload. Retry in {clock(retryIn)}.</p>
         )}
