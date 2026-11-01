@@ -1,3 +1,5 @@
+import { SpiderLogo } from '@/components/participant/spider-logo';
+
 // Original web art (Design Brief §2): thin lines radiating from one corner.
 function WebCorner({ className }: { className: string }) {
   return (
@@ -30,7 +32,8 @@ export function AuthCard({
       <WebCorner className="top-0 left-0" />
       <WebCorner className="right-0 bottom-0 rotate-180" />
       <div className="relative w-full max-w-sm bg-card p-6 [clip-path:polygon(0_0,calc(100%-16px)_0,100%_16px,100%_100%,16px_100%,0_calc(100%-16px))]">
-        <p className="font-heading text-sm font-bold tracking-[0.02em] text-muted-foreground">
+        <p className="flex items-center gap-2 font-heading text-sm font-bold tracking-[0.02em] text-muted-foreground">
+          <SpiderLogo />
           SPIDEY tracXer
         </p>
         <h1 className="mt-1 font-heading text-3xl leading-[1.1] font-black tracking-[0.02em] uppercase">

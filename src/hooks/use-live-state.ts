@@ -37,7 +37,8 @@ export function useLiveState(): { state: LiveState | null; connection: Connectio
     const refetch = () => {
       load(abort.signal)
         .then((next) => {
-          setState(next);
+          // Responses can land out of order (and the CDN caches them): never go back a version.
+          setState((prev) => (prev && next.v < prev.v ? prev : next));
           setFetchOk(true);
           // First load tells us the channel to join.
           if (!unsubscribe) {
@@ -80,6 +81,7 @@ export function useLiveState(): { state: LiveState | null; connection: Connectio
     };
   }, []);
 
-  const connection: Connection = socketUp ? 'live' : fetchOk ? 'polling' : 'offline';
+  // A failed read outranks a healthy socket: pings alone don't make the board current.
+  const connection: Connection = !fetchOk ? 'offline' : socketUp ? 'live' : 'polling';
   return { state, connection };
 }

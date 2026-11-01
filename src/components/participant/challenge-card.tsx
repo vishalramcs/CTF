@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import type { SyntheticEvent } from 'react';
 
+import FlipCard from '@/components/FlipCard';
+import PixelCard from '@/components/PixelCard';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
 
 export const DIFFICULTY: Record<Card['difficulty'], { label: string; border: string }> = {
@@ -27,38 +30,88 @@ function stateLabel(card: Card): string {
   }
 }
 
-// Design Brief §5. A real link is keyboard reachable and opens the new tab without any script.
+// Design Brief §5. Click flips the card; the real link on the back opens the new tab.
 export function ChallengeCard({ card }: { card: Card }) {
   // Points fall as more teams solve it, so show what it started at.
   const decayed = card.currentPoints !== card.basePoints;
+  // FlipCard captures the pointer and takes Enter and Space, so the link must keep its own events.
+  const stop = (event: SyntheticEvent) => event.stopPropagation();
   return (
-    <Link
-      href={`/challenge/${card.number}`}
-      target="_blank"
-      rel="noopener"
-      className={`flex min-h-32 flex-col justify-between gap-3 border border-border bg-card p-4 [clip-path:polygon(0_0,calc(100%-14px)_0,100%_14px,100%_100%,0_100%)] hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset ${
+    <FlipCard
+      flipped={undefined}
+      onFlipChange={undefined}
+      draggable={false}
+      tiltMax={6}
+      hoverScale={1.02}
+      height={176}
+      radius={6}
+      background="var(--card)"
+      shadowOpacity={0.6}
+      ariaLabel={`Question ${card.number}, ${card.title}, ${DIFFICULTY[card.difficulty].label}, ${card.currentPoints} points, ${stateLabel(card)}. Flip for the link.`}
+      className={`w-full! focus-visible:ring-2 focus-visible:ring-ring ${
         card.state === 'solved' ? 'opacity-75' : ''
       }`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-heading text-2xl font-black">#{card.number}</p>
-        <DifficultyChip difficulty={card.difficulty} />
-      </div>
-      <p className="font-semibold">{card.title}</p>
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <p className="font-mono tabular-nums">
-          {decayed && (
-            <s className="mr-2 text-muted-foreground">
-              <span className="sr-only">was </span>
-              {card.basePoints}
-            </s>
-          )}
-          {card.currentPoints} pts
-        </p>
-        <p className={card.state === 'solved' ? 'text-success' : 'text-muted-foreground'}>
-          {stateLabel(card)}
-        </p>
-      </div>
-    </Link>
+      front={
+        (
+          <PixelCard
+            colors={['#e0f2fe', '#38bdf8', '#2d6bff', '#e2232a']}
+            gap={8}
+            speed={25}
+            glowColor="#2d6bff"
+            intro={false}
+            noFocus
+            radius={6}
+            style={{
+              width: '100%',
+              height: '100%',
+              placeItems: 'stretch',
+              background: 'var(--card)',
+            }}
+          >
+            <div className="flex flex-col justify-between gap-3 border border-border p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-heading text-2xl font-black">#{card.number}</p>
+                <DifficultyChip difficulty={card.difficulty} />
+              </div>
+              <p className="font-semibold">{card.title}</p>
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <p className="font-mono tabular-nums">
+                  {decayed && (
+                    <s className="mr-2 text-muted-foreground">
+                      <span className="sr-only">was </span>
+                      {card.basePoints}
+                    </s>
+                  )}
+                  {card.currentPoints} pts
+                </p>
+                <p className={card.state === 'solved' ? 'text-success' : 'text-muted-foreground'}>
+                  {stateLabel(card)}
+                </p>
+              </div>
+            </div>
+          </PixelCard>
+        ) as never
+      }
+      back={
+        (
+          <div className="flex h-full flex-col justify-between gap-3 border border-border p-4">
+            <p className="font-semibold">
+              #{card.number} {card.title}
+            </p>
+            <Link
+              href={`/challenge/${card.number}`}
+              target="_blank"
+              rel="noopener"
+              onPointerDown={stop}
+              onClick={stop}
+              onKeyDown={stop}
+              className="inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-4 font-semibold text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              Open mission
+            </Link>
+          </div>
+        ) as never
+      }
+    />
   );
 }

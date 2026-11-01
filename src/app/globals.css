@@ -89,21 +89,13 @@
   html {
     @apply font-sans;
   }
+  /* Tables sit directly on the bright page background. */
+  table {
+    @apply bg-background/85;
+  }
 }
 
-/* R6: participant dashboard. Original web art in CSS only; motion stops under reduced motion. */
-.web-bg {
-  background-color: #07090f;
-  background-image:
-    repeating-radial-gradient(circle at 0 0, transparent 0 46px, rgb(45 107 255 / 0.07) 47px 48px),
-    repeating-conic-gradient(
-      from 0deg at 0 0,
-      transparent 0 9deg,
-      rgb(45 107 255 / 0.07) 9deg 9.4deg
-    ),
-    linear-gradient(180deg, #0a1020 0%, #07090f 60%);
-}
-
+/* R6: participant dashboard. Motion stops under reduced motion. */
 .panel-notch {
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
@@ -141,9 +133,229 @@
   animation: fade-up 600ms ease-out both;
 }
 
+/* Live leaderboard. */
+.mission-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 0 0 1px rgb(45 107 255 / 0.15),
+    0 0 24px rgb(226 35 42 / 0.12);
+}
+/* A thin strand with a knot at its centre, like one thread of a web. */
+.web-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ring), var(--primary), transparent);
+}
+.points-float {
+  animation: points-float 1.6s ease-out forwards;
+}
+.podium-takeover {
+  animation: podium-takeover 1.6s ease-out;
+}
+.spider-sense {
+  animation: spider-sense 1.2s ease-out;
+}
+
+@keyframes points-float {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+}
+@keyframes podium-takeover {
+  from {
+    filter: drop-shadow(0 0 28px rgb(244 197 66 / 0.9));
+  }
+  to {
+    filter: none;
+  }
+}
+@keyframes spider-sense {
+  from {
+    box-shadow: 0 0 0 0 rgb(45 107 255 / 0.8);
+  }
+  to {
+    box-shadow: 0 0 0 16px rgb(226 35 42 / 0);
+  }
+}
+
+/* Login background glitch: the canvas jumps and shifts hue while neon slices flash over it. */
+.glitch-bg {
+  animation: glitch-bg-shift 4s steps(1) infinite;
+}
+.glitch-bg::before,
+.glitch-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0 -40px;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+.glitch-bg::before {
+  background: repeating-linear-gradient(0deg, rgb(25 245 208 / 0.45) 0 2px, transparent 2px 6px);
+  animation: glitch-bg-slice 2.6s steps(1) infinite;
+}
+.glitch-bg::after {
+  background: rgb(255 43 214 / 0.35);
+  animation: glitch-bg-slice 3.4s steps(1) infinite reverse;
+}
+
+@keyframes glitch-bg-shift {
+  0% {
+    transform: none;
+    filter: none;
+  }
+  60% {
+    transform: translate(-6px, 2px);
+    filter: hue-rotate(60deg);
+  }
+  63% {
+    transform: translate(6px, -2px);
+    filter: hue-rotate(-60deg);
+  }
+  66% {
+    transform: none;
+    filter: none;
+  }
+  88% {
+    transform: translate(4px, 0);
+    filter: hue-rotate(120deg);
+  }
+  91% {
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes glitch-bg-slice {
+  0% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+    clip-path: inset(12% 0 70% 0);
+    transform: translateX(-30px);
+  }
+  64% {
+    clip-path: inset(55% 0 30% 0);
+    transform: translateX(30px);
+  }
+  68% {
+    clip-path: inset(30% 0 62% 0);
+    transform: translateX(-12px);
+  }
+  72% {
+    opacity: 0;
+  }
+  88% {
+    opacity: 1;
+    clip-path: inset(75% 0 5% 0);
+    transform: translateX(20px);
+  }
+  92% {
+    opacity: 0;
+  }
+}
+
+/* Text glitch. In the base layer so a utility animation on an element still wins. */
+@layer base {
+  body {
+    animation: glitch-body-text 6s steps(1) infinite;
+  }
+  h1,
+  h2,
+  h3 {
+    animation: glitch-text 5s steps(1) infinite;
+  }
+}
+
+/* Colour split only: no movement, so body text stays readable. Form inputs do not inherit it. */
+@keyframes glitch-body-text {
+  0% {
+    text-shadow:
+      0 0 3px #000,
+      0 0 8px #000;
+  }
+  80% {
+    text-shadow:
+      1.5px 0 #19f5d0,
+      -1.5px 0 #ff2bd6;
+  }
+  82% {
+    text-shadow:
+      -1.5px 0 #19f5d0,
+      1.5px 0 #ff2bd6;
+  }
+  84% {
+    text-shadow:
+      0 0 3px #000,
+      0 0 8px #000;
+  }
+}
+
+@keyframes glitch-text {
+  0% {
+    transform: none;
+    text-shadow:
+      0 0 3px #000,
+      0 0 8px #000;
+  }
+  70% {
+    transform: translateX(-2px);
+    text-shadow:
+      3px 0 #19f5d0,
+      -3px 0 #ff2bd6;
+  }
+  72% {
+    transform: translateX(2px) skewX(-4deg);
+    text-shadow:
+      -3px 0 #19f5d0,
+      3px 0 #ff2bd6;
+  }
+  74% {
+    transform: translateX(-1px);
+    text-shadow:
+      2px 1px #7dff3c,
+      -2px -1px #ff2bd6;
+  }
+  76% {
+    transform: none;
+    text-shadow:
+      0 0 3px #000,
+      0 0 8px #000;
+  }
+  94% {
+    transform: translateX(2px);
+    text-shadow:
+      -2px 0 #19f5d0,
+      2px 0 #ff2bd6;
+  }
+  96% {
+    transform: none;
+    text-shadow:
+      0 0 3px #000,
+      0 0 8px #000;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mutant-crawl,
-  .fade-up {
+  .fade-up,
+  .glitch-bg,
+  .podium-takeover,
+  .spider-sense,
+  body,
+  h1,
+  h2,
+  h3 {
     animation: none;
+  }
+  .glitch-bg::before,
+  .glitch-bg::after {
+    display: none;
   }
 }

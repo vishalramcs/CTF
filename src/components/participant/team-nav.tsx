@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+
+import GooeyNav from '@/components/GooeyNav';
 
 const LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -11,18 +12,26 @@ const LINKS = [
 
 export function TeamNav() {
   const path = usePathname();
+  const router = useRouter();
   return (
-    <nav aria-label="Main" className="flex flex-wrap gap-1">
-      {LINKS.map(({ href, label }) => (
-        <Link
-          key={href}
-          href={href}
-          aria-current={path === href ? 'page' : undefined}
-          className="inline-flex min-h-11 items-center rounded-sm px-3 text-sm font-semibold hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none aria-[current=page]:border-b-2 aria-[current=page]:border-primary"
-        >
-          {label}
-        </Link>
-      ))}
-    </nav>
+    // GooeyNav renders plain anchors: keep them as links, but navigate without a full reload.
+    <div
+      onClickCapture={(event) => {
+        const href = (event.target as Element).closest('a')?.getAttribute('href');
+        if (!href || event.metaKey || event.ctrlKey || event.shiftKey) return;
+        event.preventDefault();
+        router.push(href);
+      }}
+    >
+      <GooeyNav
+        items={LINKS}
+        activeIndex={LINKS.findIndex(({ href }) => href === path)}
+        onChange={undefined}
+        color="#8f2a30"
+        activeTextColor="#f1e6e7"
+        colors={['#2d6bff', '#38bdf8', '#8f2a30'] as never[]}
+        style={{ '--gn-y': '14px', '--gn-frame': 'rgba(14, 19, 32, 0.8)', textShadow: 'none' }}
+      />
+    </div>
   );
 }

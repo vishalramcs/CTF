@@ -2,8 +2,8 @@ import type { Connection } from '@/hooks/use-live-state';
 
 const LABEL: Record<Connection, { text: string; dot: string }> = {
   live: { text: 'Live', dot: 'bg-success' },
-  polling: { text: 'Updating every 15 s', dot: 'bg-warn' },
-  offline: { text: 'Offline, retrying', dot: 'bg-destructive' },
+  polling: { text: 'Reconnecting, updating every 15 s', dot: 'bg-warn' },
+  offline: { text: 'Disconnected, retrying', dot: 'bg-destructive' },
 };
 
 // The text carries the state; the dot colour is a second cue.

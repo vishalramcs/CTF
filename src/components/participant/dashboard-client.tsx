@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
+import HalftoneReveal from '@/components/HalftoneReveal';
 import { formatPoints } from '@/components/leaderboard/format';
 import { CoordinateBoard } from '@/components/coordinates/coordinate-board';
 import { Announcements } from '@/components/participant/announcements';
@@ -58,21 +59,39 @@ export function DashboardClient({
   const status = STATUS[state?.status ?? 'running'];
 
   return (
-    <div className="web-bg">
+    <div>
       <main className="mx-auto flex max-w-[1200px] flex-col gap-10 p-4 pb-24">
-        <section aria-labelledby="welcome" className="fade-up flex flex-col gap-2 py-6">
-          <h1
-            id="welcome"
-            className="font-heading text-4xl font-black tracking-[0.02em] uppercase sm:text-6xl"
+        <section
+          aria-labelledby="welcome"
+          className="fade-up flex items-center justify-between gap-6 py-6"
+        >
+          <div className="flex flex-col gap-2">
+            <h1
+              id="welcome"
+              className="font-heading text-4xl font-black tracking-[0.02em] uppercase sm:text-6xl"
+            >
+              The city needs you, <span className="text-primary">Spider-Man.</span>
+            </h1>
+            <p role="status" className="w-fit bg-background/85 px-2 py-1 text-lg">
+              <span className="font-heading font-bold text-ring uppercase">
+                {state ? status.name : 'Connecting'}
+              </span>
+              {state && <span className="text-muted-foreground"> · {status.rule}</span>}
+            </p>
+          </div>
+          <div
+            aria-hidden
+            className="hidden size-56 shrink-0 overflow-hidden rounded-full md:block"
           >
-            The city needs you, <span className="text-primary">Spider-Man.</span>
-          </h1>
-          <p role="status" className="text-lg">
-            <span className="font-heading font-bold text-ring uppercase">
-              {state ? status.name : 'Connecting'}
-            </span>
-            {state && <span className="text-muted-foreground"> · {status.rule}</span>}
-          </p>
+            <HalftoneReveal
+              src="/event-logo.png"
+              inkColor="#e2232a"
+              paperColor="#07090f"
+              invert
+              cellSize={5}
+              style={{}}
+            />
+          </div>
         </section>
 
         <section aria-labelledby="score">

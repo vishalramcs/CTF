@@ -1,7 +1,15 @@
 import Link from 'next/link';
 
-import { formatPoints } from '@/components/leaderboard/format';
+import { AnimatedNumber } from '@/components/leaderboard/animated-number';
+import { solvedCount } from '@/components/leaderboard/format';
 import type { BoardRow } from '@/lib/realtime/public-state';
+
+// Design Brief §4 metals, by rank: the rank is printed too, so colour is never the only cue.
+const METAL: Record<number, string> = {
+  1: 'border-l-[#f4c542] text-[#f4c542]',
+  2: 'border-l-[#c9d1e0] text-[#c9d1e0]',
+  3: 'border-l-[#d08a4e] text-[#d08a4e]',
+};
 
 // Top 5, plus this team's row when it is lower down. "You" is also in words, not only colour.
 export function LeaderboardPreview({ rows, ownTeam }: { rows: BoardRow[]; ownTeam: string }) {
@@ -14,37 +22,47 @@ export function LeaderboardPreview({ rows, ownTeam }: { rows: BoardRow[]; ownTea
       <h2 id="preview" className="font-heading text-2xl font-bold uppercase">
         Leaderboard
       </h2>
-      <table className="w-full text-left">
-        <caption className="sr-only">Top five teams and your team</caption>
-        <thead className="sr-only">
-          <tr>
-            <th>Rank</th>
-            <th>Team</th>
-            <th>Points</th>
-          </tr>
-        </thead>
-        <tbody>
-          {shown.map((r) => (
-            <tr
-              key={r.teamName}
-              className={`border-b border-border ${r.teamName === ownTeam ? 'bg-secondary font-semibold' : ''}`}
-            >
-              <td className="py-2 pr-2 font-mono tabular-nums">#{r.rank}</td>
-              <td className="py-2 pr-2">
-                {r.teamName}
-                {r.teamName === ownTeam && <span className="ml-2 text-sm text-ring">(you)</span>}
-              </td>
-              <td className="py-2 text-right font-mono tabular-nums">{formatPoints(r.total)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <Link
-        href="/leaderboard"
-        className="inline-flex min-h-11 items-center text-sm text-ring underline underline-offset-4"
-      >
-        Full leaderboard
-      </Link>
+      <div className="mission-panel flex flex-col gap-2 rounded-lg p-3">
+        <ol aria-label="Top five teams and your team" className="flex flex-col gap-2">
+          {shown.map((r) => {
+            const isOwn = r.teamName === ownTeam;
+            const metal = METAL[r.rank] ?? 'border-l-border text-muted-foreground';
+            return (
+              <li
+                key={r.teamName}
+                aria-current={isOwn ? 'true' : undefined}
+                className={`flex items-center gap-3 rounded-md border-l-4 p-2 ${metal} ${
+                  isOwn ? 'bg-primary/15 ring-1 ring-primary' : 'bg-secondary'
+                }`}
+              >
+                <span className="w-8 shrink-0 font-heading text-xl font-black tabular-nums">
+                  <span className="sr-only">Rank </span>
+                  {r.rank}
+                </span>
+                <span className="min-w-0 flex-1 text-foreground">
+                  <span className="block truncate font-semibold">
+                    {r.teamName}
+                    {isOwn && <span className="ml-2 text-xs uppercase">(you)</span>}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {solvedCount(r)} solved
+                  </span>
+                </span>
+                <span className="shrink-0 font-heading text-xl font-black text-foreground tabular-nums">
+                  <AnimatedNumber value={r.total} />
+                  <span className="sr-only"> points</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <Link
+          href="/leaderboard"
+          className="inline-flex min-h-11 items-center justify-center rounded-sm border border-border text-sm font-semibold hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          Full leaderboard
+        </Link>
+      </div>
     </section>
   );
 }
