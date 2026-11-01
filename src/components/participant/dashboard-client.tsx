@@ -63,16 +63,17 @@ export function DashboardClient({
       <main className="mx-auto flex max-w-[1200px] flex-col gap-10 p-4 pb-24">
         <section
           aria-labelledby="welcome"
-          className="fade-up flex items-center justify-between gap-6 py-6"
+          className="fade-up flex items-center justify-between gap-6 sm:py-6"
         >
           <div className="flex flex-col gap-2">
             <h1
               id="welcome"
-              className="font-heading text-4xl font-black tracking-[0.02em] uppercase sm:text-6xl"
+              className="font-heading text-[clamp(1.75rem,9.5vw,2.25rem)] font-black tracking-[0.02em] uppercase sm:text-6xl"
             >
-              The city needs you, <span className="text-primary">Spider-Man.</span>
+              The city needs you,{' '}
+              <span className="whitespace-nowrap text-primary">Spider-Man.</span>
             </h1>
-            <p role="status" className="w-fit bg-background/85 px-2 py-1 text-lg">
+            <p role="status" className="w-fit bg-background/85 px-2 py-1 sm:text-lg">
               <span className="font-heading font-bold text-ring uppercase">
                 {state ? status.name : 'Connecting'}
               </span>

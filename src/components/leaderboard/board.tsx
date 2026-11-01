@@ -98,6 +98,7 @@ export function Board({
   ];
   const cell = large ? 'px-3 py-3' : 'px-2 py-2';
   const num = `${cell} text-right tabular-nums`;
+  const wide = `${cell} hidden sm:table-cell`;
   return (
     <div className="flex flex-col gap-3">
       {!large && (
@@ -129,13 +130,13 @@ export function Board({
               <th scope="col" className={num}>
                 Score
               </th>
-              <th scope="col" className={cell}>
+              <th scope="col" className={wide}>
                 Challenges solved
               </th>
-              <th scope="col" className={cell}>
+              <th scope="col" className={wide}>
                 Rank change
               </th>
-              <th scope="col" className={cell}>
+              <th scope="col" className={wide}>
                 Status
               </th>
             </tr>
@@ -161,6 +162,20 @@ export function Board({
                   <td className={cell}>
                     {row.teamName}
                     {own && <span className="ml-2 text-xs uppercase">(you)</span>}
+                    {/* The three wide columns, folded under the name on a phone. */}
+                    <div className="mt-1 flex flex-wrap gap-x-3 text-xs font-normal text-muted-foreground sm:hidden">
+                      <span>
+                        {solvedCount(row)} solved (E {row.easySolved} · M {row.mediumSolved} · D{' '}
+                        {row.difficultSolved})
+                      </span>
+                      <span className={row.mainDone ? 'text-success' : ''}>
+                        Main {row.mainDone ? '✓ Done' : '—'}
+                      </span>
+                      <span className={row.coordinatesDone ? 'text-success' : ''}>
+                        Coordinates {row.coordinatesDone ? '✓ Found' : '—'}
+                      </span>
+                      {change && change.positions !== 0 && <RankChangeCell change={change} />}
+                    </div>
                   </td>
                   <td className={`${num} relative font-bold`}>
                     <AnimatedNumber value={row.total} />
@@ -168,7 +183,7 @@ export function Board({
                       <PointsFloat key={change.v} points={change.points} large={large} />
                     )}
                   </td>
-                  <td className={cell}>
+                  <td className={wide}>
                     <span className="font-bold tabular-nums">{solvedCount(row)}</span>
                     <span
                       className={`ml-2 whitespace-nowrap text-muted-foreground ${
@@ -178,10 +193,10 @@ export function Board({
                       E {row.easySolved} · M {row.mediumSolved} · D {row.difficultSolved}
                     </span>
                   </td>
-                  <td className={cell}>
+                  <td className={wide}>
                     <RankChangeCell change={change} />
                   </td>
-                  <td className={`${cell} whitespace-nowrap`}>
+                  <td className={`${wide} whitespace-nowrap`}>
                     <span className={row.mainDone ? 'text-success' : 'text-muted-foreground'}>
                       Main {row.mainDone ? '✓ Done' : '—'}
                     </span>

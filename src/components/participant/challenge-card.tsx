@@ -73,9 +73,10 @@ export function ChallengeCard({ card }: { card: Card }) {
                 <p className="font-heading text-2xl font-black">#{card.number}</p>
                 <DifficultyChip difficulty={card.difficulty} />
               </div>
-              <p className="font-semibold">{card.title}</p>
+              {/* The card has a fixed height; the back shows the full title. */}
+              <p className="line-clamp-2 font-semibold">{card.title}</p>
               <div className="flex items-center justify-between gap-2 text-sm">
-                <p className="font-mono tabular-nums">
+                <p className="font-mono whitespace-nowrap tabular-nums">
                   {decayed && (
                     <s className="mr-2 text-muted-foreground">
                       <span className="sr-only">was </span>
@@ -84,7 +85,11 @@ export function ChallengeCard({ card }: { card: Card }) {
                   )}
                   {card.currentPoints} pts
                 </p>
-                <p className={card.state === 'solved' ? 'text-success' : 'text-muted-foreground'}>
+                <p
+                  className={`text-right text-xs sm:text-sm ${
+                    card.state === 'solved' ? 'text-success' : 'text-muted-foreground'
+                  }`}
+                >
                   {stateLabel(card)}
                 </p>
               </div>

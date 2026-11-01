@@ -17,16 +17,17 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
 
   return (
     <>
-      <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-border bg-card p-4">
+      {/* overflow-x-clip: GooeyNav's canvas overhangs its bar and must not widen the page. */}
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-clip border-b border-border bg-card p-4 sm:gap-x-6">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-11 items-center gap-3 font-heading text-xl font-black tracking-[0.02em] uppercase focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="inline-flex min-h-11 min-w-0 flex-1 basis-0 items-center gap-2 font-heading text-xl font-black tracking-[0.02em] uppercase focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:flex-none sm:basis-auto sm:gap-3"
         >
-          <SpiderLogo />
-          {teamName}
+          <SpiderLogo className="size-11 shrink-0" />
+          <span className="truncate">{teamName}</span>
         </Link>
         <TeamNav />
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           <p className="font-heading text-2xl font-black tabular-nums">
             {formatPoints(score)}
             <span className="sr-only"> points</span>

@@ -31,7 +31,7 @@ export function StatusBar({ state, large }: { state: LiveState; large?: boolean 
           {STATUS[state.status].name}
         </span>
       </div>
-      <dl className="flex flex-wrap gap-x-8 gap-y-3">
+      <dl className="grid w-full grid-cols-3 gap-x-3 sm:flex sm:w-auto sm:flex-wrap sm:gap-x-8 sm:gap-y-3">
         <Stat label="Teams" value={rows.length} large={large} />
         <Stat
           label="Challenges solved"

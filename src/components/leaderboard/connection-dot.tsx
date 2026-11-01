@@ -10,7 +10,7 @@ const LABEL: Record<Connection, { text: string; dot: string }> = {
 export function ConnectionDot({ connection }: { connection: Connection }) {
   const { text, dot } = LABEL[connection];
   return (
-    <p className="inline-flex items-center gap-2 text-sm text-muted-foreground" role="status">
+    <p className="inline-flex items-center gap-2 text-sm" role="status">
       <span aria-hidden className={`size-2.5 rounded-full ${dot}`} />
       {text}
     </p>

@@ -15,7 +15,7 @@ export function StatusBanner({ status }: { status: EventStatus }) {
       <p className="font-heading text-lg font-bold uppercase" role="status">
         {name}
       </p>
-      <p className="text-muted-foreground">{rule}</p>
+      <p className="hidden text-muted-foreground sm:block">{rule}</p>
     </div>
   );
 }

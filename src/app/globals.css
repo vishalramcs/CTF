@@ -133,6 +133,29 @@
   animation: fade-up 600ms ease-out both;
 }
 
+@media (max-width: 639px) {
+  /* The nav fills its own row and fits three links on a 320 px screen. */
+  .gooey-nav.gooey-nav--md {
+    --gn-x: 10px;
+    --gn-gap: 0px;
+    --gn-font: 13px;
+    display: flex;
+  }
+  .gooey-nav .gooey-nav__stage {
+    flex: 1;
+  }
+  .gooey-nav .gooey-nav__list {
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+}
+
+/* The header behind the nav is opaque, so its blur only costs GPU time. */
+.gooey-nav.gooey-nav--framed {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 /* Live leaderboard. */
 .mission-panel {
   background: var(--card);
@@ -339,6 +362,34 @@
     text-shadow:
       0 0 3px #000,
       0 0 8px #000;
+  }
+}
+
+/* A full-screen filter is the costly part on a phone: keep the jump, drop the hue shift. */
+@media (pointer: coarse) {
+  .glitch-bg {
+    animation-name: glitch-bg-jump;
+  }
+}
+
+@keyframes glitch-bg-jump {
+  0% {
+    transform: none;
+  }
+  60% {
+    transform: translate(-6px, 2px);
+  }
+  63% {
+    transform: translate(6px, -2px);
+  }
+  66% {
+    transform: none;
+  }
+  88% {
+    transform: translate(4px, 0);
+  }
+  91% {
+    transform: none;
   }
 }
 

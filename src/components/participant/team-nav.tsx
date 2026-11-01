@@ -15,7 +15,9 @@ export function TeamNav() {
   const router = useRouter();
   return (
     // GooeyNav renders plain anchors: keep them as links, but navigate without a full reload.
+    // Own full-width row on a phone, below the team name and score.
     <div
+      className="order-last w-full sm:order-none sm:w-auto"
       onClickCapture={(event) => {
         const href = (event.target as Element).closest('a')?.getAttribute('href');
         if (!href || event.metaKey || event.ctrlKey || event.shiftKey) return;
