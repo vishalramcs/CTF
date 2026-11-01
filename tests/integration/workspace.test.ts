@@ -30,7 +30,7 @@ import {
 
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 
-const FLAG = `${env.FLAG_PREFIX}{nightshift_17}`;
+const FLAG = `${env.FLAG_PREFIX}{N51.E5E0D7S2}`;
 const WS = '/api/challenges/5/workspace/files';
 
 let sql: postgres.Sql;
@@ -121,7 +121,7 @@ describe('evidence', () => {
 
     const logins = (await text('authentication.log')).split(/\r?\n/);
     expect(logins.filter((l) => l.includes('session=S-044'))).toEqual([
-      '09:17 LOGIN_SUCCESS account=nightshift_17 session=S-044',
+      '09:17 LOGIN_SUCCESS account=N51.E5E0D7S2 session=S-044',
     ]);
   });
 
@@ -163,6 +163,11 @@ describe('flag', () => {
 
     expect((await (await sendFlag(FLAG)).json()).result).toBe('already_solved');
     expect(await score(teamA)).toBe(earned);
+  });
+
+  it('accepts the flag in any letter case, with surrounding spaces', async () => {
+    const res = await sendFlag(`  ${FLAG.toLowerCase()}\n`);
+    expect((await res.json()).result).toBe('correct');
   });
 
   it('gives the coordinate fragment an admin configured, to the solving team only', async () => {
