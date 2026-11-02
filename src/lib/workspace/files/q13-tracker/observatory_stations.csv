@@ -1,0 +1,8 @@
+# corrected_time = raw_time_utc - clock_offset_s
+station_id,observatory,clock_offset_s
+OBS-1,Mauna Kea Array,37
+OBS-2,Atacama Ridge,-22
+OBS-3,La Palma Deck,58
+OBS-4,Siding Spring,-41
+OBS-5,Hanle Station,13
+OBS-6,Sutherland Dish,76

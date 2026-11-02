@@ -1,0 +1,3 @@
+Containment note. The sealed container holds one specimen. Its tag position is visible in the photo.
+The last weigh-in put it at 84.2 kg. Careful with units: the older scale logs in grams.
+Only trust a match that the behaviour log also supports.

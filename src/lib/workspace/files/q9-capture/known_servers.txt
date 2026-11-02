@@ -1,0 +1,6 @@
+# Servers this device is expected to talk to
+updates.sable-labs.test 10.20.5.10
+time.sable-labs.test 10.20.5.11
+telemetry.sable-labs.test 10.20.5.12
+files.sable-labs.test 10.20.5.13
+dns.sable-labs.test 10.20.0.53

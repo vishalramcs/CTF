@@ -1,0 +1,3 @@
+The archive dropped one dimension after a portal fired. The sensors did not lose everything.
+The reading taken at the exact moment of corruption still holds the number, written the way the instruments write numbers.
+Check it against what survived of the signature, and against what the archive still knows. - Miles

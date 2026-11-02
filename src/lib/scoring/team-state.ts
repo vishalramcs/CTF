@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, or, sql } from 'drizzle-orm';
 import { cache } from 'react';
 
 import { finalCoordinatesFor, type FinalCoordinate } from '@/lib/coordinates/state';
@@ -59,10 +59,20 @@ export type ChallengeCard = {
   pointsEarned: number | null;
 };
 
+// A full-access team (a tester, docs/09 §4) reads every question whatever its status or the event's.
+const fullAccess = (teamId: string) =>
+  sql<boolean>`EXISTS (SELECT 1 FROM app.teams ft WHERE ft.id = ${teamId} AND ft.full_access)`;
+
+export async function hasFullAccess(teamId: string): Promise<boolean> {
+  const [row] = await db.select({ full: fullAccess(teamId) }).from(eventState);
+  return row.full;
+}
+
 // A sealed question hides its title and content until this team unlocks it. A team that somehow
 // solved it first keeps access. Every read path uses this, so hiding it is never only a UI matter.
 const SEALED_TITLE = 'Sealed trail';
 const sealedFor = (teamId: string) => sql<boolean>`(${challenges.requiresUnlock}
+  AND NOT ${fullAccess(teamId)}
   AND NOT EXISTS (SELECT 1 FROM ${teamChallengeUnlocks} u
     WHERE u.team_id = ${teamId} AND u.challenge_id = ${challenges.id})
   AND NOT EXISTS (SELECT 1 FROM ${solves} s3
@@ -82,19 +92,27 @@ export async function listChallengeCards(
       basePoints: challenges.basePoints,
       pointsEarned: solves.pointsAwarded,
       sealed: sealedFor(teamId),
+      full: fullAccess(teamId),
       priorSolves: sql<number>`(SELECT count(*)::int FROM ${solves} s2
         WHERE s2.challenge_id = ${challenges.id})`,
     })
     .from(challenges)
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
-    .where(eq(challenges.isPublished, true))
+    .where(or(eq(challenges.isPublished, true), fullAccess(teamId)))
     .orderBy(asc(challenges.number));
 
-  return rows.map(({ pointsEarned, priorSolves, sealed, ...card }) => ({
+  return rows.map(({ pointsEarned, priorSolves, sealed, full, ...card }) => ({
     ...card,
     title: sealed ? SEALED_TITLE : card.title,
     currentPoints: nextPoints(card.basePoints, priorSolves),
-    state: pointsEarned !== null ? 'solved' : sealed ? 'sealed' : challengeAccess(status),
+    state:
+      pointsEarned !== null
+        ? 'solved'
+        : sealed
+          ? 'sealed'
+          : full
+            ? 'open'
+            : challengeAccess(status),
     pointsEarned: pointsEarned === null ? null : Number(pointsEarned),
   }));
 }
@@ -113,7 +131,7 @@ export async function findPublishedChallenge(param: string, teamId: string) {
     .where(
       and(
         eq(challenges.number, number),
-        eq(challenges.isPublished, true),
+        or(eq(challenges.isPublished, true), fullAccess(teamId)),
         sql`NOT ${sealedFor(teamId)}`,
       ),
     );
@@ -169,6 +187,7 @@ export async function getChallengeView(
       variantData: teamChallengeVariants.variantData,
       generatorConfig: challenges.generatorConfig,
       sealed: sealedFor(teamId),
+      full: fullAccess(teamId),
       pointsEarned: solves.pointsAwarded,
       // Joined only through the team's own solve, so an unsolved challenge returns no fragment.
       fragmentValue: sql<
@@ -191,7 +210,12 @@ export async function getChallengeView(
       ),
     )
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
-    .where(and(eq(challenges.number, number), eq(challenges.isPublished, true)));
+    .where(
+      and(
+        eq(challenges.number, number),
+        or(eq(challenges.isPublished, true), fullAccess(teamId)),
+      ),
+    );
   if (!row) return null;
   if (row.sealed) {
     return {
@@ -207,7 +231,7 @@ export async function getChallengeView(
     title: row.title,
     difficulty: row.difficulty,
   };
-  const access = challengeAccess(state.status);
+  const access = row.full ? 'open' : challengeAccess(state.status);
   if (access !== 'open') return { ...header, access };
   if (!row.variantData) return null;
 

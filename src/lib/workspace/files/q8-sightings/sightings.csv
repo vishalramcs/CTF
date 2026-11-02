@@ -1,0 +1,7 @@
+sighting_id,claimed_time_utc,map_x,map_y,marker,reporter,photo_file
+SP-101,2026-10-18T14:30:00Z,62,38,green,verified_feed,sighting_photo_01.jpg
+SP-102,2026-10-18T14:32:00Z,48,52,red,anon_upload,sighting_photo_02.jpg
+SP-103,2026-10-18T14:33:00Z,71,44,red,street_cam,sighting_photo_03.jpg
+SP-104,2026-10-18T14:35:00Z,56,47,red,anon_upload,sighting_photo_04.jpg
+SP-105,2026-10-18T14:32:00Z,39,31,green,verified_feed,sighting_photo_05.jpg
+SP-106,2026-10-18T14:32:00Z,28,64,red,street_cam,sighting_photo_06.jpg

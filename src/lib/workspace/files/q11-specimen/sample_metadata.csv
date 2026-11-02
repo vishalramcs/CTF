@@ -1,0 +1,13 @@
+specimen_id,stage,mass_value,mass_unit,container_position,logged_on
+S-01,juvenile,410,g,A-1,2026-10-10
+S-02,dormant,2.1,kg,A-2,2026-10-11
+S-03,juvenile,820,g,A-3,2026-10-12
+S-04,fully developed,84.2,kg,C-1,2026-10-13
+S-05,dormant,3.4,kg,B-1,2026-10-14
+S-06,juvenile,640,g,B-2,2026-10-15
+S-07,developing,19.0,kg,B-3,2026-10-16
+S-08,developing,22600,g,C-2,2026-10-17
+S-09,fully developed,84200,g,C-3,2026-10-18
+S-10,dormant,1.2,kg,D-1,2026-10-19
+S-11,developing,31.5,kg,D-2,2026-10-20
+S-12,fully developed,62.0,kg,C-3,2026-10-21

@@ -1,0 +1,9 @@
+OSCORP INTERNAL: ACCESS REPORT
+From: Harry Osborn
+To: Norman Osborn
+
+Dad, the alert fired between 02:00 and 03:00 UTC on 12 Oct. Security says most of what they saw was noise.
+A failed login is not a break-in, and neither is a firewall rule that only says no. I want the session that was
+let all the way in: a sign-in that succeeded and traffic the firewall actually permitted.
+
+Note from network team: the login server logs UTC. The firewall appliance still logs IST (UTC+05:30).

@@ -1,0 +1,9 @@
+# Oscorp registered devices. Last reviewed by H. Osborn, 2026-10-01
+device_id | ip | owner_account
+LAB-WS-014 | 10.40.2.14 | hosborn
+EXEC-LT-001 | 10.40.1.5 | nosborn
+LAB-WS-021 | 10.40.2.21 | cconnors
+PARTNER-QUEST-03 | 198.51.100.23 | quest_vpn
+PARTNER-ALCHEMAX-1 | 198.51.100.61 | alchemax_vpn
+PARTNER-HORIZON-2 | 192.0.2.18 | horizon_vpn
+SEC-OPS-02 | 10.40.9.2 | secops

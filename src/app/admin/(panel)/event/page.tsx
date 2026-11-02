@@ -16,6 +16,7 @@ export default async function EventPage() {
         status={event.status as EventStatus}
         submissionsOpen={event.submissionsOpen}
         leaderboardFrozen={event.leaderboardFrozen}
+        decoderReleased={event.decoderReleased}
         freezeAt={event.freezeAt}
         timeZone={env.EVENT_TIMEZONE}
         isSuper={session.adminLevel === 'super_admin'}

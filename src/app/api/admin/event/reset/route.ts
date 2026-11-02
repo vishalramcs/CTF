@@ -50,6 +50,7 @@ export const POST = withSuperAdmin(async (req, session) => {
         statusChangedAt: sql`now()`,
         leaderboardFrozen: false,
         freezeAt: null,
+        decoderReleased: false,
         coordinateWinnerId: null,
         coordinateWonAt: null,
         scoreboardVersion: sql`${eventState.scoreboardVersion} + 1`,

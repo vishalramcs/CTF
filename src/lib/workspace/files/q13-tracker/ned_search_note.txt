@@ -1,0 +1,10 @@
+I built the tracker to find one heartbeat. If I don't make it back, this is what it looks like:
+
+  one channel, never changing: C-14
+  5 pulses in every burst
+  every 90 seconds exactly, in true time
+  last confirmed beacon 21:07:15 UTC on 31 Oct
+
+The observatory clocks do not agree, so raw times lie. Their offsets are on file.
+Each beacon carried 4 hex characters. In order they spell text, and that text is Base64 of what you need.
+The real signal has 8 beacons. A few other chains look close. They are not him. - Ned

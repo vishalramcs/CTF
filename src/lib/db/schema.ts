@@ -34,6 +34,7 @@ export const teams = app.table('teams', {
   slug: text('slug').notNull(),
   isActive: boolean('is_active').notNull().default(true),
   isHidden: boolean('is_hidden').notNull().default(false),
+  fullAccess: boolean('full_access').notNull().default(false),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });
 
@@ -165,6 +166,12 @@ export const eventState = app.table('event_state', {
   coordinateWinnerId: uuid('coordinate_winner_id'),
   coordinateWonAt: timestamptz('coordinate_won_at'),
   freezeAt: timestamptz('freeze_at'),
+  decoderReleased: boolean('decoder_released').notNull().default(false),
+});
+
+export const vaultKeys = app.table('vault_keys', {
+  slot: smallint('slot').primaryKey(),
+  valueEnc: text('value_enc').notNull(),
 });
 
 export const broadcastGate = app.table('broadcast_gate', {

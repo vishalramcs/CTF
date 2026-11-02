@@ -1,0 +1,8 @@
+2026-10-20 (all times UTC)
+03:00  capture started
+03:04  routine health checks
+03:11  device reports idle, no scheduled jobs
+03:12  activity observed although the device should be silent
+03:14  activity stops
+03:16  routine health checks resume
+03:30  capture stopped

@@ -39,6 +39,7 @@ export async function loadEventState() {
       statusChangedAt: eventState.statusChangedAt,
       submissionsOpen: eventState.submissionsOpen,
       leaderboardFrozen: eventState.leaderboardFrozen,
+      decoderReleased: eventState.decoderReleased,
       freezeAt: eventState.freezeAt,
     })
     .from(eventState)

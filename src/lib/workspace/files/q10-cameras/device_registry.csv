@@ -1,0 +1,31 @@
+device_id,owner,type,registered_on
+DEVICE-01,Security,tablet,2026-03-22
+DEVICE-02,Maintenance,handheld,2026-05-27
+DEVICE-03,IT,badge reader,2026-04-26
+DEVICE-04,Security,handheld,2026-03-24
+DEVICE-05,unregistered,handheld,2026-05-14
+DEVICE-06,Maintenance,tablet,2026-06-17
+DEVICE-07,unregistered,handheld,2026-03-26
+DEVICE-08,Facilities,badge reader,2026-03-22
+DEVICE-09,unregistered,badge reader,2026-03-13
+DEVICE-10,unregistered,handheld,2026-02-17
+DEVICE-11,unregistered,badge reader,2026-06-25
+DEVICE-12,Night shift,handheld,2026-06-17
+DEVICE-13,unregistered,tablet,2026-07-18
+DEVICE-14,unknown,badge reader,2026-07-14
+DEVICE-15,Facilities,handheld,2026-08-22
+DEVICE-16,unregistered,tablet,2026-08-17
+DEVICE-17,unknown,handheld,2026-06-19
+DEVICE-18,Maintenance,handheld,2026-03-12
+DEVICE-19,unregistered,tablet,2026-03-21
+DEVICE-20,IT,badge reader,2026-07-15
+DEVICE-21,Security,tablet,2026-02-16
+DEVICE-22,Night shift,handheld,2026-04-16
+DEVICE-23,Maintenance,handheld,2026-07-15
+DEVICE-24,Facilities,badge reader,2026-03-24
+DEVICE-25,Maintenance,handheld,2026-02-12
+DEVICE-26,IT,handheld,2026-01-16
+DEVICE-27,IT,tablet,2026-03-21
+DEVICE-28,Facilities,badge reader,2026-07-11
+DEVICE-29,Facilities,badge reader,2026-06-24
+DEVICE-30,Facilities,badge reader,2026-08-28

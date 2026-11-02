@@ -76,14 +76,14 @@ function insertSolve(teamId: string, challengeId: string) {
 }
 
 describe('structure', () => {
-  it('has 24 tables and 3 views, all with RLS on', async () => {
+  it('has 25 tables and 3 views, all with RLS on', async () => {
     const [{ tables }] = await sql`
       SELECT count(*)::int AS tables FROM pg_tables WHERE schemaname = 'app'`;
     const [{ views }] = await sql`
       SELECT count(*)::int AS views FROM pg_views WHERE schemaname = 'app'`;
     const [{ open }] = await sql`
       SELECT count(*)::int AS open FROM pg_tables WHERE schemaname = 'app' AND NOT rowsecurity`;
-    expect({ tables, views, open }).toEqual({ tables: 24, views: 3, open: 0 });
+    expect({ tables, views, open }).toEqual({ tables: 25, views: 3, open: 0 });
   });
 
   it('Drizzle schema matches every table and view column in the database', async () => {
@@ -99,7 +99,7 @@ describe('structure', () => {
     const objects = Object.values(schema);
     const tables = objects.filter((o) => is(o, PgTable)) as PgTable[];
     const views = objects.filter((o) => is(o, PgView)) as PgView[];
-    expect(tables).toHaveLength(24);
+    expect(tables).toHaveLength(25);
     expect(views).toHaveLength(3);
 
     for (const table of tables) {

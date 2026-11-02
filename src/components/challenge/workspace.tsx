@@ -3,6 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { WorkspaceToolPanel } from '@/components/challenge/tools';
+import {
+  ExifViewer,
+  HexViewer,
+  PacketViewer,
+  SqliteViewer,
+} from '@/components/challenge/viewers';
 import { apiPost } from '@/lib/api-client';
 import { parseCsv } from '@/lib/workspace/definitions';
 import type { WorkspaceState } from '@/lib/workspace/state';
@@ -81,14 +88,22 @@ function Preview({ file, number }: { file: File; number: number }) {
           rel="noopener"
           className="inline-flex min-h-11 items-center text-sm text-ring underline underline-offset-4"
         >
-          Open the newspaper in a new tab
+          Open the PDF in a new tab
         </a>
       </div>
     );
   }
-  if (file.kind === 'image') {
-    // eslint-disable-next-line @next/next/no-img-element -- behind a team login, not optimisable
-    return <img src={url} alt={`Recovered photograph ${file.key}`} className="h-auto w-full" />;
+  if (file.kind === 'sqlite') return <SqliteViewer url={url} />;
+  if (file.kind === 'pcap') return <PacketViewer url={url} />;
+  if (file.kind === 'image' || file.kind === 'hex' || file.kind === 'exif') {
+    return (
+      <div className="flex flex-col gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element -- behind a team login, not optimisable */}
+        <img src={url} alt={`Recovered photograph ${file.key}`} className="h-auto w-full" />
+        {file.kind === 'hex' && <HexViewer url={url} />}
+        {file.kind === 'exif' && <ExifViewer url={url} />}
+      </div>
+    );
   }
   return <TextPreview file={file} url={url} />;
 }
@@ -147,13 +162,12 @@ export function Workspace({
     <section aria-labelledby="workspace" className="flex flex-col gap-4">
       <div>
         <h2 id="workspace" className="font-heading text-2xl font-bold uppercase">
-          The MJ Archive
+          {state.title}
         </h2>
-        <p className="text-muted-foreground">
-          Investigate MJ’s recovered files, uncover the truth behind article NY-204, and discover
-          what she left hidden in the archive.
-        </p>
+        <p className="text-muted-foreground">{state.intro}</p>
       </div>
+
+      <WorkspaceToolPanel number={number} state={state} />
 
       <dl className="grid gap-3 sm:grid-cols-2">
         <div className="border border-border bg-card p-3">
@@ -204,7 +218,7 @@ export function Workspace({
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-mono text-sm font-semibold break-all">{file.key}</h3>
-                  {confirming ? (
+                  {state.readOnly ? null : confirming ? (
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm">Delete this file?</span>
                       <button

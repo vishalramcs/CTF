@@ -3,7 +3,7 @@
 Spider-Man–themed beginner CTF for a live 75-minute college event (EYE club, PSG Tech). Next.js 15 + Supabase (Postgres + Realtime Broadcast) on Vercel.
 
 ## Read first
-`docs/01-PRD.md` (what), `docs/02-TRD.md` (how, decisions are final), `docs/03-App-Flow.md` (screens and states), `docs/04-Design-Brief.md` (look), `docs/05-Backend-Schema.md` (tables and transaction recipes), `docs/06-Implementation-Plan.md` (milestones), and **`docs/07-Rules-v2.md`, which overrides them where they disagree** (dynamic scoring, no AI Mode), and **`docs/08-Question-Rules.md`, which overrides 07 where they disagree** (12 questions plus a Main Question, two-tier position scoring, coordinate fragments, final-location race, new ranking; no locations or Cosmic Keys). If code and docs disagree, the docs win. Change a doc deliberately and say so.
+`docs/01-PRD.md` (what), `docs/02-TRD.md` (how, decisions are final), `docs/03-App-Flow.md` (screens and states), `docs/04-Design-Brief.md` (look), `docs/05-Backend-Schema.md` (tables and transaction recipes), `docs/06-Implementation-Plan.md` (milestones), and **`docs/07-Rules-v2.md`, which overrides them where they disagree** (dynamic scoring, no AI Mode), and **`docs/08-Question-Rules.md`, which overrides 07 where they disagree** (12 questions plus a Main Question, two-tier position scoring, coordinate fragments, final-location race, new ranking; no locations or Cosmic Keys), and **`docs/09-Key-Rules.md`, which overrides 08 where they disagree** (four keys and a sealed final message replace coordinate fragments). If code and docs disagree, the docs win. Change a doc deliberately and say so.
 
 ## Workflow
 - Build **one milestone at a time** (06 §1). At the end of each: run `pnpm lint && pnpm typecheck && pnpm test && pnpm build`, commit `M<n>: <title>`, then **stop**, summarise what was built and verified, and wait for "continue".
@@ -21,7 +21,7 @@ Spider-Man–themed beginner CTF for a live 75-minute college event (EYE club, P
 8. **Fragments are identical for all teams** and live only on `app.challenges` (`fragment_value`, `coordinate_order`, `order_clue`), never in team variants. They reach a team only after it solves that question; the Main Question's three final coordinates only after it solves the Main Question. Variants change the question values and the team token.
 9. **Every admin mutation writes `audit_log`**. Every submit of any kind writes an attempt row.
 10. Inspect-surface clues (comments, meta, cookies `clue_*`, localStorage, headers `x-spidey-*`, robots.txt) are intended. They must hold dummy clue values only, never real tokens.
-11. Original spider and web art only. No Marvel or Sony logos, mask, artwork, stills or music. Exception, by organiser decision: `public/event-logo.png`, which the organisers supplied and take responsibility for.
+11. Original spider and web art only. No Marvel or Sony logos, mask, artwork, stills or music. Exceptions, by organiser decision: `public/event-logo.png` and the Q3 evidence photo (`src/lib/workspace/files/q3-bugle/`), which the organisers supplied and take responsibility for.
 12. Never commit `.env*` (except `.env.example`) or `seed-output/`.
 
 ## Commands (keep this list current)

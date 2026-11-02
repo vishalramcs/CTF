@@ -16,13 +16,17 @@ const body = z
   .object({
     submissionsOpen: z.boolean().optional(),
     leaderboardFrozen: z.boolean().optional(),
+    decoderReleased: z.boolean().optional(),
     // Finale time in EVENT_TIMEZONE; null clears it. /api/public/state freezes the board after it.
     freezeAt: localDateTime.nullable().optional(),
   })
   .refine((b) => Object.keys(b).length > 0);
 
 export const POST = withAdmin(async (req, session) => {
-  const { submissionsOpen, leaderboardFrozen, freezeAt } = await parseBody(req, body);
+  const { submissionsOpen, leaderboardFrozen, decoderReleased, freezeAt } = await parseBody(
+    req,
+    body,
+  );
 
   const result = await db.transaction(async (tx) => {
     const state = await lockEvent(tx);
@@ -31,8 +35,12 @@ export const POST = withAdmin(async (req, session) => {
       submissionsOpen: submissionsOpen !== undefined && submissionsOpen !== state.submissionsOpen,
       leaderboardFrozen:
         leaderboardFrozen !== undefined && leaderboardFrozen !== state.leaderboardFrozen,
+      decoderReleased: decoderReleased !== undefined && decoderReleased !== state.decoderReleased,
     };
 
+    if (changed.decoderReleased) {
+      await tx.update(eventState).set({ decoderReleased }).where(eq(eventState.id, 1));
+    }
     if (changed.submissionsOpen) {
       await tx.update(eventState).set({ submissionsOpen }).where(eq(eventState.id, 1));
     }
@@ -55,17 +63,20 @@ export const POST = withAdmin(async (req, session) => {
         })
         .where(eq(eventState.id, 1));
     }
-    if (changed.submissionsOpen || changed.leaderboardFrozen) await bumpBoard(tx);
+    // The version bump also makes each dashboard re-read, which is how the decoder appears.
+    if (changed.submissionsOpen || changed.leaderboardFrozen || changed.decoderReleased) {
+      await bumpBoard(tx);
+    }
     await audit(tx, {
       ...actor(req, session),
       action: 'event.settings',
       entityType: 'event',
-      details: { submissionsOpen, leaderboardFrozen, freezeAt, changed },
+      details: { submissionsOpen, leaderboardFrozen, decoderReleased, freezeAt, changed },
     });
     return changed;
   });
 
-  if (result.leaderboardFrozen) await notifyBoard();
+  if (result.leaderboardFrozen || result.decoderReleased) await notifyBoard();
   if (result.submissionsOpen) await notifyStatus();
   return json({ ok: true });
 });

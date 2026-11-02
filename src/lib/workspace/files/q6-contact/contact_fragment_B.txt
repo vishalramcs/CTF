@@ -1,0 +1,4 @@
+RECOVERED CONTACT CARD (part B)
+label: second half, as MJ wrote it
+digits: 28460
+status: incomplete

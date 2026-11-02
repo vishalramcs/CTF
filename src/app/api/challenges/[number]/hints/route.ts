@@ -5,7 +5,7 @@ import { db } from '@/lib/db/client';
 import { challengeHints, hintReveals } from '@/lib/db/schema';
 import { ApiError, json, parseBody, withTeam } from '@/lib/http';
 import { challengeAccess } from '@/lib/scoring/points';
-import { findPublishedChallenge, getEventState } from '@/lib/scoring/team-state';
+import { findPublishedChallenge, getEventState, hasFullAccess } from '@/lib/scoring/team-state';
 
 export const runtime = 'nodejs';
 
@@ -19,7 +19,9 @@ export const POST = withTeam<{ number: string }>(async (req, session, { params }
 
   const { status } = await getEventState();
   const access = challengeAccess(status);
-  if (access !== 'open') throw new ApiError(423, access, 'This challenge is not open.');
+  if (access !== 'open' && !(await hasFullAccess(session.teamId))) {
+    throw new ApiError(423, access, 'This challenge is not open.');
+  }
 
   // shortcut: re-opening a hint adds no row, so only first reveals count. It's a sanity limit on a
   // free action; add a counter table if hint requests ever show up as load.

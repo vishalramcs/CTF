@@ -28,10 +28,12 @@ async function submitCoordinatesTx(teamId: string, input: string): Promise<Coord
       submissions_open: boolean;
       expected: string | null;
       winner: string | null;
+      full: boolean;
     }>(sql`SELECT status, submissions_open, coordinate_answer_hash AS expected,
-                  coordinate_winner_id AS winner
+                  coordinate_winner_id AS winner,
+                  (SELECT full_access FROM app.teams WHERE id = ${teamId}) AS full
              FROM app.event_state WHERE id = 1 FOR UPDATE`);
-    if (!canSubmit(state.status, state.submissions_open) || !state.expected) {
+    if ((!state.full && !canSubmit(state.status, state.submissions_open)) || !state.expected) {
       return { result: 'closed' };
     }
 
@@ -61,7 +63,8 @@ async function submitCoordinatesTx(teamId: string, input: string): Promise<Coord
     if (!isCorrect) return { result: 'wrong', attemptsLeft: WRONG_LIMIT - 1 - row.wrong };
 
     // The row lock taken by the SELECT means no other team can reach this UPDATE meanwhile.
-    const winner = state.winner === null;
+    // A tester can't take the win from a real team.
+    const winner = state.winner === null && !state.full;
     await tx.execute(sql`UPDATE app.event_state SET
         scoreboard_version = scoreboard_version + 1, updated_at = now()
         ${winner ? sql`, coordinate_winner_id = ${teamId}::uuid, coordinate_won_at = now()` : sql``}

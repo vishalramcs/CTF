@@ -39,10 +39,16 @@ async function submitFlagTx(
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${teamId}:${challenge.id}`}))`);
 
     // FOR SHARE: a status change waits for this commit.
-    const [state] = await tx.execute<{ status: EventStatus; submissions_open: boolean }>(
-      sql`SELECT status, submissions_open FROM app.event_state WHERE id = 1 FOR SHARE`,
-    );
-    if (!canSubmit(state.status, state.submissions_open)) return { result: 'closed' };
+    const [state] = await tx.execute<{
+      status: EventStatus;
+      submissions_open: boolean;
+      full: boolean;
+    }>(sql`SELECT status, submissions_open,
+             (SELECT full_access FROM app.teams WHERE id = ${teamId}) AS full
+           FROM app.event_state WHERE id = 1 FOR SHARE`);
+    if (!state.full && !canSubmit(state.status, state.submissions_open)) {
+      return { result: 'closed' };
+    }
 
     // One round trip for the solved check, the wrong count and the expected hash.
     const [row] = await tx.execute<{

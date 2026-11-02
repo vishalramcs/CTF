@@ -1,6 +1,6 @@
 import { DashboardClient } from '@/components/participant/dashboard-client';
 import { requireTeam } from '@/lib/auth/guards';
-import { getCoordinateBoard } from '@/lib/coordinates/state';
+import { getVault } from '@/lib/vault/state';
 import { listAnnouncements } from '@/lib/participant/announcements';
 import { listCompletedSurprises } from '@/lib/participant/history';
 import { getEventState, getTeamScore, listChallengeCards } from '@/lib/scoring/team-state';
@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const { status } = await getEventState();
   const { score, rank } = await getTeamScore(teamId);
   const cards = await listChallengeCards(teamId, status);
-  const coordinates = await getCoordinateBoard(teamId);
+  const vault = await getVault(teamId);
   const announcements = await listAnnouncements();
   const surprises = await listCompletedSurprises(teamId);
 
@@ -21,7 +21,7 @@ export default async function DashboardPage() {
       score={score}
       rank={rank}
       cards={cards}
-      coordinates={coordinates}
+      vault={vault}
       announcements={announcements}
       surprises={surprises}
     />

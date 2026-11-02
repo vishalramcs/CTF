@@ -32,6 +32,7 @@ export function EventPanel({
   status,
   submissionsOpen,
   leaderboardFrozen,
+  decoderReleased,
   freezeAt,
   timeZone,
   isSuper,
@@ -39,6 +40,7 @@ export function EventPanel({
   status: EventStatus;
   submissionsOpen: boolean;
   leaderboardFrozen: boolean;
+  decoderReleased: boolean;
   freezeAt: Date | string | null;
   timeZone: string;
   isSuper: boolean;
@@ -104,6 +106,21 @@ export function EventPanel({
           Leaderboard {leaderboardFrozen ? 'frozen' : 'live'}
           <span className="text-sm font-normal text-muted-foreground">
             (freezing saves the public board as it is now)
+          </span>
+        </label>
+        <label className="flex items-center gap-3 font-medium">
+          <input
+            type="checkbox"
+            className="size-5"
+            checked={decoderReleased}
+            disabled={pending}
+            onChange={() =>
+              run('POST', '/api/admin/event/settings', { decoderReleased: !decoderReleased })
+            }
+          />
+          Final decoder {decoderReleased ? 'released' : 'hidden'}
+          <span className="text-sm font-normal text-muted-foreground">
+            (release it for the last 5 to 10 minutes)
           </span>
         </label>
         <div className="space-y-2">
