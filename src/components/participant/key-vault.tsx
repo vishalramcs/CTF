@@ -25,7 +25,10 @@ function Decoder({ keys, sealed }: { keys: Vault['keys']; sealed: SealedMessage 
   }
 
   return (
-    <form onSubmit={(e) => void decode(e)} className="flex flex-col gap-2 border-l-2 border-ring pl-3">
+    <form
+      onSubmit={(e) => void decode(e)}
+      className="flex flex-col gap-2 border-l-2 border-ring pl-3"
+    >
       <h3 className="font-heading text-lg font-bold uppercase">Final decoder</h3>
       {keys.map((k, i) => (
         <div key={k.slot} className="flex flex-col gap-1">
@@ -57,14 +60,17 @@ function Decoder({ keys, sealed }: { keys: Vault['keys']; sealed: SealedMessage 
 export function KeyVault({ vault }: { vault: Vault }) {
   const router = useRouter();
   return (
-    <div className="panel-notch flex flex-col gap-4 border border-border bg-card p-4">
+    <div className="dash-card flex flex-col gap-4 p-4">
       <p className="text-sm text-muted-foreground">
         Any 2 flags in a tier earn its key. The Main Question earns the fourth. All four open the
         final transmission.
       </p>
       <ul className="grid gap-3 sm:grid-cols-2">
         {vault.keys.map((k) => (
-          <li key={k.slot} className="flex min-h-20 flex-col gap-1 border border-border p-3">
+          <li
+            key={k.slot}
+            className="flex min-h-20 flex-col gap-1 rounded-lg border border-border bg-secondary/40 p-3"
+          >
             <span className="text-sm font-semibold">
               KEY 0{k.slot} · {k.label}
             </span>

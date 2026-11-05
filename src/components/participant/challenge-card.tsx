@@ -5,11 +5,26 @@ import FlipCard from '@/components/FlipCard';
 import PixelCard from '@/components/PixelCard';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
 
-export const DIFFICULTY: Record<Card['difficulty'], { label: string; border: string }> = {
-  easy: { label: 'Easy', border: 'border-difficulty-easy' },
-  medium: { label: 'Medium', border: 'border-difficulty-medium' },
-  difficult: { label: 'Difficult', border: 'border-difficulty-difficult' },
-  main_difficult: { label: 'Main Question', border: 'border-difficulty-main' },
+export const DIFFICULTY: Record<
+  Card['difficulty'],
+  { label: string; border: string; accent: string }
+> = {
+  easy: { label: 'Easy', border: 'border-difficulty-easy', accent: 'border-l-difficulty-easy' },
+  medium: {
+    label: 'Medium',
+    border: 'border-difficulty-medium',
+    accent: 'border-l-difficulty-medium',
+  },
+  difficult: {
+    label: 'Difficult',
+    border: 'border-difficulty-difficult',
+    accent: 'border-l-difficulty-difficult',
+  },
+  main_difficult: {
+    label: 'Main Question',
+    border: 'border-difficulty-main',
+    accent: 'border-l-difficulty-main',
+  },
 };
 
 export function DifficultyChip({ difficulty }: { difficulty: Card['difficulty'] }) {
@@ -46,7 +61,7 @@ export function ChallengeCard({ card }: { card: Card }) {
       tiltMax={6}
       hoverScale={1.02}
       height={176}
-      radius={6}
+      radius={10}
       background="var(--card)"
       shadowOpacity={0.6}
       ariaLabel={`Question ${card.number}, ${card.title}, ${DIFFICULTY[card.difficulty].label}, ${card.currentPoints} points, ${stateLabel(card)}. Flip for the link.`}
@@ -62,7 +77,7 @@ export function ChallengeCard({ card }: { card: Card }) {
             glowColor="#2d6bff"
             intro={false}
             noFocus
-            radius={6}
+            radius={10}
             style={{
               width: '100%',
               height: '100%',
@@ -70,7 +85,9 @@ export function ChallengeCard({ card }: { card: Card }) {
               background: 'var(--card)',
             }}
           >
-            <div className="flex flex-col justify-between gap-3 border border-border p-4">
+            <div
+              className={`flex flex-col justify-between gap-3 rounded-[10px] border border-border border-l-4 p-4 ${DIFFICULTY[card.difficulty].accent}`}
+            >
               <div className="flex items-start justify-between gap-2">
                 <p className="font-heading text-2xl font-black">#{card.number}</p>
                 <DifficultyChip difficulty={card.difficulty} />
@@ -101,7 +118,7 @@ export function ChallengeCard({ card }: { card: Card }) {
       }
       back={
         (
-          <div className="flex h-full flex-col justify-between gap-3 border border-border p-4">
+          <div className="flex h-full flex-col justify-between gap-3 rounded-[10px] border border-border p-4">
             <p className="font-semibold">
               #{card.number} {card.title}
             </p>

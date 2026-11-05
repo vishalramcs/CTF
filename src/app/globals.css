@@ -480,3 +480,53 @@
     opacity: 0;
   }
 }
+
+/* Dashboard cards (docs/10 §3). Dashboard only: the Leaderboard and History pages keep
+   .mission-panel and .panel-notch untouched. */
+.dash-card {
+  background: linear-gradient(165deg, var(--card), #0a0e19);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 8px 24px rgb(0 0 0 / 0.35);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+.dash-card--accent {
+  border-top: 2px solid var(--primary);
+}
+@media (hover: hover) {
+  .dash-card:hover {
+    border-color: rgb(45 107 255 / 0.55);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 10px 28px rgb(0 0 0 / 0.45),
+      0 0 0 1px rgb(45 107 255 / 0.2);
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-card {
+    transition: none;
+  }
+  .dash-card:hover {
+    transform: none;
+  }
+}
+
+/* Top three on the dashboard leaderboard preview. */
+.lb-gold {
+  background: linear-gradient(160deg, rgb(244 197 66 / 0.18), rgb(244 197 66 / 0.04));
+  border-color: rgb(244 197 66 / 0.55);
+}
+.lb-silver {
+  background: linear-gradient(160deg, rgb(201 209 224 / 0.14), rgb(201 209 224 / 0.03));
+  border-color: rgb(201 209 224 / 0.45);
+}
+.lb-bronze {
+  background: linear-gradient(160deg, rgb(208 138 78 / 0.16), rgb(208 138 78 / 0.03));
+  border-color: rgb(208 138 78 / 0.5);
+}
