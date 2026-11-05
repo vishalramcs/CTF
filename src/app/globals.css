@@ -530,3 +530,77 @@
   background: linear-gradient(160deg, rgb(208 138 78 / 0.16), rgb(208 138 78 / 0.03));
   border-color: rgb(208 138 78 / 0.5);
 }
+
+/* Login page: the hanging spider panel and a subtle title glitch (docs/10 §4). */
+.hanging-spider-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 46% at 100% 0%, rgb(190 0 8 / 0.5), transparent 72%),
+    radial-gradient(ellipse 60% 48% at 100% 100%, rgb(175 0 10 / 0.5), transparent 72%);
+}
+.hanging-spider {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  transform-origin: top center;
+  animation: spider-sway 5s ease-in-out infinite;
+}
+.hanging-spider__line {
+  display: block;
+  width: 3px;
+  height: clamp(170px, 29vh, 285px);
+  margin-left: -1.5px;
+  background: #ed101b;
+  box-shadow: 0 0 5px rgb(255 0 20 / 0.5);
+}
+.hanging-spider__body {
+  display: block;
+  width: clamp(100px, 10vw, 145px);
+  height: auto;
+  transform: translateX(-50%);
+  overflow: visible;
+  filter: drop-shadow(0 0 5px rgb(255 0 18 / 0.28));
+}
+@keyframes spider-sway {
+  0%,
+  100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+.glitch-title {
+  position: relative;
+}
+.glitch-title::before,
+.glitch-title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+}
+.glitch-title::before {
+  color: #e2232a;
+  clip-path: inset(0 0 55% 0);
+  animation: flashy-glitch-a 6s steps(1) infinite;
+}
+.glitch-title::after {
+  color: #2d6bff;
+  clip-path: inset(55% 0 0 0);
+  animation: flashy-glitch-b 6s steps(1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hanging-spider {
+    animation: none;
+  }
+  .glitch-title::before,
+  .glitch-title::after {
+    animation: none;
+  }
+}
