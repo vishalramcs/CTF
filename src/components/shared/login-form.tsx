@@ -12,11 +12,13 @@ export function LoginForm({
   next,
   notice,
   usernameLabel = 'Username',
+  compact = false,
 }: {
   endpoint: string;
   next: string;
   notice?: string;
   usernameLabel?: string;
+  compact?: boolean;
 }) {
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -49,7 +51,7 @@ export function LoginForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className={compact ? 'space-y-3' : 'space-y-4'}>
       {notice && !error && (
         <p role="status" className="text-sm text-muted-foreground">
           {notice}
@@ -64,7 +66,7 @@ export function LoginForm({
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          className={inputClass}
+          className={compact ? inputClass.replace('h-11', 'h-10') : inputClass}
         />
       </label>
       <label className="block text-sm font-medium">
@@ -75,7 +77,7 @@ export function LoginForm({
           required
           maxLength={256}
           autoComplete="current-password"
-          className={inputClass}
+          className={compact ? inputClass.replace('h-11', 'h-10') : inputClass}
         />
       </label>
       {error && (
@@ -83,7 +85,11 @@ export function LoginForm({
           {error}
         </p>
       )}
-      <Button type="submit" disabled={pending} className="h-11 w-full text-base">
+      <Button
+        type="submit"
+        disabled={pending}
+        className={compact ? 'h-10 w-full text-base' : 'h-11 w-full text-base'}
+      >
         {pending ? 'Checking…' : 'Log in'}
       </Button>
     </form>

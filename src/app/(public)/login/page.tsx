@@ -18,11 +18,12 @@ export default async function LoginPage({
   if (result.ok && result.session.role === 'team') redirect(target);
 
   return (
-    <AuthCard title="Team login" subtitle="Log in with your team name and password.">
+    <AuthCard title="Team login" subtitle="Log in with your team name and password." spider>
       <LoginForm
         endpoint="/api/auth/login"
         next={target}
         usernameLabel="Team name"
+        compact
         notice={isSessionEndReason(reason) ? SESSION_ENDED_MESSAGES[reason] : undefined}
       />
     </AuthCard>
