@@ -410,3 +410,73 @@
     display: none;
   }
 }
+
+/* FLASHY SPIDER-MAN overlay (docs/10). Dark stage, red and blue corners, a slow glitch on the title. */
+.flashy-stage {
+  background:
+    radial-gradient(ellipse 50% 45% at 0% 0%, rgb(226 35 42 / 0.45), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 100% 100%, rgb(45 107 255 / 0.4), transparent 70%), #02030a;
+}
+.flashy-signal {
+  background: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.03) 0 2px, transparent 2px 5px);
+}
+.flashy-glitch {
+  position: relative;
+}
+.flashy-glitch::before,
+.flashy-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.flashy-glitch::before {
+  color: #e2232a;
+  clip-path: inset(0 0 55% 0);
+  animation: flashy-glitch-a 4s steps(1) infinite;
+}
+.flashy-glitch::after {
+  color: #2d6bff;
+  clip-path: inset(55% 0 0 0);
+  animation: flashy-glitch-b 4s steps(1) infinite;
+}
+@keyframes flashy-glitch-a {
+  0%,
+  90%,
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  92% {
+    transform: translateX(-4px);
+    opacity: 0.9;
+  }
+  96% {
+    transform: translateX(3px);
+    opacity: 0.9;
+  }
+}
+@keyframes flashy-glitch-b {
+  0%,
+  91%,
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  93% {
+    transform: translateX(4px);
+    opacity: 0.9;
+  }
+  97% {
+    transform: translateX(-3px);
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flashy-glitch::before,
+  .flashy-glitch::after {
+    animation: none;
+    opacity: 0;
+  }
+}
