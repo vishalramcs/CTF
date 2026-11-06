@@ -16,6 +16,7 @@
         "gen-secrets": "tsx scripts/gen-secrets.ts",
         "bench:argon2": "tsx scripts/bench-argon2.ts",
         "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "loadtest": "tsx --env-file=.env.local scripts/loadtest.ts",
         "db:push": "tsx --env-file=.env.local scripts/db-push.ts"
     },
     "dependencies": {
