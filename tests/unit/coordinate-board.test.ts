@@ -1,11 +1,12 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CoordinateBoard } from '@/components/coordinates/coordinate-board';
 import { fragmentId } from '@/lib/coordinates/fragments';
 import type { CoordinateBoard as BoardData } from '@/lib/coordinates/state';
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh() {} }) }));
 
 const slot = (order: number, value: string | null) => ({
   id: fragmentId(order),
@@ -15,7 +16,7 @@ const slot = (order: number, value: string | null) => ({
 });
 
 // `values` is the fragment held in each slot 1-6, or null.
-function board(values: (string | null)[]): BoardData {
+function board(values: (string | null)[], answered = true): BoardData {
   const locations = [1, 2, 3].map((position) => {
     const north = slot(2 * position - 1, values[2 * position - 2]);
     const south = slot(2 * position, values[2 * position - 1]);
@@ -25,12 +26,14 @@ function board(values: (string | null)[]): BoardData {
       north,
       south,
       reconstructed,
-      label: reconstructed ? `PLACE${position}` : null,
+      answered: reconstructed && answered,
+      label: reconstructed && answered ? `PLACE${position}` : null,
       text: reconstructed ? `TEXT${position}` : null,
     };
   });
   return {
     slots: 6,
+    locationPoints: 25,
     fragments: [],
     locations,
     finalCoordinates: null,
@@ -38,8 +41,8 @@ function board(values: (string | null)[]): BoardData {
   };
 }
 
-const render = (values: (string | null)[]) =>
-  renderToStaticMarkup(createElement(CoordinateBoard, { board: board(values) }));
+const render = (values: (string | null)[], answered = true) =>
+  renderToStaticMarkup(createElement(CoordinateBoard, { board: board(values, answered) }));
 
 describe('fragmentId', () => {
   it('names the six slots L1-N to L3-S', () => {
@@ -55,6 +58,16 @@ describe('fragmentId', () => {
 });
 
 describe('CoordinateBoard', () => {
+  it('asks for the place name once a location is rebuilt, and hides it until answered', () => {
+    const html = render(['AAA', 'BBB', null, null, null, null], false);
+    expect(html).toContain('Name the place for +25');
+    expect(html).not.toContain('PLACE1');
+    expect(html.match(/Name the place/g)).toHaveLength(1);
+    const done = render(['AAA', 'BBB', null, null, null, null], true);
+    expect(done).not.toContain('Name the place');
+    expect(done).toContain('Place named');
+  });
+
   it('shows three locked locations before any fragment is held', () => {
     const html = render([null, null, null, null, null, null]);
     expect(html.match(/Incomplete/g)).toHaveLength(3);

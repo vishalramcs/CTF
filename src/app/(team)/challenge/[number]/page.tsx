@@ -75,7 +75,12 @@ export default async function ChallengePage({ params }: { params: Promise<{ numb
 
       <Evidence blocks={view.evidence} number={view.number} />
       <Hints number={view.number} count={view.hintCount} />
-      <FlagForm number={view.number} prefix={env.FLAG_PREFIX} solved={view.solved} />
+      <FlagForm
+        number={view.number}
+        prefix={env.FLAG_PREFIX}
+        solved={view.solved}
+        parts={view.parts}
+      />
     </main>
   );
 }

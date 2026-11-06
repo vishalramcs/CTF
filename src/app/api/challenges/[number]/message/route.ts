@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 const bodySchema = z.object({ to: z.string().max(40), text: z.string().max(200) });
 
 // Lives only in this route, so the number never reaches a browser bundle.
-const CONTACT = '7391528460';
+const CONTACT = '8462097315';
 const GREETING = /^good morning[\s.!]*$/i;
 const REPLY = 'The signal moved WEST.';
 const DEFAULT_REPLY = 'Who is this?';

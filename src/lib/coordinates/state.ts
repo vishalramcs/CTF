@@ -18,9 +18,9 @@ type Held = {
   orderClue: string | null;
 };
 
-// Fragments a team has earned, and nothing else. A fragment comes from the team's own solve of the
-// question that carries it, or from solving the Main Question, which grants all of them. Derived
-// from `solves` (unique per team and challenge), so an award can never be duplicated.
+// Fragments a team has earned, and nothing else. Fragment n comes from the team's own solve of the
+// question that carries it, or from finding beacon flag n of the Main Question (docs/12). Derived
+// from `solves` and `part_solves` (each unique per team), so an award can never be duplicated.
 async function heldFragments(executor: Executor, teamId: string): Promise<Held[]> {
   const rows = await executor.execute<{
     order: number;
@@ -37,9 +37,9 @@ async function heldFragments(executor: Executor, teamId: string): Promise<Held[]
        AND (
          EXISTS (SELECT 1 FROM app.solves s WHERE s.team_id = ${teamId}
                   AND s.challenge_id = c.id)
-         OR EXISTS (SELECT 1 FROM app.solves s
-                      JOIN app.challenges m ON m.id = s.challenge_id
-                     WHERE s.team_id = ${teamId} AND m.difficulty = 'main_difficult')
+         OR EXISTS (SELECT 1 FROM app.part_solves s
+                      JOIN app.challenge_parts p ON p.id = s.part_id
+                     WHERE s.team_id = ${teamId} AND p.part = c.coordinate_order)
        )
      ORDER BY c.coordinate_order`);
   return rows.map((r) => ({
@@ -52,22 +52,13 @@ async function heldFragments(executor: Executor, teamId: string): Promise<Held[]
   }));
 }
 
-async function solvedMain(executor: Executor, teamId: string): Promise<boolean> {
-  const rows = await executor.execute(sql`
-    SELECT 1 FROM app.solves s JOIN app.challenges c ON c.id = s.challenge_id
-     WHERE s.team_id = ${teamId} AND c.difficulty = 'main_difficult' LIMIT 1`);
-  return rows.length > 0;
-}
-
-// The reconstructed locations: those whose North and South fragments the team holds, or all three
-// once it has solved the Main Question. Fixed positions 1-3 in app.final_coordinates carry the
+// The reconstructed locations: those whose North and South fragments the team holds. Fixed positions 1-3 in app.final_coordinates carry the
 // organiser's text for each. Takes the caller's executor so a submit reads them in its own
 // transaction. null when none is reconstructed yet.
 export async function finalCoordinatesFor(
   executor: Executor & Pick<typeof db, 'select'>,
   teamId: string,
 ): Promise<FinalCoordinate[] | null> {
-  const main = await solvedMain(executor, teamId);
   const held = new Set((await heldFragments(executor, teamId)).map((f) => f.order));
   const rows = await executor
     .select({
@@ -77,13 +68,25 @@ export async function finalCoordinatesFor(
     })
     .from(finalCoordinates)
     .orderBy(asc(finalCoordinates.position));
-  const out = rows.filter(
-    (r) => main || (held.has(2 * r.position - 1) && held.has(2 * r.position)),
-  );
-  return out.length > 0 ? out.map(({ label, value }) => ({ label, value })) : null;
+  const named = await namedPositions(executor, teamId);
+  const out = rows.filter((r) => held.has(2 * r.position - 1) && held.has(2 * r.position));
+  // The place name is the location answer (docs/12), so it stays hidden until the team gives it.
+  return out.length > 0
+    ? out.map(({ position, label, value }) => ({
+        label: named.has(position) ? label : '',
+        value,
+      }))
+    : null;
 }
 
-// All six fragments, for a team that has just solved the Main Question.
+// Locations whose place name this team has answered correctly.
+export async function namedPositions(executor: Executor, teamId: string): Promise<Set<number>> {
+  const rows = await executor.execute<{ position: number }>(sql`
+    SELECT position FROM app.location_answers WHERE team_id = ${teamId} AND is_correct`);
+  return new Set(rows.map((r) => r.position));
+}
+
+// Every fragment this team holds.
 export async function allFragmentsFor(executor: Executor, teamId: string): Promise<FragmentRef[]> {
   return (await heldFragments(executor, teamId)).map((f) => ({
     id: fragmentId(f.order),
@@ -96,9 +99,13 @@ export async function allFragmentsFor(executor: Executor, teamId: string): Promi
 export async function getCoordinateBoard(teamId: string) {
   const held = await heldFragments(db, teamId);
   const final = await finalCoordinatesFor(db, teamId);
-  const mainSolved = await solvedMain(db, teamId);
+  const named = await namedPositions(db, teamId);
   const rows = await db
-    .select({ position: finalCoordinates.position, label: finalCoordinates.label, value: finalCoordinates.value })
+    .select({
+      position: finalCoordinates.position,
+      label: finalCoordinates.label,
+      value: finalCoordinates.value,
+    })
     .from(finalCoordinates)
     .orderBy(asc(finalCoordinates.position));
   const [found] = await db
@@ -121,20 +128,27 @@ export async function getCoordinateBoard(teamId: string) {
     const position = i + 1;
     const north = slot(2 * position - 1);
     const south = slot(2 * position);
-    const reconstructed = mainSolved || (north.held && south.held);
+    const reconstructed = north.held && south.held;
     const text = reconstructed ? (rows.find((r) => r.position === position) ?? null) : null;
     return {
       position,
       north,
       south,
       reconstructed,
-      label: text?.label ?? null,
+      // The place name is what the team must find, so it is sent only once answered.
+      answered: named.has(position),
+      label: named.has(position) ? (text?.label ?? null) : null,
       text: text?.value ?? null,
     };
   });
 
+  const [{ points }] = await db.execute<{ points: string }>(
+    sql`SELECT location_points AS points FROM app.event_state WHERE id = 1`,
+  );
+
   return {
     slots: FRAGMENT_SLOTS,
+    locationPoints: Number(points),
     fragments: held.map((f) => ({
       number: f.number,
       title: f.title,
@@ -149,4 +163,3 @@ export async function getCoordinateBoard(teamId: string) {
 }
 
 export type CoordinateBoard = Awaited<ReturnType<typeof getCoordinateBoard>>;
-

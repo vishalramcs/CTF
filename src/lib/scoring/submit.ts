@@ -12,6 +12,7 @@ import { challenges, solves, submissions } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 import { checkFlag } from '@/lib/flags/verify';
 import { notifyBoard } from '@/lib/realtime/broadcast';
+import { partsOf, submitPart, type PartResult } from '@/lib/scoring/parts';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
 
 const WRONG_LIMIT = 8;
@@ -27,6 +28,7 @@ export type SubmitResult =
       finalCoordinates?: FinalCoordinate[];
       fragments?: FragmentRef[];
     }
+  | PartResult
   | { result: 'wrong'; attemptsLeft: number }
   | { result: 'already_solved' }
   | { result: 'rate_limited'; retryAfter: number }
@@ -81,6 +83,17 @@ async function submitFlagTx(
     if (row.solved) return { result: 'already_solved' };
     if (row.wrong >= WRONG_LIMIT) {
       return { result: 'rate_limited', retryAfter: Math.max(row.retry_after ?? 1, 1) };
+    }
+
+    // The Main Question's six beacon flags (docs/12): any unfound one is accepted in the same box.
+    const parts = await partsOf(tx, challenge.id);
+    if (parts.length > 0) {
+      const outcome = await submitPart(tx, { teamId, sessionId }, challenge.id, parts, input, (v) =>
+        v.trim().replaceAll('\0', '').slice(0, PREVIEW_LENGTH),
+      );
+      return outcome.result === 'wrong'
+        ? { result: 'wrong', attemptsLeft: WRONG_LIMIT - 1 - row.wrong }
+        : outcome;
     }
 
     const { result, hash } = checkFlag(input, row.expected ?? '', {
@@ -139,6 +152,6 @@ async function submitFlagTx(
 
 export async function submitFlag(...args: Parameters<typeof submitFlagTx>): Promise<SubmitResult> {
   const result = await submitFlagTx(...args);
-  if (result.result === 'correct') await notifyBoard(); // after the commit
+  if (result.result === 'correct' || result.result === 'part') await notifyBoard(); // after the commit
   return result;
 }

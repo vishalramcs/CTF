@@ -61,10 +61,13 @@ export function FlagForm({
   number,
   prefix,
   solved,
+  parts = null,
 }: {
   number: number;
   prefix: string;
   solved: Solved | null;
+  // The Main Question's six beacon flags (docs/12): each is submitted here, in any order.
+  parts?: { total: number; found: number[] } | null;
 }) {
   const router = useRouter();
   const [flag, setFlag] = useState('');
@@ -100,6 +103,16 @@ export function FlagForm({
       case 'rate_limited':
         setMessage('');
         return setRetryIn(outcome.retryAfter);
+      case 'part':
+        setMessage(
+          `Beacon ${outcome.part} accepted (+${outcome.points}). Fragment ${outcome.fragmentId}: ${
+            outcome.fragment ?? 'not set yet'
+          }. ${outcome.found} of ${outcome.total} beacons found.`,
+        );
+        setFlag('');
+        return router.refresh();
+      case 'part_already_found':
+        return setMessage(`Your team already found beacon ${outcome.part}.`);
       case 'already_solved':
         setMessage('Your team has already solved this one.');
         return router.refresh();
@@ -131,6 +144,12 @@ export function FlagForm({
       <h2 id="submit" className="font-heading text-2xl font-bold uppercase">
         Submit
       </h2>
+      {parts && (
+        <p className="font-mono text-sm" aria-live="polite">
+          Beacons found: {parts.found.length}/{parts.total}
+          {parts.found.length > 0 && ` (${parts.found.join(', ')})`}
+        </p>
+      )}
       {!shown && (
         <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-2 sm:flex-row">
           <input

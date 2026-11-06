@@ -1,4 +1,4 @@
 RECOVERED CONTACT CARD (part A)
 label: first half, as MJ wrote it
-digits: 73915
+digits: 84620
 status: incomplete

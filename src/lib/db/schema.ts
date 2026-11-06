@@ -167,6 +167,7 @@ export const eventState = app.table('event_state', {
   coordinateWonAt: timestamptz('coordinate_won_at'),
   freezeAt: timestamptz('freeze_at'),
   decoderReleased: boolean('decoder_released').notNull().default(false),
+  locationPoints: numeric('location_points', { precision: 7, scale: 2 }).notNull().default('25'),
 });
 
 export const vaultKeys = app.table('vault_keys', {
@@ -375,3 +376,34 @@ export const vPublicFeed = app
     pointsAwarded: numeric('points_awarded', { precision: 7, scale: 2 }),
   })
   .existing();
+
+// 0008 (docs/12): the Main Question's six beacon flags, and place-name answers per location.
+export const challengeParts = app.table('challenge_parts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  challengeId: uuid('challenge_id').notNull(),
+  part: smallint('part').notNull(),
+  flagHash: text('flag_hash').notNull(),
+});
+
+export const partSolves = app.table('part_solves', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  teamId: uuid('team_id').notNull(),
+  partId: uuid('part_id').notNull(),
+  // Set by the trigger on insert.
+  solvePosition: integer('solve_position')
+    .notNull()
+    .default(sql`0`),
+  pointsAwarded: numeric('points_awarded', { precision: 7, scale: 2 })
+    .notNull()
+    .default(sql`0`),
+  solvedAt: timestamptz('solved_at').notNull().defaultNow(),
+});
+
+export const locationAnswers = app.table('location_answers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  teamId: uuid('team_id').notNull(),
+  position: smallint('position').notNull(),
+  submittedHash: text('submitted_hash').notNull(),
+  isCorrect: boolean('is_correct').notNull(),
+  submittedAt: timestamptz('submitted_at').notNull().defaultNow(),
+});

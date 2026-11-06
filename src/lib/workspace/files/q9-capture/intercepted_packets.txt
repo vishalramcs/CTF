@@ -1,7 +1,7 @@
 # Packets the intern flagged. Not all of them matter, and the list may be incomplete.
-pkt 62: response from 10.20.5.11, carries an encoded field
-pkt 146: response from 10.20.5.10, carries an encoded field
-pkt 188: response from 10.20.5.11, carries an encoded field
-pkt 340: response from 10.20.5.10, carries an encoded field
-pkt 389: response from 10.20.5.11, carries an encoded field
-pkt 256: response from 198.51.100.77
+pkt 41: response from 10.20.5.10, carries an encoded field
+pkt 62: response from 10.20.5.13, carries an encoded field
+pkt 68: response from 10.20.5.11, carries an encoded field
+pkt 116: response from 10.20.5.11, carries an encoded field
+pkt 144: response from 10.20.5.12, carries an encoded field
+pkt 81: response from 203.0.113.140

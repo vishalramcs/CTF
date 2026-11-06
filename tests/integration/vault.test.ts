@@ -34,7 +34,10 @@ let easy: TestChallenge[];
 let hidden: TestChallenge;
 
 const send = (number: number, flag: string, as: Auth = auth) =>
-  submit(request(`/api/challenges/${number}/submit`, { method: 'POST', auth: as, body: { flag } }), params({ number: String(number) }));
+  submit(
+    request(`/api/challenges/${number}/submit`, { method: 'POST', auth: as, body: { flag } }),
+    params({ number: String(number) }),
+  );
 
 beforeAll(() => {
   sql = openSql();
@@ -106,7 +109,10 @@ describe('a full-access team', () => {
     ]);
     const res = await send(3, flagOf(team, hidden));
     expect(res.status).toBe(404);
-    const view = await getChallenge(request('/api/challenges/3', { auth }), params({ number: '3' }));
+    const view = await getChallenge(
+      request('/api/challenges/3', { auth }),
+      params({ number: '3' }),
+    );
     expect(view.status).toBe(404);
   });
 });
@@ -127,9 +133,9 @@ describe('the simulated contact', () => {
   };
 
   it('answers only the right number with the right greeting', async () => {
-    expect(await say('7391528460', 'good morning!')).toBe('The signal moved WEST.');
+    expect(await say('8462097315', 'good morning!')).toBe('The signal moved WEST.');
     expect(await say('2846073915', 'Good morning')).toBe('Who is this?');
-    expect(await say('7391528460', 'hello')).toBe('Who is this?');
+    expect(await say('8462097315', 'hello')).toBe('Who is this?');
   });
 
   it('is not a tool on any other question', async () => {

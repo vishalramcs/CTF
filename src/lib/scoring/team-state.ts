@@ -8,6 +8,7 @@ import {
   type FragmentRef,
 } from '@/lib/coordinates/state';
 import { db } from '@/lib/db/client';
+import { teamParts } from '@/lib/scoring/parts';
 import {
   challengeHints,
   challenges,
@@ -162,6 +163,7 @@ export type ChallengeView =
       files: VariantData['files'];
       hintCount: number;
       currentPoints: number;
+      parts: { total: number; found: number[] } | null;
       solved: {
         points: number;
         fragment: string | null;
@@ -184,6 +186,7 @@ export async function getChallengeView(
   const state = await getEventState();
   const [row] = await db
     .select({
+      id: challenges.id,
       number: challenges.number,
       title: challenges.title,
       difficulty: challenges.difficulty,
@@ -217,10 +220,7 @@ export async function getChallengeView(
     )
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
     .where(
-      and(
-        eq(challenges.number, number),
-        or(eq(challenges.isPublished, true), fullAccess(teamId)),
-      ),
+      and(eq(challenges.number, number), or(eq(challenges.isPublished, true), fullAccess(teamId))),
     );
   if (!row) return null;
   if (row.sealed) {
@@ -249,9 +249,12 @@ export async function getChallengeView(
   const fragments =
     solvedHere && row.difficulty === 'main_difficult' ? await allFragmentsFor(db, teamId) : null;
   const variant = row.variantData as VariantData;
+  // The Main Question's six beacon flags (docs/12), with which ones this team has found.
+  const parts = await teamParts(teamId, row.id);
   return {
     ...header,
     access,
+    parts: parts ? { total: parts.total, found: parts.found } : null,
     workspace: (row.generatorConfig as { workspace?: string }).workspace ?? null,
     category: row.category,
     story: row.story,
@@ -265,7 +268,7 @@ export async function getChallengeView(
       row.pointsEarned === null
         ? null
         : {
-            points: Number(row.pointsEarned),
+            points: parts ? parts.points : Number(row.pointsEarned),
             fragment: row.fragmentValue,
             orderClue: row.orderClue,
             finalCoordinates: final,

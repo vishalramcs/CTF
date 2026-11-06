@@ -37,7 +37,7 @@ describe('the legacy flag prefix', () => {
 
 describe('the evidence viewers read the real files', () => {
   it('reads a photo the way the tracker question needs', () => {
-    const fields = parseExif(bytesOf('q8-sightings/sighting_photo_04.jpg'));
+    const fields = parseExif(bytesOf('q8-sightings/sighting_photo_03.jpg'));
     expect(fields.DateTimeOriginal).toBe('2026:10:18 23:32:10');
     expect(fields.OffsetTimeOriginal).toBe('+09:00');
     expect(fields.GPSLatitudeRef).toBe('N');
@@ -45,9 +45,9 @@ describe('the evidence viewers read the real files', () => {
 
   it('lists the capture, with exactly one response from the unknown server carrying a route', () => {
     const packets = parsePcapng(bytesOf('q9-capture/network_capture.pcapng'));
-    expect(packets.length).toBeGreaterThan(300);
+    expect(packets.length).toBeGreaterThan(100);
     const hits = packets.filter(
-      (p) => p.src === '198.51.100.77' && asciiOf(p.payload).includes('"route"'),
+      (p) => p.src === '203.0.113.140' && asciiOf(p.payload).includes('"route"'),
     );
     expect(hits).toHaveLength(1);
     expect(hits[0].time.startsWith('03:12')).toBe(true);

@@ -1,47 +1,15 @@
 # Camera system sign-ins. Times are authoritative.
-2026-09-01 23:40:00 session=S1010 device=DEVICE-23 account=svc_maint result=SUCCESS ticket=MT-2619
-2026-09-02 12:56:23 session=S1135 device=DEVICE-21 account=night_guard result=SUCCESS
-2026-09-03 01:31:27 session=S1003 device=DEVICE-17 account=PROWLER result=SUCCESS
-2026-09-03 09:15:41 session=S1074 device=DEVICE-11 account=jdavis result=FAILED
-2026-09-03 14:24:18 session=S1104 device=DEVICE-21 account=night_guard result=SUCCESS
-2026-09-03 14:31:49 session=S1219 device=DEVICE-02 account=rmartin result=SUCCESS
-2026-09-03 15:04:29 session=S1052 device=DEVICE-11 account=facilities result=FAILED
-2026-09-03 16:47:20 session=S1153 device=DEVICE-05 account=rmartin result=FAILED
-2026-09-03 18:36:34 session=S1055 device=DEVICE-21 account=jdavis result=SUCCESS
-2026-09-04 08:36:43 session=S1183 device=DEVICE-02 account=jdavis result=FAILED
-2026-09-04 09:57:06 session=S1199 device=DEVICE-11 account=night_guard result=SUCCESS
-2026-09-04 12:58:19 session=S1038 device=DEVICE-02 account=jdavis result=SUCCESS
-2026-09-04 13:12:16 session=S1152 device=DEVICE-21 account=rmartin result=SUCCESS
-2026-09-04 17:15:26 session=S1211 device=DEVICE-11 account=jdavis result=FAILED
-2026-09-05 09:23:39 session=S1066 device=DEVICE-11 account=jdavis result=SUCCESS
-2026-09-05 13:23:39 session=S1203 device=DEVICE-05 account=night_guard result=FAILED
-2026-09-05 13:49:24 session=S1044 device=DEVICE-14 account=night_guard result=SUCCESS
-2026-09-05 15:28:19 session=S1107 device=DEVICE-05 account=rmartin result=FAILED
-2026-09-05 15:47:19 session=S1192 device=DEVICE-11 account=jdavis result=SUCCESS
-2026-09-05 18:10:12 session=S1175 device=DEVICE-11 account=facilities result=SUCCESS
-2026-09-05 18:51:08 session=S1131 device=DEVICE-02 account=night_guard result=FAILED
-2026-09-06 00:15:00 session=S1024 device=DEVICE-23 account=svc_maint result=SUCCESS ticket=MT-2921
-2026-09-06 08:15:37 session=S1225 device=DEVICE-11 account=jdavis result=SUCCESS
-2026-09-06 08:50:40 session=S1098 device=DEVICE-02 account=facilities result=SUCCESS
-2026-09-06 16:49:55 session=S1167 device=DEVICE-21 account=rmartin result=SUCCESS
-2026-09-06 18:32:31 session=S1035 device=DEVICE-02 account=rmartin result=FAILED
-2026-09-07 02:06:38 session=S1018 device=DEVICE-17 account=PROWLER result=SUCCESS
-2026-09-07 11:21:08 session=S1145 device=DEVICE-02 account=facilities result=SUCCESS
-2026-09-07 12:09:47 session=S1224 device=DEVICE-14 account=night_guard result=SUCCESS
-2026-09-07 12:40:17 session=S1058 device=DEVICE-11 account=night_guard result=SUCCESS
-2026-09-07 15:31:09 session=S1053 device=DEVICE-21 account=night_guard result=SUCCESS
-2026-09-07 18:37:14 session=S1110 device=DEVICE-05 account=rmartin result=FAILED
-2026-09-08 13:15:27 session=S1077 device=DEVICE-02 account=jdavis result=SUCCESS
-2026-09-09 11:44:51 session=S1119 device=DEVICE-02 account=night_guard result=SUCCESS
-2026-09-09 17:40:19 session=S1146 device=DEVICE-02 account=facilities result=FAILED
-2026-09-09 23:55:00 session=S1029 device=DEVICE-23 account=svc_maint result=SUCCESS ticket=MT-2209
-2026-09-10 08:30:06 session=S1136 device=DEVICE-21 account=rmartin result=FAILED
-2026-09-10 15:08:58 session=S1171 device=DEVICE-02 account=facilities result=SUCCESS
-2026-09-10 16:38:26 session=S1086 device=DEVICE-02 account=facilities result=FAILED
-2026-09-10 17:52:21 session=S1126 device=DEVICE-02 account=facilities result=FAILED
-2026-09-11 00:46:24 session=S1027 device=DEVICE-17 account=PROWLER result=SUCCESS
-2026-09-11 08:24:52 session=S1197 device=DEVICE-11 account=rmartin result=FAILED
-2026-09-11 12:19:32 session=S1160 device=DEVICE-05 account=rmartin result=SUCCESS
-2026-09-11 14:50:10 session=S1085 device=DEVICE-02 account=night_guard result=SUCCESS
-2026-09-11 15:32:11 session=S1112 device=DEVICE-11 account=rmartin result=FAILED
-2026-09-12 14:11:50 session=S1092 device=DEVICE-02 account=rmartin result=FAILED
+2026-09-01 23:40:00 session=S1004 device=DEVICE-23 account=svc_maint result=SUCCESS ticket=MT-2724
+2026-09-02 12:01:19 session=S1041 device=DEVICE-21 account=jdavis result=SUCCESS
+2026-09-03 01:31:43 session=S1003 device=DEVICE-17 account=PROWLER result=SUCCESS
+2026-09-03 09:55:52 session=S1024 device=DEVICE-11 account=rmartin result=SUCCESS
+2026-09-05 17:32:57 session=S1033 device=DEVICE-02 account=jdavis result=SUCCESS
+2026-09-05 18:22:57 session=S1060 device=DEVICE-05 account=rmartin result=SUCCESS
+2026-09-06 00:15:00 session=S1008 device=DEVICE-23 account=svc_maint result=SUCCESS ticket=MT-2535
+2026-09-07 02:06:49 session=S1006 device=DEVICE-17 account=PROWLER result=SUCCESS
+2026-09-07 10:23:47 session=S1017 device=DEVICE-21 account=night_guard result=SUCCESS
+2026-09-09 22:55:00 session=S1016 device=DEVICE-23 account=svc_maint result=SUCCESS ticket=MT-2824
+2026-09-10 09:09:58 session=S1037 device=DEVICE-14 account=night_guard result=SUCCESS
+2026-09-10 14:58:54 session=S1053 device=DEVICE-21 account=jdavis result=SUCCESS
+2026-09-11 00:46:21 session=S1012 device=DEVICE-17 account=PROWLER result=SUCCESS
+2026-09-12 10:12:49 session=S1047 device=DEVICE-14 account=night_guard result=SUCCESS

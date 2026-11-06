@@ -30,7 +30,7 @@ import {
 
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 
-const FLAG = `${env.FLAG_PREFIX}{N51.E5E0D7S2}`;
+const FLAG = `${env.FLAG_PREFIX}{j.jameson_ed}`;
 const WS = '/api/challenges/5/workspace/files';
 
 let sql: postgres.Sql;
@@ -121,7 +121,7 @@ describe('evidence', () => {
 
     const logins = (await text('authentication.log')).split(/\r?\n/);
     expect(logins.filter((l) => l.includes('session=S-044'))).toEqual([
-      '09:17 LOGIN_SUCCESS account=N51.E5E0D7S2 session=S-044',
+      '09:17 LOGIN_SUCCESS account=j.jameson_ed session=S-044',
     ]);
   });
 

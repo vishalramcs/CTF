@@ -23,7 +23,12 @@ export type WorkspaceFile = {
   unlocksQuestion?: number;
 };
 
-export type Workspace = { title: string; intro: string; tool?: WorkspaceTool; files: WorkspaceFile[] };
+export type Workspace = {
+  title: string;
+  intro: string;
+  tool?: WorkspaceTool;
+  files: WorkspaceFile[];
+};
 
 const TEXT = 'text/plain; charset=utf-8';
 const BINARY = 'application/octet-stream';
@@ -90,11 +95,7 @@ export const WORKSPACES: Record<string, Workspace> = {
   'q7-connors': {
     title: 'Connors’ research files',
     intro: 'The research database, its audit trail and Gwen’s note.',
-    files: [
-      text('gwen_research_note.txt'),
-      db('connors_research.db'),
-      text('project_audit.log'),
-    ],
+    files: [text('gwen_research_note.txt'), db('connors_research.db'), text('project_audit.log')],
   },
   'q8-sightings': {
     title: 'Sighting evidence',
@@ -153,14 +154,12 @@ export const WORKSPACES: Record<string, Workspace> = {
   },
   'q13-tracker': {
     title: 'Ned’s tracker data',
-    intro: 'Ned’s note, the observatory data and the sealed final transmission.',
+    intro: 'Ned’s note and the observatory data. Six beacons, six flags.',
     files: [
       text('ned_search_note.txt'),
       csv('observatory_stations.csv'),
       csv('tracker_observations.csv'),
       csv('signal_readings.csv'),
-      { key: 'final_transmission.json', kind: 'json', contentType: TEXT },
-      text('decoder_spec.txt'),
     ],
   },
 };
