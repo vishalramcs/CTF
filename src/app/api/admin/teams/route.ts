@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { toCsv } from '@/lib/admin/csv';
 import { actor, NO_STORE, pgError, slugify } from '@/lib/admin/http';
-import { listTeams, parseTeamNames, uniqueHandle } from '@/lib/admin/teams';
+import { listTeams, parseTeamRows, uniqueHandle } from '@/lib/admin/teams';
 import { audit } from '@/lib/audit';
 import { hashPassword } from '@/lib/auth/password';
 import { teamPassword } from '@/lib/auth/team-credentials';
@@ -22,7 +22,8 @@ export const GET = withAdmin(async () => json({ teams: await listTeams() }));
 
 export const POST = withAdmin(async (req, session) => {
   const { text } = await parseBody(req, body);
-  const { names, errors } = parseTeamNames(text);
+  const { rows: parsed, errors } = parseTeamRows(text);
+  const names = parsed.map((r) => r.name);
   if (errors.length > 0) throw new ApiError(400, 'bad_request', errors.join(' '));
   if (names.length === 0) throw new ApiError(400, 'bad_request', 'List at least one team.');
   if (names.length > MAX_TEAMS) {
@@ -31,7 +32,8 @@ export const POST = withAdmin(async (req, session) => {
 
   // Hashed before the transaction (it holds the instance's only connection), one at a time to
   // keep Argon2's memory use flat.
-  const passwords = names.map(teamPassword);
+  // A password typed in the list wins; otherwise the default rule.
+  const passwords = parsed.map((r) => r.password ?? teamPassword(r.name));
   const hashes: string[] = [];
   for (const password of passwords) hashes.push(await hashPassword(password));
 

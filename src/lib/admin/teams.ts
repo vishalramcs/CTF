@@ -6,24 +6,39 @@ import { sessions, teams, users, vScoreboard } from '@/lib/db/schema';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-// One team name per line. A blank line is skipped; a duplicate or odd-sized name is an error.
-export function parseTeamNames(text: string): { names: string[]; errors: string[] } {
-  const names: string[] = [];
+// One team per line: "name", or "name<TAB>password" / "name,password" (from the Excel template).
+// A blank password falls back to the default rule. A header row ("Team name, Password") is skipped.
+// A blank line is skipped; a duplicate or odd-sized name is an error.
+export function parseTeamRows(text: string): {
+  rows: { name: string; password: string | null }[];
+  errors: string[];
+} {
+  const rows: { name: string; password: string | null }[] = [];
   const errors: string[] = [];
   const seen = new Set<string>();
   text.split(/\r?\n/).forEach((raw, index) => {
-    const name = raw.trim().replace(/\s+/g, ' ');
+    const parts = raw.includes('\t') ? raw.split('\t') : raw.split(',');
+    const name = (parts[0] ?? '').trim().replace(/\s+/g, ' ');
+    const password = (parts[1] ?? '').trim();
     if (!name) return;
+    if (index === 0 && /^team(\s*name)?$/i.test(name)) return;
     if (name.length < 2 || name.length > 40) {
       errors.push(`Line ${index + 1}: a name needs 2–40 characters.`);
     } else if (seen.has(name.toLowerCase())) {
       errors.push(`Line ${index + 1}: "${name}" is listed twice.`);
+    } else if (password && (password.length < 4 || password.length > 64)) {
+      errors.push(`Line ${index + 1}: a password needs 4–64 characters.`);
     } else {
       seen.add(name.toLowerCase());
-      names.push(name);
+      rows.push({ name, password: password || null });
     }
   });
-  return { names, errors };
+  return { rows, errors };
+}
+
+export function parseTeamNames(text: string): { names: string[]; errors: string[] } {
+  const { rows, errors } = parseTeamRows(text);
+  return { names: rows.map((r) => r.name), errors };
 }
 
 export function uniqueHandle(base: string, taken: Set<string>): string {

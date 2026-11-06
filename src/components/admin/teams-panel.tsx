@@ -15,6 +15,7 @@ import {
 } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
 import { send } from '@/lib/admin/client';
+import { buildXlsx, readXlsx } from '@/lib/admin/xlsx';
 import { formatTime } from '@/lib/admin/shared';
 import type { TeamRow } from '@/lib/admin/teams';
 
@@ -296,7 +297,38 @@ function CreateTeamsModal({
 
   async function readFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) setText(await file.text());
+    if (!file) return;
+    setError(undefined);
+    try {
+      if (/\.xlsx$/i.test(file.name)) {
+        const rows = await readXlsx(await file.arrayBuffer());
+        setText(
+          rows
+            .map((r) => [r[0] ?? '', r[1] ?? ''].map((c) => c.trim()))
+            .filter(([name]) => name)
+            .map(([name, password]) => (password ? `${name}\t${password}` : name))
+            .join('\n'),
+        );
+      } else {
+        setText(await file.text());
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not read that file.');
+    }
+  }
+
+  function downloadTemplate() {
+    const bytes = buildXlsx([['Team name', 'Password']]);
+    const url = URL.createObjectURL(
+      new Blob([bytes as BlobPart], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'teams-template.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function submit(event: FormEvent) {
@@ -316,9 +348,37 @@ function CreateTeamsModal({
   return (
     <Modal title="Create teams" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
+        <div className="space-y-2 text-sm">
+          <p className="font-medium">Easiest way, with Excel:</p>
+          <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+            <li>Download the template.</li>
+            <li>
+              Fill column A with team names and column B with their passwords (4–64 characters).
+            </li>
+            <li>Save it, upload it below, check the list, then press Create.</li>
+          </ol>
+          <Button
+            type="button"
+            variant="outline"
+            className={actionClass}
+            onClick={downloadTemplate}
+          >
+            Download Excel template
+          </Button>
+        </div>
         <label className="block font-medium">
-          One team name per line. The team name is the login; the password is that name lowercased,
-          without spaces, reversed.
+          Upload the filled Excel (.xlsx) or a CSV
+          <input
+            type="file"
+            accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={readFile}
+            className={inputClass}
+          />
+        </label>
+        <label className="block font-medium">
+          Teams to create. One per line: team name, then a tab or comma and the password. The team
+          name is the login. A team with no password gets the default: its name lowercased, without
+          spaces, reversed.
           <textarea
             value={text}
             onChange={(event) => setText(event.target.value)}
@@ -327,15 +387,6 @@ function CreateTeamsModal({
             maxLength={20_000}
             spellCheck={false}
             className={textareaClass}
-          />
-        </label>
-        <label className="block font-medium">
-          Or upload a CSV
-          <input
-            type="file"
-            accept=".csv,.txt,text/csv"
-            onChange={readFile}
-            className={inputClass}
           />
         </label>
         <ErrorText>{error}</ErrorText>
