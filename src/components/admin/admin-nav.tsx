@@ -7,6 +7,7 @@ const LINKS = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/teams', label: 'Teams' },
   { href: '/admin/challenges', label: 'Challenges' },
+  { href: '/admin/workspaces', label: 'Workspaces' },
   { href: '/admin/coordinates', label: 'Coordinates' },
   { href: '/admin/solves', label: 'Solves' },
   { href: '/admin/surprises', label: 'Surprises' },

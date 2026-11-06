@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 import { ApiError, withTeam } from '@/lib/http';
 import { getChallengeView } from '@/lib/scoring/team-state';
-import { findWorkspaceFile } from '@/lib/workspace/definitions';
 import { isFileDeleted } from '@/lib/workspace/state';
+import { downloadUploadedFile, findFile } from '@/lib/workspace/uploaded';
 
 export const runtime = 'nodejs';
 
@@ -33,13 +33,15 @@ export const GET = withTeam<{ number: string; file: string }>(async (_req, sessi
   const { number, file: key } = await params;
   const view = await getChallengeView(session.teamId, number);
   const workspace = view?.access === 'open' ? view.workspace : null;
-  const file = workspace ? findWorkspaceFile(workspace, key) : undefined;
+  const file = workspace ? await findFile(workspace, key) : undefined;
   if (!workspace || !file) throw new ApiError(404, 'not_found', 'No such file.');
   if (await isFileDeleted(session.teamId, workspace, file.key)) {
     throw new ApiError(410, 'deleted', 'This file was deleted.');
   }
 
-  const content = await READERS[workspace](file.key);
+  const content = Object.hasOwn(READERS, workspace)
+    ? await READERS[workspace](file.key)
+    : await downloadUploadedFile(workspace, file.key);
   return new Response(new Uint8Array(content), {
     headers: {
       'content-type': file.contentType,

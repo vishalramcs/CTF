@@ -23,6 +23,10 @@ export default async function ChallengePage({ params }: { params: Promise<{ numb
   const { teamId } = await requireTeam();
   const view = await getChallengeView(teamId, (await params).number);
   if (!view) notFound();
+  const workspace =
+    view.access === 'open' && view.workspace
+      ? await getWorkspaceState(teamId, view.workspace)
+      : null;
 
   if (view.access !== 'open') {
     const { heading, text } = NOT_OPEN[view.access];
@@ -65,12 +69,8 @@ export default async function ChallengePage({ params }: { params: Promise<{ numb
         <div dangerouslySetInnerHTML={{ __html: view.html }} />
       </section>
 
-      {view.workspace && (
-        <Workspace
-          number={view.number}
-          initial={await getWorkspaceState(teamId, view.workspace)}
-          solved={view.solved !== null}
-        />
+      {workspace && (
+        <Workspace number={view.number} initial={workspace} solved={view.solved !== null} />
       )}
 
       <Evidence blocks={view.evidence} number={view.number} />

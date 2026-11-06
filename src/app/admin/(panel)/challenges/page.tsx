@@ -1,6 +1,6 @@
 import { ChallengesPanel } from '@/components/admin/challenges-panel';
 import { PageTitle } from '@/components/admin/page-title';
-import { fragmentSlots, listChallenges, WORKSPACE_NAMES } from '@/lib/admin/challenges';
+import { fragmentSlots, listChallenges, workspaceNames } from '@/lib/admin/challenges';
 import { listTeams } from '@/lib/admin/teams';
 import { requireAdmin } from '@/lib/auth/guards';
 
@@ -13,7 +13,12 @@ export default async function ChallengesPage() {
   return (
     <>
       <PageTitle>Challenges</PageTitle>
-      <ChallengesPanel rows={rows} teams={teams} slots={slots} workspaces={WORKSPACE_NAMES} />
+      <ChallengesPanel
+        rows={rows}
+        teams={teams}
+        slots={slots}
+        workspaces={await workspaceNames()}
+      />
     </>
   );
 }

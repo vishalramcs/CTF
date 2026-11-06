@@ -88,7 +88,7 @@ const score = async (team: string) => {
 
 describe('evidence', () => {
   it('serves the five-page PDF and every listed file to a signed-in team', async () => {
-    const { files } = await getWorkspaceState(teamA, 'mj-archive');
+    const { files } = (await getWorkspaceState(teamA, 'mj-archive'))!;
     expect(files.map((f) => f.key)).toEqual([
       'MJ_Newspaper.pdf',
       'archive_access.csv',
@@ -215,7 +215,7 @@ describe('sealed question', () => {
 
     const fresh = await sessionFor(sql, 'teama');
     expect((await view('9', fresh)).status).toBe(200);
-    expect((await getWorkspaceState(teamA, 'mj-archive')).unlock?.unlocked).toBe(true);
+    expect((await getWorkspaceState(teamA, 'mj-archive'))!.unlock?.unlocked).toBe(true);
   });
 
   it('a repeat or parallel delete unlocks once', async () => {
@@ -249,7 +249,7 @@ describe('independent progress', () => {
   it('completing Q5 does not unlock Q9', async () => {
     await sendFlag(FLAG);
     expect((await view('9')).status).toBe(423);
-    expect((await getWorkspaceState(teamA, 'mj-archive')).unlock?.unlocked).toBe(false);
+    expect((await getWorkspaceState(teamA, 'mj-archive'))!.unlock?.unlocked).toBe(false);
   });
 
   it('unlocking Q9 does not complete Q5 or award points', async () => {

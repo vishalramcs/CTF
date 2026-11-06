@@ -3,7 +3,8 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { challenges, teamChallengeUnlocks, workspaceDeletions } from '@/lib/db/schema';
 import { canSubmit, type EventStatus } from '@/lib/scoring/points';
-import { WORKSPACES, type WorkspaceFile, type WorkspaceTool } from '@/lib/workspace/definitions';
+import type { WorkspaceFile, WorkspaceTool } from '@/lib/workspace/definitions';
+import { resolveWorkspace } from '@/lib/workspace/uploaded';
 
 export type WorkspaceState = {
   title: string;
@@ -19,8 +20,10 @@ export type WorkspaceState = {
 export async function getWorkspaceState(
   teamId: string,
   workspace: string,
-): Promise<WorkspaceState> {
-  const { files, title, intro, tool } = WORKSPACES[workspace];
+): Promise<WorkspaceState | null> {
+  const found = await resolveWorkspace(workspace);
+  if (!found) return null; // an uploaded folder that was emptied or never filled
+  const { files, title, intro, tool } = found;
   const deleted = await db
     .select({ key: workspaceDeletions.fileKey })
     .from(workspaceDeletions)

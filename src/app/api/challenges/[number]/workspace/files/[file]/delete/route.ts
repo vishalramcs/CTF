@@ -1,7 +1,7 @@
 import { ApiError, json, withTeam } from '@/lib/http';
 import { getChallengeView } from '@/lib/scoring/team-state';
-import { findWorkspaceFile } from '@/lib/workspace/definitions';
 import { deleteWorkspaceFile, getWorkspaceState } from '@/lib/workspace/state';
+import { findFile } from '@/lib/workspace/uploaded';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +11,7 @@ export const POST = withTeam<{ number: string; file: string }>(
     const { number, file: key } = await params;
     const view = await getChallengeView(session.teamId, number);
     const workspace = view?.access === 'open' ? view.workspace : null;
-    const file = workspace ? findWorkspaceFile(workspace, key) : undefined;
+    const file = workspace ? await findFile(workspace, key) : undefined;
     if (!workspace || !file) throw new ApiError(404, 'not_found', 'No such file.');
     if (!file.deletable) throw new ApiError(403, 'read_only', 'This evidence file is protected.');
 

@@ -7,8 +7,12 @@ import { db } from '@/lib/db/client';
 import { challengeHints, challenges } from '@/lib/db/schema';
 import { ApiError } from '@/lib/http';
 import { WORKSPACES } from '@/lib/workspace/definitions';
+import { listUploadedWorkspaces, WORKSPACE_NAME } from '@/lib/workspace/uploaded';
 
-export const WORKSPACE_NAMES = Object.keys(WORKSPACES);
+// Built-in first, then admin-uploaded folders (/admin/workspaces).
+export async function workspaceNames(): Promise<string[]> {
+  return [...Object.keys(WORKSPACES), ...(await listUploadedWorkspaces())];
+}
 
 // Everything an admin needs, and never static_flag_hash.
 const columns = {
@@ -68,9 +72,13 @@ export const challengeFields = z.object({
   // Holds the template's `inspect` and `files` blocks (QUESTIONS_TEMPLATE §4–5).
   generatorConfig: z
     .record(z.string(), z.unknown())
-    .refine((c) => c.workspace === undefined || WORKSPACE_NAMES.includes(c.workspace as string), {
-      message: 'Unknown workspace.',
-    }),
+    .refine(
+      (c) =>
+        c.workspace === undefined ||
+        (typeof c.workspace === 'string' &&
+          (Object.hasOwn(WORKSPACES, c.workspace) || WORKSPACE_NAME.test(c.workspace))),
+      { message: 'Unknown workspace.' },
+    ),
   hints: z.array(z.string().trim().min(1).max(5000)).max(20),
   isPublished: z.boolean(),
 });
