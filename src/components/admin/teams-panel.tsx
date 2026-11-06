@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { send } from '@/lib/admin/client';
 import { buildXlsx, readXlsx } from '@/lib/admin/xlsx';
+import { teamPassword } from '@/lib/auth/team-credentials';
 import { formatTime } from '@/lib/admin/shared';
 import type { TeamRow } from '@/lib/admin/teams';
 
@@ -199,24 +200,14 @@ export function TeamsPanel({
       )}
 
       {dialog?.kind === 'reset' && (
-        <ConfirmModal
-          title="Reset password"
-          word={dialog.team.name}
-          label="Reset password"
+        <ResetPasswordModal
+          team={dialog.team}
           onClose={close}
-          onConfirm={async () => {
-            const result = await send<{ username: string; password: string }>(
-              'POST',
-              `/api/admin/teams/${dialog.team.id}/reset-password`,
-            );
-            if (!result.ok) return result.message;
-            setDialog({ kind: 'new-password', team: dialog.team, ...result.data });
+          onDone={(data) => {
+            setDialog({ kind: 'new-password', team: dialog.team, ...data });
             router.refresh();
           }}
-        >
-          {dialog.team.name} gets the password derived from its name again and all its devices are
-          logged out.
-        </ConfirmModal>
+        />
       )}
 
       {dialog?.kind === 'new-password' && (
@@ -415,6 +406,108 @@ function CreateTeamsModal({
           </Button>
           <Button type="submit" className={actionClass} disabled={pending}>
             {pending ? 'Creating…' : 'Create'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ResetPasswordModal({
+  team,
+  onClose,
+  onDone,
+}: {
+  team: TeamRow;
+  onClose: () => void;
+  onDone: (data: { username: string; password: string }) => void;
+}) {
+  const [mode, setMode] = useState<'reverse' | 'custom'>('reverse');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string>();
+  const [pending, setPending] = useState(false);
+  const reversed = teamPassword(team.name);
+  const valid = mode === 'reverse' || (password.trim().length >= 4 && password.length <= 64);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!valid) return;
+    setPending(true);
+    setError(undefined);
+    const result = await send<{ username: string; password: string }>(
+      'POST',
+      `/api/admin/teams/${team.id}/reset-password`,
+      mode === 'custom' ? { password: password.trim() } : {},
+    );
+    setPending(false);
+    if (result.ok) onDone(result.data);
+    else setError(result.message);
+  }
+
+  const option = 'flex cursor-pointer items-start gap-3 rounded-md border border-border p-3';
+  return (
+    <Modal title={`Reset password · ${team.name}`} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <fieldset className="space-y-2">
+          <legend className="mb-2 font-medium">New password</legend>
+          <label className={option}>
+            <input
+              type="radio"
+              name="mode"
+              className="mt-1 size-4"
+              checked={mode === 'reverse'}
+              onChange={() => setMode('reverse')}
+            />
+            <span>
+              <span className="block font-medium">Reverse of the team name (default)</span>
+              <span className="text-sm text-muted-foreground">
+                Easy to tell the team: <span className="font-mono text-foreground">{reversed}</span>
+              </span>
+            </span>
+          </label>
+          <label className={option}>
+            <input
+              type="radio"
+              name="mode"
+              className="mt-1 size-4"
+              checked={mode === 'custom'}
+              onChange={() => setMode('custom')}
+            />
+            <span className="block flex-1 space-y-2">
+              <span className="block font-medium">Type a new password</span>
+              <input
+                aria-label="New password"
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={64}
+                placeholder="4–64 characters"
+                value={password}
+                onFocus={() => setMode('custom')}
+                onChange={(e) => {
+                  setMode('custom');
+                  setPassword(e.target.value);
+                }}
+                className={inputClass}
+              />
+            </span>
+          </label>
+        </fieldset>
+        <p className="text-sm text-muted-foreground">
+          All of {team.name}&apos;s devices are logged out. The team logs in again with its name and
+          the new password.
+        </p>
+        <ErrorText>{error}</ErrorText>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" className={actionClass} onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="destructive"
+            className={actionClass}
+            disabled={pending || !valid}
+          >
+            {pending ? 'Resetting…' : 'Reset password'}
           </Button>
         </div>
       </form>
