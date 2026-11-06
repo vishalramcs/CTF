@@ -22,7 +22,7 @@ Values are encrypted in `app.vault_keys`, and a team receives a value only after
 `teams.full_access` lets a tester read and submit every question at any event status, published or not. It is a hidden team and can't become the race winner. Its solves still take a position until the event reset clears them, so reset before the real event.
 
 ## 5. Flag prefix
-`FLAG_PREFIX` is `SPIDEY`. `EYE` is still accepted for flags set under it (the older Q1 and Q5), and each prefix hashes differently, so one can't solve the other's question.
+Organiser decision, 7 Nov: every flag is `EYE{...}` and `FLAG_PREFIX` is `EYE`. All 13 static flags were re-hashed under `EYE` (`scripts/switch-prefix-eye.ts`, audited), so a `SPIDEY{...}` submission is now malformed.
 
 ## 6. Questions
 Evidence lives in `src/lib/workspace/files/<workspace>/`, served only through the signed-in workspace route. Generator and organiser reference: `seed-output/` (never committed).
