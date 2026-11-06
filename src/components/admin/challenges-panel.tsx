@@ -16,6 +16,7 @@ import { useAction } from '@/components/admin/use-action';
 import { Button } from '@/components/ui/button';
 import type { LoadedChallenge } from '@/lib/admin/challenges';
 import { DIFFICULTIES, GENERATOR_KEYS, LEVELS, type Difficulty } from '@/lib/admin/shared';
+import { fragmentId } from '@/lib/coordinates/fragments';
 
 type Row = Omit<LoadedChallenge, 'hints'>;
 type TeamOption = { id: string; name: string };
@@ -23,7 +24,41 @@ type Dialog = { kind: 'form'; row?: Row } | { kind: 'tools' | 'delete'; row: Row
 
 const HINT_SEPARATOR = '\n---\n';
 
-export function ChallengesPanel({ rows, teams }: { rows: Row[]; teams: TeamOption[] }) {
+function Summary({ rows, slots }: { rows: Row[]; slots: Record<string, number> }) {
+  const tiers = [
+    { key: 'easy', label: 'Easy' },
+    { key: 'medium', label: 'Medium' },
+    { key: 'difficult', label: 'Difficult' },
+  ];
+  const bearing = Object.keys(slots).length;
+  return (
+    <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm" aria-label="Configuration summary">
+      {tiers.map(({ key, label }) => {
+        const inTier = rows.filter((r) => r.difficulty === key);
+        const withFragment = inTier.filter((r) => slots[r.id] !== undefined).length;
+        const ok = inTier.length === 4 && withFragment === 2;
+        return (
+          <li key={key} className={ok ? '' : 'text-destructive'}>
+            {label}: {inTier.length}/4 questions, {withFragment}/2 with a fragment
+          </li>
+        );
+      })}
+      <li>Main: {rows.filter((r) => r.difficulty === 'main_difficult').length}/1</li>
+      <li className={bearing === 6 ? '' : 'text-destructive'}>Fragments: {bearing}/6</li>
+      <li>Locations: 3</li>
+    </ul>
+  );
+}
+
+export function ChallengesPanel({
+  rows,
+  teams,
+  slots,
+}: {
+  rows: Row[];
+  teams: TeamOption[];
+  slots: Record<string, number>;
+}) {
   const [dialog, setDialog] = useState<Dialog>();
   const { run, error } = useAction();
   const close = () => setDialog(undefined);
@@ -36,6 +71,7 @@ export function ChallengesPanel({ rows, teams }: { rows: Row[]; teams: TeamOptio
         </Button>
         <ErrorText>{error}</ErrorText>
       </div>
+      <Summary rows={rows} slots={slots} />
       <div className="overflow-x-auto">
         <table className={tableClass}>
           <thead>
@@ -44,6 +80,7 @@ export function ChallengesPanel({ rows, teams }: { rows: Row[]; teams: TeamOptio
               <th className={thClass}>Title</th>
               <th className={thClass}>Level</th>
               <th className={thClass}>Base</th>
+              <th className={thClass}>Fragment</th>
               <th className={thClass}>Flag</th>
               <th className={thClass}>Version</th>
               <th className={thClass}>Published</th>
@@ -57,6 +94,9 @@ export function ChallengesPanel({ rows, teams }: { rows: Row[]; teams: TeamOptio
                 <td className={tdClass}>{row.title}</td>
                 <td className={tdClass}>{DIFFICULTIES[row.difficulty as Difficulty].label}</td>
                 <td className={tdClass}>{row.basePoints}</td>
+                <td className={tdClass}>
+                  {slots[row.id] === undefined ? '-' : fragmentId(slots[row.id])}
+                </td>
                 <td className={tdClass}>
                   {row.flagMode === 'static' ? 'Static (shared)' : 'Per team'}
                 </td>

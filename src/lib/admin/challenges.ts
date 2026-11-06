@@ -31,6 +31,14 @@ export function listChallenges() {
   return db.select(columns).from(challenges).orderBy(challenges.number);
 }
 
+// Which fragment slot (1-6) each question holds, by challenge id. The value itself stays out.
+export async function fragmentSlots(): Promise<Record<string, number>> {
+  const rows = await db
+    .select({ id: challenges.id, slot: challenges.coordinateOrder })
+    .from(challenges);
+  return Object.fromEntries(rows.flatMap((r) => (r.slot === null ? [] : [[r.id, r.slot]])));
+}
+
 export async function loadChallenge(id: string) {
   const [challenge] = await db.select(columns).from(challenges).where(eq(challenges.id, id));
   if (!challenge) return undefined;

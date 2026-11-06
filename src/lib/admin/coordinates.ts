@@ -17,8 +17,10 @@ export const fragmentPlan = z
 
 export type FragmentPlan = z.infer<typeof fragmentPlan>;
 
-// docs/08 §3. A plan is empty (clears every fragment) or exactly six: two per difficulty, never on
-// the Main Question, orders 1-6 each used once. A table check can't count rows, so it is here.
+// docs/10. A plan is empty (clears every fragment) or exactly six: two per difficulty, never on the
+// Main Question, slots 1-6 each used once (1 L1-N, 2 L1-S, 3 L2-N, 4 L2-S, 5 L3-N, 6 L3-S). Which
+// question holds which slot is free, so a location can mix difficulties. A table check can't count
+// rows, so it is here.
 export function checkFragmentPlan(
   plan: { challengeId: string; order: number }[],
   difficultyOf: Map<string, string>,
@@ -37,30 +39,7 @@ export function checkFragmentPlan(
   if (counts.easy !== 2 || counts.medium !== 2 || counts.difficult !== 2) {
     return 'Use 2 Easy, 2 Medium and 2 Difficult questions.';
   }
-  const firstOrder: Record<string, number> = { easy: 1, medium: 3, difficult: 5 };
-  for (const p of plan) {
-    const first = firstOrder[difficultyOf.get(p.challengeId)!];
-    if (p.order !== first && p.order !== first + 1) {
-      return 'Easy uses orders 1-2, Medium 3-4 and Difficult 5-6: each pair makes one coordinate.';
-    }
-  }
   return null;
-}
-
-// docs/08 §3. Coordinate positions (1-3) whose fragment pair, joined in order, differs from the
-// value the Main Question reveals. Saved separately, so this warns instead of refusing a save.
-export function coordinateMismatches(
-  fragments: { order: number; value: string }[],
-  final: { position: number; value: string }[],
-): number[] {
-  return final
-    .filter(({ position, value }) => {
-      const pair = [2 * position - 1, 2 * position].map(
-        (order) => fragments.find((f) => f.order === order)?.value,
-      );
-      return pair.every((v) => v !== undefined) && pair.join('') !== value;
-    })
-    .map((c) => c.position);
 }
 
 // Never selects answer_hash or answer_enc: the page only learns whether an answer is set.
@@ -113,10 +92,6 @@ export async function loadCoordinateConfig() {
       new Map(questions.map((q) => [q.id, q.difficulty])),
     ),
     assignedCount: assigned.length,
-    mismatches: coordinateMismatches(
-      assigned.map((q) => ({ order: q.coordinateOrder!, value: q.fragmentValue! })),
-      final,
-    ),
   };
 }
 

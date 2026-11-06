@@ -1,6 +1,11 @@
 import { eq, sql } from 'drizzle-orm';
 
-import { finalCoordinatesFor, type FinalCoordinate } from '@/lib/coordinates/state';
+import {
+  allFragmentsFor,
+  finalCoordinatesFor,
+  type FinalCoordinate,
+  type FragmentRef,
+} from '@/lib/coordinates/state';
 
 import { db } from '@/lib/db/client';
 import { challenges, solves, submissions } from '@/lib/db/schema';
@@ -20,6 +25,7 @@ export type SubmitResult =
       fragment?: string;
       orderClue?: string;
       finalCoordinates?: FinalCoordinate[];
+      fragments?: FragmentRef[];
     }
   | { result: 'wrong'; attemptsLeft: number }
   | { result: 'already_solved' }
@@ -112,8 +118,12 @@ async function submitFlagTx(
       })
       .from(challenges)
       .where(eq(challenges.id, challenge.id));
-    const final =
-      earned.difficulty === 'main_difficult' ? await finalCoordinatesFor(tx, teamId) : null;
+    // A fragment-bearing question or the Main Question can complete a location. Read inside this
+    // transaction, so it includes the solve just inserted.
+    const isMain = earned.difficulty === 'main_difficult';
+    const final = isMain || earned.value ? await finalCoordinatesFor(tx, teamId) : null;
+    // The Main Question grants every fragment at once.
+    const fragments = isMain ? await allFragmentsFor(tx, teamId) : null;
 
     return {
       result: 'correct',
@@ -122,6 +132,7 @@ async function submitFlagTx(
       ...(earned.value ? { fragment: earned.value } : {}),
       ...(earned.value && earned.orderClue ? { orderClue: earned.orderClue } : {}),
       ...(final ? { finalCoordinates: final } : {}),
+      ...(fragments && fragments.length > 0 ? { fragments } : {}),
     };
   });
 }

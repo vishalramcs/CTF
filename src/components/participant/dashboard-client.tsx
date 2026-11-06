@@ -3,18 +3,18 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
+import { CoordinateBoard } from '@/components/coordinates/coordinate-board';
 import HalftoneReveal from '@/components/HalftoneReveal';
 import { formatPoints } from '@/components/leaderboard/format';
 import { Announcements } from '@/components/participant/announcements';
 import { ChallengeCard, DIFFICULTY } from '@/components/participant/challenge-card';
-import { KeyVault } from '@/components/participant/key-vault';
 import { LeaderboardPreview } from '@/components/participant/leaderboard-preview';
 import { STATUS } from '@/components/participant/phase-banner';
 import { useLiveState } from '@/hooks/use-live-state';
 import { formatDateTimeIST } from '@/lib/participant/time';
 import type { SurpriseDone } from '@/lib/participant/history';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
-import type { Vault } from '@/lib/vault/state';
+import type { CoordinateBoard as BoardData } from '@/lib/coordinates/state';
 
 const GROUPS: Card['difficulty'][] = ['easy', 'medium', 'difficult', 'main_difficult'];
 const H2 = 'font-heading text-2xl font-bold uppercase';
@@ -35,7 +35,7 @@ export function DashboardClient({
   score,
   rank,
   cards,
-  vault,
+  board,
   announcements,
   surprises,
 }: {
@@ -43,7 +43,7 @@ export function DashboardClient({
   score: number;
   rank: number | null;
   cards: Card[];
-  vault: Vault;
+  board: BoardData;
   announcements: { message: string; createdAt: string }[];
   surprises: SurpriseDone[];
 }) {
@@ -107,8 +107,8 @@ export function DashboardClient({
               value={`${cards.filter((c) => c.state === 'solved').length}/${cards.length}`}
             />
             <Stat
-              label="Keys"
-              value={`${vault.keys.filter((k) => k.value).length}/${vault.keys.length}`}
+              label="Fragments"
+              value={`${board.fragments.length}/${board.slots}`}
             />
           </dl>
         </section>
@@ -137,11 +137,11 @@ export function DashboardClient({
               })}
             </section>
 
-            <section aria-labelledby="vault" className="flex flex-col gap-3">
-              <h2 id="vault" className={H2}>
-                Key vault
+            <section aria-labelledby="locations" className="flex flex-col gap-3">
+              <h2 id="locations" className={H2}>
+                Locations
               </h2>
-              <KeyVault vault={vault} />
+              <CoordinateBoard board={board} />
             </section>
 
             <section aria-labelledby="surprises" className="flex flex-col gap-2">

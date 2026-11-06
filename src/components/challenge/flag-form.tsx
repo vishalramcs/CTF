@@ -12,15 +12,31 @@ type Solved = {
   fragment: string | null;
   orderClue: string | null;
   finalCoordinates: { label: string; value: string }[] | null;
+  fragments: { id: string; value: string }[] | null;
 };
 
-function SolvedPanel({ points, fragment, orderClue, finalCoordinates }: Solved) {
+function SolvedPanel({ points, fragment, orderClue, finalCoordinates, fragments }: Solved) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-success p-4">
       <p className="font-semibold text-success">
-        ✓ {fragment ? `Signal fragment recovered. +${points}` : `Flag accepted (+${points})`}
+        ✓{' '}
+        {fragments
+          ? `All six fragments recovered. +${points}`
+          : fragment
+            ? `Signal fragment recovered. +${points}`
+            : `Flag accepted (+${points})`}
       </p>
       {fragment && <p className="font-mono text-5xl font-semibold">{fragment}</p>}
+      {fragments && (
+        <ul className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+          {fragments.map((f) => (
+            <li key={f.id} className="font-mono">
+              <span className="mr-2 text-sm text-muted-foreground">{f.id}</span>
+              {f.value}
+            </li>
+          ))}
+        </ul>
+      )}
       {orderClue && <p>{orderClue}</p>}
       {finalCoordinates && finalCoordinates.length > 0 && (
         <ul className="flex flex-col gap-1">
@@ -72,6 +88,7 @@ export function FlagForm({
           fragment: outcome.fragment ?? null,
           orderClue: outcome.orderClue ?? null,
           finalCoordinates: outcome.finalCoordinates ?? null,
+          fragments: outcome.fragments ?? null,
         });
         setMessage('');
         return router.refresh();

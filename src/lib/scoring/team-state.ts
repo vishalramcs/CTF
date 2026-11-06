@@ -1,7 +1,12 @@
 import { and, asc, eq, or, sql } from 'drizzle-orm';
 import { cache } from 'react';
 
-import { finalCoordinatesFor, type FinalCoordinate } from '@/lib/coordinates/state';
+import {
+  allFragmentsFor,
+  finalCoordinatesFor,
+  type FinalCoordinate,
+  type FragmentRef,
+} from '@/lib/coordinates/state';
 import { db } from '@/lib/db/client';
 import {
   challengeHints,
@@ -162,6 +167,7 @@ export type ChallengeView =
         fragment: string | null;
         orderClue: string | null;
         finalCoordinates: FinalCoordinate[] | null;
+        fragments: FragmentRef[] | null;
       } | null;
     });
 
@@ -235,10 +241,13 @@ export async function getChallengeView(
   if (access !== 'open') return { ...header, access };
   if (!row.variantData) return null;
 
+  const solvedHere = row.pointsEarned !== null;
   const final =
-    row.pointsEarned !== null && row.difficulty === 'main_difficult'
+    solvedHere && (row.difficulty === 'main_difficult' || row.fragmentValue)
       ? await finalCoordinatesFor(db, teamId)
       : null;
+  const fragments =
+    solvedHere && row.difficulty === 'main_difficult' ? await allFragmentsFor(db, teamId) : null;
   const variant = row.variantData as VariantData;
   return {
     ...header,
@@ -260,6 +269,7 @@ export async function getChallengeView(
             fragment: row.fragmentValue,
             orderClue: row.orderClue,
             finalCoordinates: final,
+            fragments: fragments && fragments.length > 0 ? fragments : null,
           },
   };
 }

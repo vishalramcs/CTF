@@ -15,6 +15,7 @@ import { useAction } from '@/components/admin/use-action';
 import { Button } from '@/components/ui/button';
 import { DIFFICULTIES, formatTime, type Difficulty } from '@/lib/admin/shared';
 import type { CoordinateConfig } from '@/lib/admin/coordinates';
+import { fragmentId } from '@/lib/coordinates/fragments';
 
 type Draft = { value: string; order: string; clue: string };
 
@@ -52,16 +53,18 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
     <form onSubmit={save} className={panelClass}>
       <SectionTitle>Fragments</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        Fill in a value for exactly 6 regular questions. Each pair makes one coordinate: Easy uses
-        orders 1-2 (coordinate 1), Medium 3-4 (coordinate 2) and Difficult 5-6 (coordinate 3). Leave
-        the others blank. Every team gets the same fragment. Clear all values to remove the plan.
+        Fill in a value for exactly 6 regular questions: 2 Easy, 2 Medium and 2 Difficult. Give
+        each one a slot from 1 to 6: 1 = Location 1 North, 2 = Location 1 South, 3 = Location 2
+        North, 4 = Location 2 South, 5 = Location 3 North, 6 = Location 3 South. Any question can
+        take any slot. Leave the others blank. Every team gets the same fragment. A flag template
+        can embed it with the fragment placeholder. Clear all values to remove the plan.
       </p>
       <p role="status" className="text-sm">
         {config.assignedCount === 0
           ? 'No fragments assigned.'
           : config.planError
             ? `Saved plan is invalid: ${config.planError}`
-            : 'Saved plan is valid (one pair per coordinate).'}
+            : 'Saved plan is valid (6 fragments, 3 locations).'}
       </p>
       <div className="overflow-x-auto">
         <table className={tableClass}>
@@ -70,7 +73,8 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
               <th className={thClass}>#</th>
               <th className={thClass}>Level</th>
               <th className={thClass}>Fragment value</th>
-              <th className={thClass}>Order (1-6)</th>
+              <th className={thClass}>Slot (1-6)</th>
+              <th className={thClass}>Fragment</th>
               <th className={thClass}>Order clue</th>
             </tr>
           </thead>
@@ -92,7 +96,7 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
                 </td>
                 <td className={tdClass}>
                   <input
-                    aria-label={`Order for ${q.number}`}
+                    aria-label={`Slot for ${q.number}`}
                     className={inputClass}
                     type="number"
                     min={1}
@@ -100,6 +104,11 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
                     value={drafts[q.id].order}
                     onChange={(e) => set(q.id, { order: e.target.value })}
                   />
+                </td>
+                <td className={tdClass}>
+                  {Number(drafts[q.id].order) >= 1 && Number(drafts[q.id].order) <= 6
+                    ? fragmentId(Number(drafts[q.id].order))
+                    : '-'}
                 </td>
                 <td className={tdClass}>
                   <input
@@ -123,6 +132,46 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
   );
 }
 
+// One row per fragment slot: which question carries it and whether its value is set.
+function LocationsOverview({ config }: { config: CoordinateConfig }) {
+  return (
+    <section className={panelClass}>
+      <SectionTitle>Locations and fragments</SectionTitle>
+      <p className="text-sm text-muted-foreground">
+        3 locations, each with a North and a South fragment: 6 fragments in all. Solving the Main
+        Question gives a team all six.
+      </p>
+      <div className="overflow-x-auto">
+        <table className={tableClass}>
+          <thead>
+            <tr>
+              <th className={thClass}>Fragment</th>
+              <th className={thClass}>Question</th>
+              <th className={thClass}>Level</th>
+              <th className={thClass}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[1, 2, 3, 4, 5, 6].map((slot) => {
+              const q = config.questions.find((x) => x.coordinateOrder === slot);
+              return (
+                <tr key={slot}>
+                  <td className={tdClass}>{fragmentId(slot)}</td>
+                  <td className={tdClass}>{q ? `${q.number} ${q.title}` : 'Not assigned'}</td>
+                  <td className={tdClass}>
+                    {q ? DIFFICULTIES[q.difficulty as Difficulty].label : '-'}
+                  </td>
+                  <td className={tdClass}>{q?.fragmentValue ? 'Configured' : 'Missing'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function FinalCoordinates({ config }: { config: CoordinateConfig }) {
   const { run, pending, error } = useAction();
   const [rows, setRows] = useState(() =>
@@ -142,20 +191,15 @@ function FinalCoordinates({ config }: { config: CoordinateConfig }) {
         return run('POST', '/api/admin/coordinates/final', { coordinates: rows });
       }}
     >
-      <SectionTitle>Main Question: final coordinates</SectionTitle>
+      <SectionTitle>Reconstructed locations</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        Shown to a team only after it solves the Main Question. These are the same coordinates the
-        fragment pairs make, so the Main Question is a shortcut. All three are required.
+        The text a team sees for a location once it holds both its North and South fragments, or
+        all three once it solves the Main Question. Label is the place name, value is the full
+        text, for example the latitude and longitude. All three are required.
       </p>
-      {config.mismatches.length > 0 && (
-        <p role="alert" className="text-sm text-destructive">
-          Coordinate {config.mismatches.join(', ')} does not match its fragment pair joined in
-          order.
-        </p>
-      )}
       {rows.map((row, i) => (
         <div key={i} className="grid gap-3 sm:grid-cols-2">
-          <Field label={`Coordinate ${i + 1} label`}>
+          <Field label={`Location ${i + 1} label`}>
             <input
               className={inputClass}
               maxLength={40}
@@ -163,10 +207,10 @@ function FinalCoordinates({ config }: { config: CoordinateConfig }) {
               onChange={(e) => patch(i, { label: e.target.value })}
             />
           </Field>
-          <Field label={`Coordinate ${i + 1} value`}>
+          <Field label={`Location ${i + 1} value`}>
             <input
               className={inputClass}
-              maxLength={60}
+              maxLength={200}
               required
               value={row.value}
               onChange={(e) => patch(i, { value: e.target.value })}
@@ -176,7 +220,7 @@ function FinalCoordinates({ config }: { config: CoordinateConfig }) {
       ))}
       <ErrorText>{error}</ErrorText>
       <Button type="submit" className={actionClass} disabled={pending}>
-        Save final coordinates
+        Save locations
       </Button>
     </form>
   );
@@ -243,6 +287,7 @@ export function CoordinatesPanel({
         </ul>
         <Notice>The two races are tracked separately and can have different winners.</Notice>
       </section>
+      <LocationsOverview config={config} />
       <FragmentPlan config={config} />
       <FinalCoordinates config={config} />
       <FinalAnswer hasAnswer={config.hasAnswer} />

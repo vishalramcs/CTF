@@ -336,8 +336,18 @@ describe('the Main Question', () => {
     ).text();
     for (const value of FINAL) expect(detail).not.toContain(value);
 
-    // Solving it does not hand over the fragments from the regular questions.
-    expect((await coordinates(team[0])).fragments).toEqual([]);
+    // docs/10: solving it grants all six fragments, each under its own location slot.
+    expect(solved.fragments).toEqual(
+      [1, 2, 3, 4, 5, 6].map((slot) => {
+        const n = Number(Object.keys(ORDERS).find((k) => ORDERS[Number(k)] === slot));
+        return { id: ['L1-N', 'L1-S', 'L2-N', 'L2-S', 'L3-N', 'L3-S'][slot - 1], value: FRAGMENTS[n] };
+      }),
+    );
+    const board = await coordinates(team[0]);
+    expect(board.fragments).toHaveLength(6);
+    expect(board.locations.every((l: { reconstructed: boolean }) => l.reconstructed)).toBe(true);
+    // A team that has not solved it still holds nothing.
+    expect((await coordinates(team[2])).fragments).toEqual([]);
 
     // First solver and timestamp are on record, and the public feed announces the first team only.
     const [first] = await sql`SELECT t.name, s.solved_at FROM app.solves s
@@ -349,6 +359,57 @@ describe('the Main Question', () => {
       expect.objectContaining({ teamName: 'Team t0', challengeNumber: 13 }),
     ]);
     expect(JSON.stringify(feed)).not.toContain(FINAL[0]);
+  });
+});
+
+describe('locations from fragment pairs', () => {
+  const board = async (who: (typeof team)[number]) =>
+    (await coordinatesGet(request('/api/coordinates', { auth: who.auth }), params({}))).json();
+
+  it('reconstructs a location only from its own North and South, whatever the questions', async () => {
+    // Q1 holds slot 3 (L2-N), Q6 holds slot 2 (L1-S): different locations, nothing complete.
+    await flag(1, team[0]);
+    const afterSecond = await flag(6, team[0]);
+    expect(afterSecond).not.toHaveProperty('finalCoordinates');
+    let b = await board(team[0]);
+    expect(b.locations.map((l: { reconstructed: boolean }) => l.reconstructed)).toEqual([
+      false,
+      false,
+      false,
+    ]);
+    expect(JSON.stringify(b)).not.toContain(FINAL[0]);
+
+    // Q2 holds slot 1 (L1-N): with Q6 (L1-S) location 1 is complete, and only that one.
+    const third = await flag(2, team[0]);
+    expect(third.finalCoordinates).toEqual([{ label: 'L1', value: FINAL[0] }]);
+    b = await board(team[0]);
+    expect(b.locations.map((l: { reconstructed: boolean }) => l.reconstructed)).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    expect(JSON.stringify(b)).not.toContain(FINAL[1]);
+  });
+
+  it('gives the missing fragments, once, when the Main Question comes after some solves', async () => {
+    await flag(1, team[0]);
+    const before = (await sql`SELECT count(*)::int AS n FROM app.score_transactions
+      WHERE team_id = ${team[0].id}`)[0].n;
+    const main = await flag(13, team[0]);
+    expect(main.fragments).toHaveLength(6);
+    expect(new Set(main.fragments.map((f: { id: string }) => f.id)).size).toBe(6);
+    // A repeat neither pays again nor repeats the award.
+    expect(await flag(13, team[0])).toEqual({ result: 'already_solved' });
+    const after = (await sql`SELECT count(*)::int AS n FROM app.score_transactions
+      WHERE team_id = ${team[0].id}`)[0].n;
+    expect(after - before).toBe(1);
+    expect((await board(team[0])).fragments).toHaveLength(6);
+  });
+
+  it('a wrong Main Question flag awards no fragment', async () => {
+    const wrong = await flag(13, team[1], 'EYE{nope}');
+    expect(wrong).not.toHaveProperty('fragments');
+    expect((await board(team[1])).fragments).toEqual([]);
   });
 });
 

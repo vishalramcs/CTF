@@ -12,8 +12,8 @@ const body = z.object({
   coordinates: z
     .array(
       z.object({
-        label: z.string().trim().max(40),
-        value: z.string().trim().min(1).max(60),
+        label: z.string().trim().max(60),
+        value: z.string().trim().min(1).max(200),
       }),
     )
     .length(3),
