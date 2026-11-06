@@ -263,6 +263,45 @@ export const surpriseSubmissions = app.table('surprise_submissions', {
   submittedAt: timestamptz('submitted_at').notNull().defaultNow(),
 });
 
+// Migration 0007 (docs/10). Settings, one row per trigger, and one row per team per trigger.
+export const flashyConfig = app.table('flashy_config', {
+  id: smallint('id').primaryKey().default(1),
+  videoUrl: text('video_url'),
+  videoSeconds: integer('video_seconds').notNull().default(70),
+  bonusPoints: numeric('bonus_points', { precision: 7, scale: 2 }).notNull().default('0'),
+  question: text('question').notNull(),
+  options: jsonb('options').notNull().default([]),
+  answerHash: text('answer_hash'),
+  updatedAt: timestamptz('updated_at').notNull().defaultNow(),
+});
+
+export const flashyRuns = app.table('flashy_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  videoUrl: text('video_url').notNull(),
+  videoSeconds: integer('video_seconds').notNull(),
+  bonusPoints: numeric('bonus_points', { precision: 7, scale: 2 }).notNull(),
+  question: text('question').notNull(),
+  options: jsonb('options').notNull(),
+  answerHash: text('answer_hash').notNull(),
+  startedAt: timestamptz('started_at').notNull().defaultNow(),
+  endedAt: timestamptz('ended_at'),
+  startedBy: uuid('started_by'),
+  endedBy: uuid('ended_by'),
+});
+
+export const flashyParticipation = app.table('flashy_participation', {
+  runId: uuid('run_id').notNull(),
+  teamId: uuid('team_id').notNull(),
+  playbacks: smallint('playbacks').notNull().default(0),
+  lastPlaybackAt: timestamptz('last_playback_at'),
+  state: text('state').notNull().default('open'),
+  chosenOption: text('chosen_option'),
+  isCorrect: boolean('is_correct'),
+  pointsAwarded: numeric('points_awarded', { precision: 7, scale: 2 }).notNull().default('0'),
+  firstSeenAt: timestamptz('first_seen_at').notNull().defaultNow(),
+  finishedAt: timestamptz('finished_at'),
+});
+
 export const announcements = app.table('announcements', {
   id: uuid('id').primaryKey().defaultRandom(),
   message: text('message').notNull(),

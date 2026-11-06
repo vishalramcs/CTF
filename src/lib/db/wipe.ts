@@ -12,8 +12,8 @@ export function isWipeable(databaseUrl: string, wipeableRef: string | undefined)
   );
 }
 
-// Reference rows created by migration 0003 (the three surprises) survive a wipe.
-const KEPT = "'broadcast_gate', 'surprise_events'";
+// Reference rows created by migrations 0003 (the three surprises) and 0007 (Flashy settings) survive a wipe.
+const KEPT = "'broadcast_gate', 'surprise_events', 'flashy_config'";
 
 export async function wipeAppTables(sql: Sql): Promise<void> {
   // One round trip. event_state references teams, so it has to be truncated too and its
@@ -29,5 +29,7 @@ export async function wipeAppTables(sql: Sql): Promise<void> {
       UPDATE app.broadcast_gate SET last_sent_at = 'epoch';
       UPDATE app.surprise_events SET enabled = false, available_from = NULL, available_until = NULL,
         content_html = '', asset_url = NULL, answer_hash = NULL, answer_enc = NULL;
+      UPDATE app.flashy_config SET video_url = NULL, video_seconds = 70, bonus_points = 0,
+        question = 'What is the number you see on the car?', options = '[]'::jsonb, answer_hash = NULL;
     END $$`);
 }

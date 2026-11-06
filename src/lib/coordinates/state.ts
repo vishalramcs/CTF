@@ -91,7 +91,7 @@ export async function allFragmentsFor(executor: Executor, teamId: string): Promi
   }));
 }
 
-// docs/10. The board: three locations, each with a North and a South fragment. A fragment value
+// docs/11. The board: three locations, each with a North and a South fragment. A fragment value
 // appears only once this team holds it; a location's text only once both halves are held.
 export async function getCoordinateBoard(teamId: string) {
   const held = await heldFragments(db, teamId);

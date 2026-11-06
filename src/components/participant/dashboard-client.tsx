@@ -11,6 +11,7 @@ import { ChallengeCard, DIFFICULTY } from '@/components/participant/challenge-ca
 import { LeaderboardPreview } from '@/components/participant/leaderboard-preview';
 import { STATUS } from '@/components/participant/phase-banner';
 import { useLiveState } from '@/hooks/use-live-state';
+import { useRankTracker } from '@/hooks/use-rank-tracker';
 import { formatDateTimeIST } from '@/lib/participant/time';
 import type { SurpriseDone } from '@/lib/participant/history';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
@@ -21,7 +22,7 @@ const H2 = 'font-heading text-2xl font-bold uppercase';
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="panel-notch border border-border bg-card p-4">
+    <div className="dash-card dash-card--accent p-4">
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd className="font-heading text-3xl font-black tabular-nums">{value}</dd>
     </div>
@@ -49,6 +50,7 @@ export function DashboardClient({
 }) {
   const router = useRouter();
   const { state } = useLiveState();
+  const { changes } = useRankTracker(state);
   // Another tab solved something, or the event changed status: re-read this team's data.
   const seen = useRef<string>(undefined);
   const stamp = state ? `${state.v}:${state.status}` : undefined;
@@ -155,7 +157,11 @@ export function DashboardClient({
           </div>
 
           <aside className="flex min-w-0 flex-col gap-10">
-            <LeaderboardPreview rows={state?.leaderboard ?? []} ownTeam={teamName} />
+            <LeaderboardPreview
+              rows={state?.leaderboard ?? []}
+              ownTeam={teamName}
+              changes={changes}
+            />
 
             <section aria-labelledby="achievements" className="flex flex-col gap-3">
               <h2 id="achievements" className={H2}>
@@ -165,7 +171,7 @@ export function DashboardClient({
               {surprises.length > 0 && (
                 <ul className="flex flex-col gap-2">
                   {surprises.map((s) => (
-                    <li key={s.kind} className="border border-border bg-card p-3">
+                    <li key={s.kind} className="dash-card p-3">
                       <p className="font-semibold">{s.title}</p>
                       <p className="text-sm text-success">
                         ✓ Completed {formatDateTimeIST(s.at)} · +{formatPoints(s.points)}
