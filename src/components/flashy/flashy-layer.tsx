@@ -194,7 +194,8 @@ function Overlay({ state, refresh }: { state: Live; refresh: () => Promise<void>
               Plays left: {left} of {PLAYBACK_LIMIT}
             </p>
 
-            {state.phase === 'watch' && (
+            {/* Stays up in the quiz too, since the last play opens the question at once. */}
+            {(state.phase === 'watch' || videoUrl) && (
               <section className="flex flex-col gap-4">
                 <div className="relative aspect-video w-full overflow-hidden border border-[#2d6bff]/60 bg-black">
                   {videoUrl && (
@@ -229,7 +230,7 @@ function Overlay({ state, refresh }: { state: Live; refresh: () => Promise<void>
                     </div>
                   )}
                 </div>
-                {videoUrl && left > 0 && (
+                {videoUrl && left > 0 && state.phase === 'watch' && (
                   <button
                     type="button"
                     onClick={play}

@@ -12,7 +12,16 @@ import { POST as skipRoute } from '@/app/api/flashy/skip/route';
 import { db } from '@/lib/db/client';
 import { wipeAppTables } from '@/lib/db/wipe';
 import { hashFlashyAnswer } from '@/lib/flashy/state';
-import { auditActions, call, createAdmin, createTeam, openSql, ok, sessionFor, type Auth } from './admin-helpers';
+import {
+  auditActions,
+  call,
+  createAdmin,
+  createTeam,
+  openSql,
+  ok,
+  sessionFor,
+  type Auth,
+} from './admin-helpers';
 
 const CORRECT = '7016';
 const SETTINGS = {
@@ -52,10 +61,12 @@ const configure = (over: object = {}) =>
     auth: admin,
     body: { ...SETTINGS, ...over },
   });
-const trigger = () => call(triggerRoute, '/api/admin/flashy/trigger', { method: 'POST', auth: admin });
+const trigger = () =>
+  call(triggerRoute, '/api/admin/flashy/trigger', { method: 'POST', auth: admin });
 const end = () => call(endRoute, '/api/admin/flashy/end', { method: 'POST', auth: admin });
 const state = async (auth: Auth = authA) => ok(await call(stateRoute, '/api/flashy', { auth }));
-const play = (auth: Auth = authA) => call(playbackRoute, '/api/flashy/playback', { method: 'POST', auth });
+const play = (auth: Auth = authA) =>
+  call(playbackRoute, '/api/flashy/playback', { method: 'POST', auth });
 const skip = (auth: Auth = authA) => call(skipRoute, '/api/flashy/skip', { method: 'POST', auth });
 const answer = (optionId: string, auth: Auth = authA) =>
   call(answerRoute, '/api/flashy/answer', { method: 'POST', auth, body: { optionId } });
@@ -94,7 +105,9 @@ describe('admin controls', () => {
       const anon = await call(handler, path, { method, body: SETTINGS });
       expect([401, 403]).toContain(anon.status);
     }
-    expect([401, 403]).toContain((await call(adminGet, '/api/admin/flashy', { auth: authA })).status);
+    expect([401, 403]).toContain(
+      (await call(adminGet, '/api/admin/flashy', { auth: authA })).status,
+    );
     expect((await state()).active).toBe(false);
   });
 
@@ -131,7 +144,9 @@ describe('admin controls', () => {
     await live();
     await ok(await end());
     const actions = await auditActions(sql);
-    expect(actions).toEqual(expect.arrayContaining(['flashy.config', 'flashy.trigger', 'flashy.end']));
+    expect(actions).toEqual(
+      expect.arrayContaining(['flashy.config', 'flashy.trigger', 'flashy.end']),
+    );
     const rows = await sql`SELECT details FROM app.audit_log WHERE action = 'flashy.config'`;
     expect(JSON.stringify(rows)).not.toContain(CORRECT);
   });
@@ -158,7 +173,9 @@ describe('what a team can see', () => {
 
   it('keeps the correct answer out of the admin view too', async () => {
     await live();
-    const text = JSON.stringify(await ok(await call(adminGet, '/api/admin/flashy', { auth: admin })));
+    const text = JSON.stringify(
+      await ok(await call(adminGet, '/api/admin/flashy', { auth: admin })),
+    );
     expect(text).not.toContain(hashFlashyAnswer(CORRECT));
     expect(text).not.toMatch(/answer_?hash/i);
   });
@@ -182,7 +199,8 @@ describe('playback limit', () => {
     await live();
     const results = await Promise.all(Array.from({ length: 8 }, () => play()));
     expect(results.filter((r) => r.status === 200)).toHaveLength(2);
-    const [row] = await sql`SELECT playbacks FROM app.flashy_participation WHERE team_id = ${teamA}`;
+    const [row] =
+      await sql`SELECT playbacks FROM app.flashy_participation WHERE team_id = ${teamA}`;
     expect(row.playbacks).toBe(2);
   });
 
@@ -207,6 +225,15 @@ describe('answering and the bonus', () => {
     await ok(await play()); // played, but the server clock says it is not over
     expect((await answer(anyOption.id)).status).toBe(409);
     expect(await ledger(teamA)).toHaveLength(0);
+  });
+
+  it('opens the question straight after the last play, with no wait', async () => {
+    await live();
+    await ok(await play());
+    expect((await state()).phase).toBe('watch');
+    await ok(await play());
+    expect((await state()).phase).toBe('quiz');
+    await ok(await answer(await optionId(CORRECT)));
   });
 
   it('pays the configured bonus once through the ledger and onto the leaderboard', async () => {

@@ -35,12 +35,12 @@ type Row = {
   watched: boolean | null;
 };
 
-// What this team may see. The options appear only once the server's clock says the video can have
-// finished, and nothing here says which one is right.
+// What this team may see. The options appear once the server's clock says the video can have
+// finished, or at once after the team's last play (organiser decision, 7 Nov), and nothing here says which one is right.
 export async function getTeamState(teamId: string): Promise<FlashyTeamState> {
   const [row] = await db.execute<Row>(sql`
     SELECT r.id, r.video_seconds, r.question, r.options, p.playbacks, p.state, p.is_correct,
-           (p.last_playback_at IS NOT NULL
+           (p.playbacks >= ${PLAYBACK_LIMIT} OR p.last_playback_at IS NOT NULL
              AND now() >= p.last_playback_at
                           + make_interval(secs => greatest(r.video_seconds - ${FINISH_TOLERANCE_SECONDS}, 0))
            ) AS watched
@@ -135,7 +135,7 @@ export async function submitAnswer(teamId: string, optionId: string): Promise<An
 
     const [part] = await tx.execute<{ state: string; playbacks: number; watched: boolean }>(sql`
       SELECT p.state, p.playbacks,
-             (p.last_playback_at IS NOT NULL
+             (p.playbacks >= ${PLAYBACK_LIMIT} OR p.last_playback_at IS NOT NULL
                AND now() >= p.last_playback_at
                             + make_interval(secs => greatest(r.video_seconds - ${FINISH_TOLERANCE_SECONDS}, 0))
              ) AS watched

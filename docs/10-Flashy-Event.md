@@ -12,8 +12,9 @@ clock says the video can have finished, the four options appear → one answer, 
 - Team identity is the session. Nothing about a team, a score or correctness comes from the client.
 - At most **2 playbacks per team per run**. One SQL statement locks the team's row and checks the
   count, so parallel requests cannot pass it.
-- The options appear, and an answer is accepted, only after `video_seconds - 5` seconds from the
-  team's latest playback. **This is a time check, not proof anyone watched.** The video URL is public
+- The options appear, and an answer is accepted, after `video_seconds - 5` seconds from the
+  team's latest playback, or at once when the team presses its second (last) play (organiser
+  decision, 7 Nov; the video stays on screen beside the question). **This is a time check, not proof anyone watched.** The video URL is public
   once a team has it, and a viewer can seek or open it directly.
 - **One attempt.** A wrong answer ends it; the response never says which option was right.
 - The correct option is stored only as `HMAC(FLAG_HMAC_KEY, 'flashy:' + label)` in `answer_hash`.
