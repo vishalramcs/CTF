@@ -30,7 +30,7 @@ type SessionRow = {
 type Dialog =
   | { kind: 'create' }
   | { kind: 'credentials'; credentials: Credential[]; csv: string }
-  | { kind: 'reset' | 'revoke' | 'deactivate' | 'rename' | 'sessions'; team: TeamRow }
+  | { kind: 'reset' | 'revoke' | 'deactivate' | 'rename' | 'sessions' | 'delete'; team: TeamRow }
   | { kind: 'new-password'; team: TeamRow; username: string; password: string };
 
 function downloadCsv(csv: string) {
@@ -133,11 +133,12 @@ export function TeamsPanel({
                         ['rename', 'Rename'],
                         ['revoke', 'Revoke sessions'],
                         ['reset', 'Reset password'],
+                        ['delete', 'Delete'],
                       ] as const
                     ).map(([kind, label]) => (
                       <Button
                         key={kind}
-                        variant={kind === 'reset' ? 'destructive' : 'outline'}
+                        variant={kind === 'reset' || kind === 'delete' ? 'destructive' : 'outline'}
                         className={actionClass}
                         onClick={() => setDialog({ kind, team })}
                       >
@@ -262,6 +263,24 @@ export function TeamsPanel({
           }}
         >
           {dialog.team.name} is logged out, can&apos;t log in, and leaves the public board.
+        </ConfirmModal>
+      )}
+
+      {dialog?.kind === 'delete' && (
+        <ConfirmModal
+          title="Delete team"
+          word={dialog.team.name}
+          label="Delete permanently"
+          onClose={close}
+          onConfirm={async () => {
+            const result = await send('DELETE', `/api/admin/teams/${dialog.team.id}`);
+            if (!result.ok) return result.message;
+            close();
+            router.refresh();
+          }}
+        >
+          {dialog.team.name} is removed for good: its login, solves, points and history. This
+          can&apos;t be undone. To only stop it logging in, use the Active checkbox instead.
         </ConfirmModal>
       )}
 

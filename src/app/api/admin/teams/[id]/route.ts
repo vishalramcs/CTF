@@ -72,3 +72,29 @@ export const PATCH = withAdmin<{ id: string }>(async (req, session, ctx) => {
   await notifyBoard();
   return json({ ok: true });
 });
+
+// Permanent. The team's login, sessions, solves, submissions and score rows go with it (every
+// table references teams ON DELETE CASCADE). Other teams keep the points they were awarded.
+export const DELETE = withAdmin<{ id: string }>(async (req, session, ctx) => {
+  const id = parseUuid((await ctx.params).id);
+  await db.transaction(async (tx) => {
+    const [team] = await tx
+      .select({ name: teams.name })
+      .from(teams)
+      .where(eq(teams.id, id))
+      .for('update');
+    if (!team) throw new ApiError(404, 'not_found', 'Team not found.');
+    await tx.execute(sql`UPDATE app.event_state SET coordinate_winner_id = NULL,
+      coordinate_won_at = NULL WHERE coordinate_winner_id = ${id}`);
+    await tx.delete(teams).where(eq(teams.id, id));
+    await audit(tx, {
+      ...actor(req, session),
+      action: 'team.delete',
+      entityType: 'team',
+      entityId: id,
+      details: { name: team.name },
+    });
+  });
+  await notifyBoard();
+  return json({ ok: true });
+});
