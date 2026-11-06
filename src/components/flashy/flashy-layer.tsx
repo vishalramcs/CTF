@@ -251,7 +251,7 @@ function Overlay({ state, refresh }: { state: Live; refresh: () => Promise<void>
                 className="fade-up flex flex-col gap-4"
               >
                 <fieldset className="flex flex-col gap-3">
-                  <legend className="mb-2 font-heading text-2xl font-bold sm:text-3xl">
+                  <legend className="mb-4 font-heading text-2xl font-bold sm:text-3xl">
                     {state.question}
                   </legend>
                   {state.options.map((o) => (
