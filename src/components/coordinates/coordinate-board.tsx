@@ -27,7 +27,7 @@ function FragmentRow({ side, slot }: { side: 'North' | 'South'; slot: Slot }) {
   );
 }
 
-// docs/10. Three locations, each rebuilt from a North and a South fragment. Only fragments this
+// docs/11. Three locations, each rebuilt from a North and a South fragment. Only fragments this
 // team has earned arrive here. A location shows its text once both halves are held, and the Main
 // Question grants all six.
 export function CoordinateBoard({ board }: { board: BoardData }) {

@@ -17,7 +17,7 @@ export const fragmentPlan = z
 
 export type FragmentPlan = z.infer<typeof fragmentPlan>;
 
-// docs/10. A plan is empty (clears every fragment) or exactly six: two per difficulty, never on the
+// docs/11. A plan is empty (clears every fragment) or exactly six: two per difficulty, never on the
 // Main Question, slots 1-6 each used once (1 L1-N, 2 L1-S, 3 L2-N, 4 L2-S, 5 L3-N, 6 L3-S). Which
 // question holds which slot is free, so a location can mix difficulties. A table check can't count
 // rows, so it is here.
