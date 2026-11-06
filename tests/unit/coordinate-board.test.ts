@@ -1,13 +1,11 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { CoordinateBoard } from '@/components/coordinates/coordinate-board';
 import { fragmentId } from '@/lib/coordinates/fragments';
 import type { CoordinateBoard as BoardData } from '@/lib/coordinates/state';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh() {} }) }));
-vi.mock('@/components/participant/answer-form', () => ({ AnswerForm: () => null }));
 
 const slot = (order: number, value: string | null) => ({
   id: fragmentId(order),

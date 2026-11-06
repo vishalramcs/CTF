@@ -1,8 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
-import { AnswerForm } from '@/components/participant/answer-form';
 import type { CoordinateBoard as BoardData } from '@/lib/coordinates/state';
 
 type Slot = BoardData['locations'][number]['north'];
@@ -31,7 +28,6 @@ function FragmentRow({ side, slot }: { side: 'North' | 'South'; slot: Slot }) {
 // team has earned arrive here. A location shows its text once both halves are held, and the Main
 // Question grants all six.
 export function CoordinateBoard({ board }: { board: BoardData }) {
-  const router = useRouter();
   const held = board.fragments.length;
   const done = board.locations.filter((l) => l.reconstructed).length;
   return (
@@ -72,18 +68,6 @@ export function CoordinateBoard({ board }: { board: BoardData }) {
         </p>
       )}
 
-      {board.found ? (
-        <p className="text-success" role="status">
-          ✓ Final location found.
-        </p>
-      ) : (
-        <AnswerForm
-          path="/api/coordinates/submit"
-          label="Final location"
-          submitLabel="Submit"
-          onCorrect={() => router.refresh()}
-        />
-      )}
     </div>
   );
 }

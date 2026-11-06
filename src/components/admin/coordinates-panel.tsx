@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 
-import { Field, Notice } from '@/components/admin/fields';
+import { Field } from '@/components/admin/fields';
 import {
   panelClass,
   SectionTitle,
@@ -13,110 +13,103 @@ import {
 import { actionClass, ErrorText, inputClass } from '@/components/admin/ui';
 import { useAction } from '@/components/admin/use-action';
 import { Button } from '@/components/ui/button';
-import { DIFFICULTIES, formatTime, type Difficulty } from '@/lib/admin/shared';
+import { DIFFICULTIES, type Difficulty } from '@/lib/admin/shared';
 import type { CoordinateConfig } from '@/lib/admin/coordinates';
 import { fragmentId } from '@/lib/coordinates/fragments';
 
-type Draft = { value: string; order: string; clue: string };
+const SLOTS = [1, 2, 3, 4, 5, 6];
+const SIDE = (slot: number) => (slot % 2 === 1 ? 'North' : 'South');
 
-function FragmentPlan({ config }: { config: CoordinateConfig }) {
+type Row = { challengeId: string; value: string };
+
+// docs/11. One row per fragment: the admin picks which question carries it and types the
+// coordinate. A team sees it after solving that question, or all six after the Main Question.
+function AssignCoordinates({ config }: { config: CoordinateConfig }) {
   const { run, pending, error } = useAction();
-  const [drafts, setDrafts] = useState<Record<string, Draft>>(() =>
-    Object.fromEntries(
-      config.questions.map((q) => [
-        q.id,
-        {
-          value: q.fragmentValue ?? '',
-          order: q.coordinateOrder?.toString() ?? '',
-          clue: q.orderClue ?? '',
-        },
-      ]),
-    ),
+  const [rows, setRows] = useState<Row[]>(() =>
+    SLOTS.map((slot) => {
+      const q = config.questions.find((x) => x.coordinateOrder === slot);
+      return { challengeId: q?.id ?? '', value: q?.fragmentValue ?? '' };
+    }),
   );
-  const set = (id: string, patch: Partial<Draft>) =>
-    setDrafts((d) => ({ ...d, [id]: { ...d[id], ...patch } }));
+  const set = (i: number, patch: Partial<Row>) =>
+    setRows((r) => r.map((row, j) => (j === i ? { ...row, ...patch } : row)));
+
+  const used = rows.map((r) => r.challengeId).filter(Boolean);
+  const duplicate = used.length !== new Set(used).size;
 
   function save(event: FormEvent) {
     event.preventDefault();
-    const plan = config.questions
-      .filter((q) => drafts[q.id].value.trim())
-      .map((q) => ({
-        challengeId: q.id,
-        value: drafts[q.id].value,
-        order: Number(drafts[q.id].order),
-        orderClue: drafts[q.id].clue || null,
-      }));
+    const filled = rows
+      .map((r, i) => ({ ...r, order: i + 1 }))
+      .filter((r) => r.challengeId && r.value.trim());
+    const plan = filled.map((r) => ({
+      challengeId: r.challengeId,
+      value: r.value,
+      order: r.order,
+      orderClue: null,
+    }));
     return run('POST', '/api/admin/coordinates/fragments', { plan });
   }
 
   return (
     <form onSubmit={save} className={panelClass}>
-      <SectionTitle>Fragments</SectionTitle>
+      <SectionTitle>Assign coordinates to questions</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        Fill in a value for exactly 6 regular questions: 2 Easy, 2 Medium and 2 Difficult. Give
-        each one a slot from 1 to 6: 1 = Location 1 North, 2 = Location 1 South, 3 = Location 2
-        North, 4 = Location 2 South, 5 = Location 3 North, 6 = Location 3 South. Any question can
-        take any slot. Leave the others blank. Every team gets the same fragment. A flag template
-        can embed it with the fragment placeholder. Clear all values to remove the plan.
+        6 coordinates, 2 per location (North and South). Pick the question that gives each one
+        and type the coordinate. Use 2 Easy, 2 Medium and 2 Difficult questions. When a team
+        solves that question it sees the coordinate on its question page and in its Locations
+        box. Solving the Main Question gives all six.
       </p>
       <p role="status" className="text-sm">
         {config.assignedCount === 0
-          ? 'No fragments assigned.'
+          ? 'Nothing saved yet.'
           : config.planError
-            ? `Saved plan is invalid: ${config.planError}`
-            : 'Saved plan is valid (6 fragments, 3 locations).'}
+            ? `Saved setup has a problem: ${config.planError}`
+            : '✓ Saved: 6 coordinates on 6 questions.'}
       </p>
       <div className="overflow-x-auto">
         <table className={tableClass}>
           <thead>
             <tr>
-              <th className={thClass}>#</th>
-              <th className={thClass}>Level</th>
-              <th className={thClass}>Fragment value</th>
-              <th className={thClass}>Slot (1-6)</th>
-              <th className={thClass}>Fragment</th>
-              <th className={thClass}>Order clue</th>
+              <th className={thClass}>Location</th>
+              <th className={thClass}>Part</th>
+              <th className={thClass}>Question</th>
+              <th className={thClass}>Coordinate</th>
             </tr>
           </thead>
           <tbody>
-            {config.questions.map((q) => (
-              <tr key={q.id}>
+            {SLOTS.map((slot, i) => (
+              <tr key={slot}>
                 <td className={tdClass}>
-                  {q.number} {q.title}
+                  {Math.ceil(slot / 2)}
+                  <span className="ml-1 text-xs text-muted-foreground">({fragmentId(slot)})</span>
                 </td>
-                <td className={tdClass}>{DIFFICULTIES[q.difficulty as Difficulty].label}</td>
+                <td className={tdClass}>{SIDE(slot)}</td>
+                <td className={tdClass}>
+                  <select
+                    aria-label={`Question for ${fragmentId(slot)}`}
+                    className={inputClass}
+                    value={rows[i].challengeId}
+                    onChange={(e) => set(i, { challengeId: e.target.value })}
+                  >
+                    <option value="">Choose a question</option>
+                    {config.questions.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        Q{q.number} · {DIFFICULTIES[q.difficulty as Difficulty].label} ·{' '}
+                        {q.title}
+                      </option>
+                    ))}
+                  </select>
+                </td>
                 <td className={tdClass}>
                   <input
-                    aria-label={`Fragment value for ${q.number}`}
+                    aria-label={`Coordinate for ${fragmentId(slot)}`}
                     className={inputClass}
                     maxLength={60}
-                    value={drafts[q.id].value}
-                    onChange={(e) => set(q.id, { value: e.target.value })}
-                  />
-                </td>
-                <td className={tdClass}>
-                  <input
-                    aria-label={`Slot for ${q.number}`}
-                    className={inputClass}
-                    type="number"
-                    min={1}
-                    max={6}
-                    value={drafts[q.id].order}
-                    onChange={(e) => set(q.id, { order: e.target.value })}
-                  />
-                </td>
-                <td className={tdClass}>
-                  {Number(drafts[q.id].order) >= 1 && Number(drafts[q.id].order) <= 6
-                    ? fragmentId(Number(drafts[q.id].order))
-                    : '-'}
-                </td>
-                <td className={tdClass}>
-                  <input
-                    aria-label={`Order clue for ${q.number}`}
-                    className={inputClass}
-                    maxLength={300}
-                    value={drafts[q.id].clue}
-                    onChange={(e) => set(q.id, { clue: e.target.value })}
+                    placeholder="e.g. 40.7128° N"
+                    value={rows[i].value}
+                    onChange={(e) => set(i, { value: e.target.value })}
                   />
                 </td>
               </tr>
@@ -124,55 +117,20 @@ function FragmentPlan({ config }: { config: CoordinateConfig }) {
           </tbody>
         </table>
       </div>
+      {duplicate && (
+        <p role="alert" className="text-sm text-destructive">
+          A question is picked twice. Each question can carry one coordinate.
+        </p>
+      )}
       <ErrorText>{error}</ErrorText>
-      <Button type="submit" className={actionClass} disabled={pending}>
-        Save fragments
+      <Button type="submit" className={actionClass} disabled={pending || duplicate}>
+        Save coordinates
       </Button>
     </form>
   );
 }
 
-// One row per fragment slot: which question carries it and whether its value is set.
-function LocationsOverview({ config }: { config: CoordinateConfig }) {
-  return (
-    <section className={panelClass}>
-      <SectionTitle>Locations and fragments</SectionTitle>
-      <p className="text-sm text-muted-foreground">
-        3 locations, each with a North and a South fragment: 6 fragments in all. Solving the Main
-        Question gives a team all six.
-      </p>
-      <div className="overflow-x-auto">
-        <table className={tableClass}>
-          <thead>
-            <tr>
-              <th className={thClass}>Fragment</th>
-              <th className={thClass}>Question</th>
-              <th className={thClass}>Level</th>
-              <th className={thClass}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[1, 2, 3, 4, 5, 6].map((slot) => {
-              const q = config.questions.find((x) => x.coordinateOrder === slot);
-              return (
-                <tr key={slot}>
-                  <td className={tdClass}>{fragmentId(slot)}</td>
-                  <td className={tdClass}>{q ? `${q.number} ${q.title}` : 'Not assigned'}</td>
-                  <td className={tdClass}>
-                    {q ? DIFFICULTIES[q.difficulty as Difficulty].label : '-'}
-                  </td>
-                  <td className={tdClass}>{q?.fragmentValue ? 'Configured' : 'Missing'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function FinalCoordinates({ config }: { config: CoordinateConfig }) {
+function LocationNames({ config }: { config: CoordinateConfig }) {
   const { run, pending, error } = useAction();
   const [rows, setRows] = useState(() =>
     [1, 2, 3].map((position) => {
@@ -191,26 +149,25 @@ function FinalCoordinates({ config }: { config: CoordinateConfig }) {
         return run('POST', '/api/admin/coordinates/final', { coordinates: rows });
       }}
     >
-      <SectionTitle>Reconstructed locations</SectionTitle>
+      <SectionTitle>Location names</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        The text a team sees for a location once it holds both its North and South fragments, or
-        all three once it solves the Main Question. Label is the place name, value is the full
-        text, for example the latitude and longitude. All three are required.
+        Shown to a team once it has both coordinates of a location.
       </p>
       {rows.map((row, i) => (
         <div key={i} className="grid gap-3 sm:grid-cols-2">
-          <Field label={`Location ${i + 1} label`}>
+          <Field label={`Location ${i + 1} name`}>
             <input
               className={inputClass}
-              maxLength={40}
+              maxLength={60}
               value={row.label}
               onChange={(e) => patch(i, { label: e.target.value })}
             />
           </Field>
-          <Field label={`Location ${i + 1} value`}>
-            <input
+          <Field label={`Location ${i + 1} full text`}>
+            <textarea
               className={inputClass}
               maxLength={200}
+              rows={2}
               required
               value={row.value}
               onChange={(e) => patch(i, { value: e.target.value })}
@@ -220,77 +177,17 @@ function FinalCoordinates({ config }: { config: CoordinateConfig }) {
       ))}
       <ErrorText>{error}</ErrorText>
       <Button type="submit" className={actionClass} disabled={pending}>
-        Save locations
+        Save location names
       </Button>
     </form>
   );
 }
 
-function FinalAnswer({ hasAnswer }: { hasAnswer: boolean }) {
-  const { run, pending, error } = useAction();
-  const [answer, setAnswer] = useState('');
-  return (
-    <form
-      className={panelClass}
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const result = await run('POST', '/api/admin/coordinates/answer', { answer });
-        if (result.ok) setAnswer('');
-      }}
-    >
-      <SectionTitle>Final location answer</SectionTitle>
-      <p role="status" className="text-sm">
-        {hasAnswer ? 'An answer is set. It can not be shown again.' : 'No answer set yet.'}
-      </p>
-      <Field label="New answer" hint="Compared after lower-casing and removing punctuation.">
-        <input
-          className={inputClass}
-          maxLength={200}
-          required
-          autoComplete="off"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-        />
-      </Field>
-      <ErrorText>{error}</ErrorText>
-      <Button type="submit" className={actionClass} disabled={pending || !answer.trim()}>
-        {hasAnswer ? 'Replace answer' : 'Set answer'}
-      </Button>
-    </form>
-  );
-}
-
-export function CoordinatesPanel({
-  config,
-  timeZone,
-}: {
-  config: CoordinateConfig;
-  timeZone: string;
-}) {
+export function CoordinatesPanel({ config }: { config: CoordinateConfig; timeZone?: string }) {
   return (
     <>
-      <section className={panelClass}>
-        <SectionTitle>Winners</SectionTitle>
-        <ul className="space-y-1 text-sm">
-          <li>
-            Coordinate winner:{' '}
-            {config.winner
-              ? `${config.winner.team} at ${formatTime(config.winner.at, timeZone)}`
-              : 'none yet'}
-          </li>
-          <li>
-            First to solve the Main Question:{' '}
-            {config.mainFirst
-              ? `${config.mainFirst.team} at ${formatTime(config.mainFirst.at, timeZone)}`
-              : 'none yet'}
-          </li>
-        </ul>
-        <Notice>The two races are tracked separately and can have different winners.</Notice>
-      </section>
-      <LocationsOverview config={config} />
-      <FragmentPlan config={config} />
-      <FinalCoordinates config={config} />
-      <FinalAnswer hasAnswer={config.hasAnswer} />
+      <AssignCoordinates config={config} />
+      <LocationNames config={config} />
     </>
   );
 }

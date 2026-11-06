@@ -16,7 +16,7 @@ export default async function SurprisesPage() {
       <PageTitle>Surprises</PageTitle>
       <FlashyPanel view={await loadFlashyAdmin()} timeZone={env.EVENT_TIMEZONE} />
       <SurprisesPanel
-        surprises={await loadSurprises()}
+        surprises={(await loadSurprises()).filter((s) => s.kind === 'spidey_signal')}
         timeZone={env.EVENT_TIMEZONE}
         notStarted={event.status === 'not_started'}
       />
