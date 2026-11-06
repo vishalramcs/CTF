@@ -54,10 +54,12 @@ export function ChallengesPanel({
   rows,
   teams,
   slots,
+  workspaces,
 }: {
   rows: Row[];
   teams: TeamOption[];
   slots: Record<string, number>;
+  workspaces: string[];
 }) {
   const [dialog, setDialog] = useState<Dialog>();
   const { run, error } = useAction();
@@ -146,7 +148,9 @@ export function ChallengesPanel({
       </div>
       {rows.length === 0 && <p className="text-sm text-muted-foreground">No challenges yet.</p>}
 
-      {dialog?.kind === 'form' && <ChallengeForm row={dialog.row} onClose={close} />}
+      {dialog?.kind === 'form' && (
+        <ChallengeForm row={dialog.row} workspaces={workspaces} onClose={close} />
+      )}
       {dialog?.kind === 'tools' && <ToolsModal row={dialog.row} teams={teams} onClose={close} />}
       {dialog?.kind === 'delete' && (
         <ConfirmModal
@@ -175,7 +179,15 @@ function parseJson(text: string, label: string): { value?: unknown; error?: stri
   }
 }
 
-function ChallengeForm({ row, onClose }: { row?: Row; onClose: () => void }) {
+function ChallengeForm({
+  row,
+  workspaces,
+  onClose,
+}: {
+  row?: Row;
+  workspaces: string[];
+  onClose: () => void;
+}) {
   const { run, pending, error } = useAction();
   const [formError, setFormError] = useState<string>();
   const [loaded, setLoaded] = useState<LoadedChallenge>();
@@ -206,6 +218,10 @@ function ChallengeForm({ row, onClose }: { row?: Row; onClose: () => void }) {
     const evidence = parseJson(text('evidence'), 'Evidence');
     const config = parseJson(text('generatorConfig'), 'Generator config');
     if (evidence.error || config.error) return setFormError(evidence.error ?? config.error);
+    // The dropdown wins over any workspace typed in the JSON box.
+    const generatorConfig: Record<string, unknown> = { ...(config.value ?? {}) };
+    delete generatorConfig.workspace;
+    if (text('workspace')) generatorConfig.workspace = text('workspace');
 
     const fields = {
       number: Number(text('number')),
@@ -217,7 +233,7 @@ function ChallengeForm({ row, onClose }: { row?: Row; onClose: () => void }) {
       questionTemplate: text('questionTemplate'),
       evidence: evidence.value ?? [],
       generatorKey: text('generatorKey'),
-      generatorConfig: config.value ?? {},
+      generatorConfig,
       hints: text('hints')
         .split(HINT_SEPARATOR.trim())
         .map((h) => h.trim())
@@ -314,6 +330,21 @@ function ChallengeForm({ row, onClose }: { row?: Row; onClose: () => void }) {
               >
                 {GENERATOR_KEYS.map((key) => (
                   <option key={key}>{key}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Workspace" hint="The files folder shown on the question page.">
+              <select
+                name="workspace"
+                defaultValue={
+                  ((row?.generatorConfig as { workspace?: string } | undefined)?.workspace ??
+                    '') as string
+                }
+                className={inputClass}
+              >
+                <option value="">None</option>
+                {workspaces.map((name) => (
+                  <option key={name}>{name}</option>
                 ))}
               </select>
             </Field>

@@ -6,6 +6,9 @@ import { GENERATOR_KEYS, LEVELS } from '@/lib/admin/shared';
 import { db } from '@/lib/db/client';
 import { challengeHints, challenges } from '@/lib/db/schema';
 import { ApiError } from '@/lib/http';
+import { WORKSPACES } from '@/lib/workspace/definitions';
+
+export const WORKSPACE_NAMES = Object.keys(WORKSPACES);
 
 // Everything an admin needs, and never static_flag_hash.
 const columns = {
@@ -63,7 +66,11 @@ export const challengeFields = z.object({
   evidence: z.array(z.unknown()).max(100),
   generatorKey: z.enum(GENERATOR_KEYS),
   // Holds the template's `inspect` and `files` blocks (QUESTIONS_TEMPLATE §4–5).
-  generatorConfig: z.record(z.string(), z.unknown()),
+  generatorConfig: z
+    .record(z.string(), z.unknown())
+    .refine((c) => c.workspace === undefined || WORKSPACE_NAMES.includes(c.workspace as string), {
+      message: 'Unknown workspace.',
+    }),
   hints: z.array(z.string().trim().min(1).max(5000)).max(20),
   isPublished: z.boolean(),
 });
