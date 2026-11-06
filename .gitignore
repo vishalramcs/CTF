@@ -46,3 +46,6 @@ next-env.d.ts
 
 # stray test output
 *.tmp.log
+
+# Organiser images waiting to be processed
+/incoming/
