@@ -20,6 +20,15 @@ function readDismissed(): string[] {
   }
 }
 
+function Lens() {
+  return (
+    <svg viewBox="0 0 32 32" className="size-7" aria-hidden fill="none">
+      <rect x="3" y="8" width="26" height="16" rx="3" stroke="#e8ecf6" />
+      <circle cx="16" cy="16" r="4" fill="#e2232a" />
+    </svg>
+  );
+}
+
 // Mounted in the team layout so every team page can show them. The icons only appear when the
 // server lists the surprise, and say nothing about its content.
 export function SurpriseLayer() {
@@ -57,6 +66,16 @@ export function SurpriseLayer() {
   return (
     <>
       <div className="pointer-events-none fixed right-4 bottom-4 z-40 flex flex-col items-end gap-3">
+        {shown('flashy_spider') && (
+          <button
+            type="button"
+            onClick={() => setOpen('flashy_spider')}
+            aria-label="A strange recording is available. Open it."
+            className={`pointer-events-auto flex size-12 items-center justify-center rounded-full border border-border bg-card ${FOCUS}`}
+          >
+            <Lens />
+          </button>
+        )}
         {shown('spidey_signal') && !dismissed.includes('spidey_signal') && (
           <div className="pointer-events-auto flex items-center gap-1">
             <button
