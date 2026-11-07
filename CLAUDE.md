@@ -17,7 +17,7 @@ Spider-Man–themed beginner CTF for a live 75-minute college event (EYE club, P
 4. **The SQL migrations are the source of truth** (`supabase/migrations/`). Drizzle schema mirrors them for typing only. Never `drizzle-kit push`.
 5. **Use the transaction recipes in 05 §5 exactly** (advisory locks, `FOR SHARE`/`FOR UPDATE` on `event_state`, `ON CONFLICT DO NOTHING`).
 6. **Realtime = public Broadcast pings only** (TRD §6). Team-specific data is fetched from authenticated APIs after a ping. One socket per browser (leader tab).
-7. **Questions are written by the organisers** (format: `QUESTIONS_TEMPLATE.md`). Never invent challenge content; use placeholders until `QUESTIONS.md` arrives.
+7. **Questions are written by the organisers** (format: `QUESTIONS_TEMPLATE.md`). Claude may write or edit challenge content (hints, text) when an organiser asks; it must keep answers and flags unchanged unless told otherwise, and show the organiser the new text.
 8. **Fragments are identical for all teams** and live only on `app.challenges` (`fragment_value`, `coordinate_order` = slot 1-6 = L1-N..L3-S, `order_clue`), never in team variants. They reach a team only after it solves that question, or finds the matching Main Question beacon flag (docs/12). A location's text (`app.final_coordinates`) reaches a team only when it holds both of that location's fragments. Variants change the question values and the team token.
 9. **Every admin mutation writes `audit_log`**. Every submit of any kind writes an attempt row.
 10. Inspect-surface clues (comments, meta, cookies `clue_*`, localStorage, headers `x-spidey-*`, robots.txt) are intended. They must hold dummy clue values only, never real tokens.
