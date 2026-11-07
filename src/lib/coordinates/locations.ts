@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 
-import { normalizeLocation } from '@/lib/coordinates/normalize';
-import { hmacHex, safeEqual } from '@/lib/crypto/hmac';
+import { normalizeLocation, placeMatches } from '@/lib/coordinates/normalize';
+import { hmacHex } from '@/lib/crypto/hmac';
 import { db } from '@/lib/db/client';
 import { env } from '@/lib/env';
 import { notifyBoard } from '@/lib/realtime/broadcast';
@@ -67,10 +67,8 @@ async function submitLocationTx(
     const [place] = await tx.execute<{ label: string }>(sql`
       SELECT label FROM app.final_coordinates WHERE position = ${position}`);
     const given = normalizeLocation(input);
-    const expected = place ? normalizeLocation(place.label) : null;
     const hash = given ? hmacHex(env.COORD_HMAC_KEY, given) : '';
-    const correct =
-      given !== null && expected !== null && safeEqual(hash, hmacHex(env.COORD_HMAC_KEY, expected));
+    const correct = place ? placeMatches(input, place.label) : false;
     const [answer] = await tx.execute<{ id: string }>(sql`
       INSERT INTO app.location_answers (team_id, position, submitted_hash, is_correct)
       VALUES (${teamId}, ${position}, ${hash}, ${correct}) RETURNING id`);
