@@ -36,11 +36,6 @@ export function parseTeamRows(text: string): {
   return { rows, errors };
 }
 
-export function parseTeamNames(text: string): { names: string[]; errors: string[] } {
-  const { rows, errors } = parseTeamRows(text);
-  return { names: rows.map((r) => r.name), errors };
-}
-
 export function uniqueHandle(base: string, taken: Set<string>): string {
   let handle = base || 'team';
   for (let n = 2; taken.has(handle); n++) handle = `${base || 'team'}-${n}`;

@@ -165,12 +165,6 @@ export const WORKSPACES: Record<string, Workspace> = {
   },
 };
 
-export function findWorkspaceFile(workspace: string, key: string): WorkspaceFile | undefined {
-  return Object.hasOwn(WORKSPACES, workspace)
-    ? WORKSPACES[workspace].files.find((file) => file.key === key)
-    : undefined;
-}
-
 // Splits simple evidence CSVs: no quoted fields, since these files are ours. A leading # line is a
 // comment for the reader, kept out of the table.
 export function parseCsv(input: string): string[][] {
