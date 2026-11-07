@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/history', label: 'History' },
+  { href: '/tools', label: 'Code Space' },
 ];
 
 export function TeamNav() {

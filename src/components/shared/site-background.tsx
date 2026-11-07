@@ -31,16 +31,17 @@ export function SiteBackground() {
     }
   }, [path, isAdmin]);
 
-  // Organiser-supplied web-over-the-city loop behind the leaderboard and the projector screen.
+  // Organiser-supplied web over the skyline, behind the leaderboard and the projector screen.
   if (BOARD_PATHS.includes(path)) {
     return (
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-black">
-        <picture>
-          <source media="(orientation: portrait)" srcSet="/swing/board-tall.gif" />
-          <img src="/swing/board-wide.gif" alt="" className="h-full w-full object-cover" />
-        </picture>
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-[#1b2a55]">
+        <img
+          src="/swing/board-bg.webp"
+          alt=""
+          className="h-full w-full object-cover object-[50%_45%]"
+        />
         {/* Keeps the board readable over the bright web. */}
-        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-black/40" />
       </div>
     );
   }

@@ -11,7 +11,7 @@ const HAND_X = 0.829;
 const HAND_Y = 0.016;
 // In the picture the web leaves the hand this far right of vertical.
 const ROPE_TILT_DEG = 26.6;
-const DURATION_MS = 1900;
+const DURATION_MS = 2500;
 const SHOOT = 0.12; // share of the run the web takes to reach its anchor
 const MAX_AMPLITUDE = (56 * Math.PI) / 180;
 const GHOST_LAG = [0.022, 0.045];

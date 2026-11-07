@@ -169,7 +169,7 @@ type Plan = { number: number; flag?: string; file?: string }[];
 
 // For each question: the correct flag (from the organiser references) and one workspace file.
 async function loadPlan(): Promise<Plan> {
-  const text = ['question-reference.md', 'held-questions.md']
+  const text = ['question-reference.md', 'held-questions.md', 'answers-2026-11-07.json']
     .map((f) => readFileSync(`seed-output/${f}`, 'utf-8'))
     .join('\n');
   const candidates = [...new Set(text.match(/[A-Z]+\{[^}\s]+\}/g) ?? [])];
