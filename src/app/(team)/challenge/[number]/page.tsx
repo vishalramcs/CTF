@@ -42,7 +42,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ numb
   }
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-8 bg-background/90 p-4">
+    <main className="swing-reveal mx-auto flex max-w-3xl flex-col gap-8 bg-background/90 p-4">
       <InspectSurfaces surfaces={view.surfaces} />
       <header className="flex flex-col gap-2">
         <Link href="/dashboard" className={BACK}>

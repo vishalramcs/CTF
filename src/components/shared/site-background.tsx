@@ -13,7 +13,8 @@ const TUNNEL = {
   shape: 'portal',
   colors: ['#000000', '#2a0a5e', '#7b1fa2', '#e0218a', '#ff6a00', '#ffb300', '#ff6a00'],
 };
-const TUNNEL_PATHS = ['/leaderboard', '/history'];
+const TUNNEL_PATHS = ['/history'];
+const BOARD_PATHS = ['/leaderboard', '/screen'];
 const ADMIN_SHAPES = ['fill', 'portal', 'horizon', 'pinch', 'rise', 'eclipse'];
 
 const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
@@ -29,6 +30,20 @@ export function SiteBackground() {
       setAdminLook({ shape: pick(ADMIN_SHAPES), colors: pick([FIELD.colors, TUNNEL.colors]) });
     }
   }, [path, isAdmin]);
+
+  // Organiser-supplied web-over-the-city loop behind the leaderboard and the projector screen.
+  if (BOARD_PATHS.includes(path)) {
+    return (
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-black">
+        <picture>
+          <source media="(orientation: portrait)" srcSet="/swing/board-tall.gif" />
+          <img src="/swing/board-wide.gif" alt="" className="h-full w-full object-cover" />
+        </picture>
+        {/* Keeps the board readable over the bright web. */}
+        <div className="absolute inset-0 bg-black/45" />
+      </div>
+    );
+  }
 
   const look = isAdmin ? adminLook : TUNNEL_PATHS.includes(path) ? TUNNEL : FIELD;
   return (

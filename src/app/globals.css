@@ -604,3 +604,67 @@
     animation: none;
   }
 }
+
+/* Spider-Man swing (src/components/swing). Hidden, not removed, so the image stays decoded. */
+.swing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  overflow: hidden;
+  visibility: hidden;
+}
+.swing-overlay[data-active] {
+  visibility: visible;
+}
+.swing-shade {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 55%, transparent 35%, rgb(0 0 0 / 0.85) 100%);
+}
+.swing-rope {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.swing-rope line {
+  stroke: #eef3fb;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 2px rgb(255 255 255 / 0.6));
+}
+.swing-hero {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 82.9% 1.6%;
+  will-change: transform, filter, opacity;
+  image-rendering: auto;
+  user-select: none;
+  filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.55));
+}
+.swing-ghost {
+  opacity: 0;
+}
+
+/* Phase 5: the question fades in once the swing has opened it. */
+@keyframes swing-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.swing-reveal {
+  animation: swing-reveal 0.45s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .swing-reveal {
+    animation: none;
+  }
+}

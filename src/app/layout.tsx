@@ -3,6 +3,7 @@ import './globals.css';
 import { Archivo, Big_Shoulders, JetBrains_Mono } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { SiteBackground } from '@/components/shared/site-background';
+import { SwingOverlay } from '@/components/swing/swing-overlay';
 
 const display = Big_Shoulders({
   subsets: ['latin'],
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className="antialiased [text-shadow:0_0_3px_#000,0_0_8px_#000,0_1px_2px_#000]">
         <SiteBackground />
         {children}
+        <SwingOverlay />
       </body>
     </html>
   );
