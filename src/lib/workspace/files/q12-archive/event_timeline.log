@@ -1,4 +1,5 @@
-20:05:12 archive sync started
+# archive clock
+20:05:12 archive sync started (sensor bus clock read 20:05:19)
 20:11:48 P-01 alignment nominal
 20:18:30 P-02 charge sequence begins
 20:18:42 P-02 SIGNATURE CORRUPTION during discharge

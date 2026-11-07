@@ -1,0 +1,6 @@
+PORTAL SENSOR CALIBRATION SHEET
+P-01  firmware 2.3  output: hexadecimal
+P-02  firmware 0.8  output: legacy, base 8 (scheduled for upgrade)
+P-03  firmware 2.3  output: hexadecimal
+P-04  firmware 2.1  output: hexadecimal
+Sensor timestamps come from the sensor bus clock, not the archive clock.

@@ -1,3 +1,4 @@
-The archive dropped one dimension after a portal fired. The sensors did not lose everything.
-The reading taken at the exact moment of corruption still holds the number, written the way the instruments write numbers.
-Check it against what survived of the signature, and against what the archive still knows. - Miles
+The archive dropped one dimension when P-02 fired. The sensors did not lose everything:
+the reading taken at the moment of corruption still holds its number.
+Careful. The sensors and the archive do not keep the same time, and not every sensor counts the same way.
+Whatever you rebuild must fit what survived of the signature, and must be gone from the archive. - Miles

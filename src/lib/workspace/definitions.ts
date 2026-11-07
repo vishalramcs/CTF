@@ -148,6 +148,7 @@ export const WORKSPACES: Record<string, Workspace> = {
       text('miles_research_note.txt'),
       text('event_timeline.log'),
       csv('portal_readings.csv'),
+      text('sensor_calibration.txt'),
       text('corrupted_signature.txt'),
       db('dimensional_records.db'),
     ],
