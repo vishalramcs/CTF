@@ -61,8 +61,8 @@ describe('swing shortcut', () => {
 describe('secret shortcuts', () => {
   const alt = (code: string, over: Partial<KeyboardEvent> = {}) =>
     key({ ctrlKey: false, key: code.slice(3).toLowerCase(), code, ...over });
-  it('maps Alt+Shift+R, D, Z to their moves and S to a random show', () => {
-    expect(secretFor(alt('KeyR'))).toBe('s:swingLeft');
+  it('maps Alt+Shift+D, Z to their moves and S to a random show; R is gone', () => {
+    expect(secretFor(alt('KeyR'))).toBeNull();
     expect(secretFor(alt('KeyD'))).toBe('s:descent');
     expect(secretFor(alt('KeyZ'))).toBe('s:approach');
     expect(secretFor(alt('KeyS'))).toMatch(/^s:/);
@@ -70,9 +70,9 @@ describe('secret shortcuts', () => {
   });
   it('ignores other keys and combinations', () => {
     expect(secretFor(alt('KeyQ'))).toBeNull();
-    expect(secretFor(alt('KeyR', { shiftKey: false }))).toBeNull();
-    expect(secretFor(alt('KeyR', { ctrlKey: true }))).toBeNull(); // AltGr on Windows is Ctrl+Alt
-    expect(secretFor(alt('KeyR', { metaKey: true }))).toBeNull();
+    expect(secretFor(alt('KeyD', { shiftKey: false }))).toBeNull();
+    expect(secretFor(alt('KeyD', { ctrlKey: true }))).toBeNull(); // AltGr on Windows is Ctrl+Alt
+    expect(secretFor(alt('KeyD', { metaKey: true }))).toBeNull();
   });
 });
 
@@ -236,7 +236,7 @@ describe('sequences', () => {
   });
 
   it('a swing starts and ends off screen and is fastest mid-arc', () => {
-    for (const name of ['q:swingRight', 'q:swingLeft', 'q:diagonal'] as const) {
+    for (const name of ['q:swingRight', 'q:diagonal'] as const) {
       const [step] = SEQUENCES[name](W, H).steps;
       const a = frameAt(step, 0, W, H);
       const b = frameAt(step, 1, W, H);

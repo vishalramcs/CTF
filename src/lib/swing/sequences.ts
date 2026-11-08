@@ -18,15 +18,9 @@ export type Sequence = {
   coverAt?: number;
 };
 
-/** The six moves. Each is a question transition (`q:`) and a secret show (`s:`). */
-export const MOVES = [
-  'swingRight',
-  'swingLeft',
-  'descent',
-  'approach',
-  'diagonal',
-  'swoop',
-] as const;
+/** The moves. Each is a question transition (`q:`) and a secret show (`s:`). The right-to-left
+ * web-shooting swing was removed by organiser decision (8 Nov 2026). */
+export const MOVES = ['swingRight', 'descent', 'approach', 'diagonal', 'swoop'] as const;
 export type Move = (typeof MOVES)[number];
 
 type Entrance = 'dashboard' | 'leaderboard' | 'history' | 'tools';
@@ -91,21 +85,6 @@ const MOVE: Record<Move, (W: number, H: number) => Built> = {
     coverAt: 0.5,
     steps: [
       cross(W, H, 1, 0.5, { pose: 'classic', ms: 1000, shoot: true, scale: [0.55, 1.35, 0.55] }),
-      vanish(380),
-    ],
-  }),
-  // B: right to left, shooting a web.
-  swingLeft: (W, H) => ({
-    cover: 0,
-    coverAt: 0.5,
-    steps: [
-      cross(W, H, -1, 0.5, {
-        pose: 'webShoot',
-        ms: 1000,
-        flip: true,
-        shoot: true,
-        scale: [0.5, 1.3, 0.5],
-      }),
       vanish(380),
     ],
   }),
@@ -357,17 +336,30 @@ export const SEQUENCES: Record<SequenceName, (W: number, H: number, o?: Origin) 
       },
     ],
   }),
-  leaderboard: (W, H) => ({
+  leaderboard: () => ({
     backdrop: 'vignette',
     ambient: true,
     steps: [
-      cross(W, H, -1, 0.4, {
-        pose: 'webShoot',
-        ms: 1300,
-        flip: true,
-        shoot: true,
-        scale: [0.4, 0.7, 0.4],
-      }),
+      {
+        pose: 'land',
+        ms: 650,
+        motion: 'leap',
+        from: [-0.15, -0.15],
+        to: [0.14, 0.8],
+        lift: 0.1,
+        scale: flat(0.45),
+      },
+      {
+        pose: 'land',
+        ms: 550,
+        motion: 'leap',
+        from: [0.14, 0.8],
+        to: [-0.25, 0.45],
+        lift: 0.15,
+        rot: -20,
+        scale: flat(0.45),
+        fade: [1, 0.6],
+      },
     ],
   }),
   history: () => ({
