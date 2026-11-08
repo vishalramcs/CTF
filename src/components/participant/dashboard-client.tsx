@@ -8,10 +8,8 @@ import HalftoneReveal from '@/components/HalftoneReveal';
 import { formatPoints } from '@/components/leaderboard/format';
 import { Announcements } from '@/components/participant/announcements';
 import { ChallengeCard, DIFFICULTY } from '@/components/participant/challenge-card';
-import { LeaderboardPreview } from '@/components/participant/leaderboard-preview';
 import { STATUS } from '@/components/participant/phase-banner';
 import { useLiveState } from '@/hooks/use-live-state';
-import { useRankTracker } from '@/hooks/use-rank-tracker';
 import { formatDateTimeIST } from '@/lib/participant/time';
 import type { SurpriseDone } from '@/lib/participant/history';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
@@ -28,10 +26,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// Server data is team-specific and refreshed with router.refresh(); the status and the
-// leaderboard preview are the public live state.
+// Server data is team-specific and refreshed with router.refresh(); the status is the public live
+// state. No leaderboard here (organiser decision, 8 Nov 2026): it lives on /leaderboard.
 export function DashboardClient({
-  teamName,
   score,
   rank,
   cards,
@@ -39,7 +36,6 @@ export function DashboardClient({
   announcements,
   surprises,
 }: {
-  teamName: string;
   score: number;
   rank: number | null;
   cards: Card[];
@@ -49,7 +45,6 @@ export function DashboardClient({
 }) {
   const router = useRouter();
   const { state } = useLiveState();
-  const { changes } = useRankTracker(state);
   // Another tab solved something, or the event changed status: re-read this team's data.
   const seen = useRef<string>(undefined);
   const stamp = state ? `${state.v}:${state.status}` : undefined;
@@ -160,12 +155,6 @@ export function DashboardClient({
           </div>
 
           <aside className="flex min-w-0 flex-col gap-10">
-            <LeaderboardPreview
-              rows={state?.leaderboard ?? []}
-              ownTeam={teamName}
-              changes={changes}
-            />
-
             <section aria-labelledby="achievements" className="flex flex-col gap-3">
               <h2 id="achievements" className={H2}>
                 Achievements

@@ -6,7 +6,7 @@ import { listCompletedSurprises } from '@/lib/participant/history';
 import { getEventState, getTeamScore, listChallengeCards } from '@/lib/scoring/team-state';
 
 export default async function DashboardPage() {
-  const { teamId, teamName } = await requireTeam();
+  const { teamId } = await requireTeam();
   // One after the other: the app has a single pooled connection.
   const { status } = await getEventState();
   const { score, rank } = await getTeamScore(teamId);
@@ -17,7 +17,6 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      teamName={teamName}
       score={score}
       rank={rank}
       cards={cards}
