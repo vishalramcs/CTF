@@ -122,11 +122,12 @@ export function playQuestionTransition(opts: PlayOptions): Promise<void> | null 
 
 type KeyLike = Pick<KeyboardEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey' | 'key' | 'code'>;
 
-// Hidden shortcuts, never shown anywhere: Alt+Shift+S a random show, D the descent, Z the approach
-// (R, the right-to-left swing, was removed with that move). Plus Ctrl+Alt+Shift+L, the full easter egg. `code` is the physical key, so layouts
+// Hidden shortcuts, never shown anywhere: Alt+Shift+S a random show, R right to left, D the descent,
+// Z the approach. Plus Ctrl+Alt+Shift+L, the full easter egg. `code` is the physical key, so layouts
 // where Alt changes the produced character still work.
 const SECRET: Record<string, Move | 'random'> = {
   KeyS: 'random',
+  KeyR: 'swingLeft',
   KeyD: 'descent',
   KeyZ: 'approach',
 };
