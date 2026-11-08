@@ -106,7 +106,9 @@ export function DashboardClient({
           </dl>
         </section>
 
-        <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
+        {/* One column: the questions use the full width; achievements and announcements sit at the
+            bottom (organiser decision, 8 Nov 2026). */}
+        <div className="flex flex-col gap-10">
           <div className="flex min-w-0 flex-col gap-10">
             <section aria-labelledby="challenges" className="flex flex-col gap-6">
               <h2 id="challenges" className={H2}>
@@ -127,7 +129,7 @@ export function DashboardClient({
                           {DIFFICULTY.main_difficult.label}
                         </h3>
                       )}
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {group.map((card) => (
                           <ChallengeCard key={card.number} card={card} />
                         ))}
@@ -154,7 +156,7 @@ export function DashboardClient({
             </section>
           </div>
 
-          <aside className="flex min-w-0 flex-col gap-10">
+          <aside className="grid min-w-0 gap-10 lg:grid-cols-2">
             <section aria-labelledby="achievements" className="flex flex-col gap-3">
               <h2 id="achievements" className={H2}>
                 Achievements
