@@ -531,74 +531,7 @@
   border-color: rgb(208 138 78 / 0.5);
 }
 
-/* Login page: the red stage panel, the hanging Spider-Man and a subtle title glitch (docs/10 §4). */
-.login-stage {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 60% 46% at 100% 0%, rgb(190 0 8 / 0.5), transparent 72%),
-    radial-gradient(ellipse 60% 48% at 100% 100%, rgb(175 0 10 / 0.5), transparent 72%);
-}
-/* Hangs from the top edge on its web and sways; behind the login card, never over the form. */
-.spidey-hang {
-  --x: 86vw;
-  --drop: 3vh;
-  --h: 28vh;
-  position: fixed;
-  top: 0;
-  left: var(--x);
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  transform-origin: 0 0;
-  animation: spider-sway 5s ease-in-out infinite;
-  transition: opacity 0.4s;
-}
-@media (min-width: 64rem) {
-  .spidey-hang {
-    --x: 75vw;
-    --drop: 12vh;
-    --h: 60vh;
-  }
-}
-.spidey-hang[data-dropped] {
-  opacity: 0;
-}
-.spidey-hang__web {
-  position: absolute;
-  left: -1px;
-  top: 0;
-  width: 2px;
-  height: var(--drop);
-  background: #eef3fb;
-  box-shadow: 0 0 3px rgb(255 255 255 / 0.6);
-}
-.spidey-hang__hand {
-  position: absolute;
-  left: 0;
-  top: var(--drop);
-}
-.spidey-hang__body {
-  position: absolute;
-  left: 0;
-  top: var(--drop);
-  height: var(--h);
-  width: auto;
-  max-width: none;
-  /* transform-origin and transform come from the login pose (src/lib/swing/poses.ts). */
-  filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.55));
-  user-select: none;
-}
-@keyframes spider-sway {
-  0%,
-  100% {
-    transform: rotate(-2.5deg);
-  }
-  50% {
-    transform: rotate(2.5deg);
-  }
-}
+/* Title glitch: team and admin login, and the event ending. */
 .glitch-title {
   position: relative;
 }
@@ -622,9 +555,6 @@
   animation: flashy-glitch-b 6s steps(1) infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .spidey-hang {
-    animation: none;
-  }
   .glitch-title::before,
   .glitch-title::after {
     animation: none;
@@ -760,7 +690,8 @@
 }
 .glass .dash-card,
 .glass .mission-panel,
-.glass .podium-glass {
+.glass .podium-glass,
+.glass .auth-glass {
   background:
     linear-gradient(160deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.03)), rgb(8 12 24 / 0.5);
   border: 1px solid var(--glass-edge);
@@ -790,7 +721,8 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass .dash-card,
   .glass .mission-panel,
-  .glass .podium-glass {
+  .glass .podium-glass,
+  .glass .auth-glass {
     background: rgb(10 14 26 / 0.88);
   }
 }
@@ -800,7 +732,8 @@
   }
   .glass .dash-card,
   .glass .mission-panel,
-  .glass .podium-glass {
+  .glass .podium-glass,
+  .glass .auth-glass {
     background: #0e1320;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
