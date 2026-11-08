@@ -82,8 +82,9 @@ export function SwingOverlay() {
           const visible = f.opacity > 0.05 && f.x > 0 && f.x < W && f.y > 0 && f.y < H;
           const cx = visible ? f.x : W / 2;
           const cy = visible ? f.y : H / 2;
-          const r = f.iris * Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.1;
-          const mask = `radial-gradient(circle at ${cx}px ${cy}px, transparent ${r}px, #000 ${r + 80}px)`;
+          const r = f.iris * (Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.1 + 80);
+          // Soft 80 px edge, fully closed at iris 0 (no hole before the reveal starts).
+          const mask = `radial-gradient(circle at ${cx}px ${cy}px, transparent ${r - 80}px, #000 ${r}px)`;
           c.style.maskImage = mask;
           c.style.setProperty('-webkit-mask-image', mask);
         } else if (c.style.maskImage) {
@@ -156,6 +157,7 @@ export function SwingOverlay() {
           if (signal.aborted) return;
           if (i === 0) {
             el.dataset.backdrop = seq.backdrop;
+            el.dataset.seq = name; // which animation is playing: for tests and debugging only
             el.dataset.active = 'true';
             // A navigating sequence takes the clicks until the next page is showing.
             if (seq.cover !== undefined) el.dataset.block = 'true';
