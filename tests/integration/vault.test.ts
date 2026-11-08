@@ -92,7 +92,7 @@ describe('a full-access team', () => {
 
   it('sees and solves an unpublished question before the event starts', async () => {
     const cards = await listChallengeCards(testerId, 'not_started');
-    expect(cards.map((c) => [c.number, c.state])).toEqual([
+    expect(cards.map((c) => [c.number, c.state]).sort((a, b) => +a[0] - +b[0])).toEqual([
       [1, 'open'],
       [2, 'open'],
       [3, 'open'],
@@ -103,7 +103,7 @@ describe('a full-access team', () => {
 
   it('changes nothing for an ordinary team', async () => {
     const cards = await listChallengeCards(team, 'not_started');
-    expect(cards.map((c) => [c.number, c.state])).toEqual([
+    expect(cards.map((c) => [c.number, c.state]).sort((a, b) => +a[0] - +b[0])).toEqual([
       [1, 'locked'],
       [2, 'locked'],
     ]);

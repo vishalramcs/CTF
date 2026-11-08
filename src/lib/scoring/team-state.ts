@@ -1,4 +1,4 @@
-import { and, asc, eq, or, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { cache } from 'react';
 
 import {
@@ -7,7 +7,9 @@ import {
   type FinalCoordinate,
   type FragmentRef,
 } from '@/lib/coordinates/state';
+import { hmacHex } from '@/lib/crypto/hmac';
 import { db } from '@/lib/db/client';
+import { env } from '@/lib/env';
 import { teamParts } from '@/lib/scoring/parts';
 import {
   challengeHints,
@@ -104,8 +106,11 @@ export async function listChallengeCards(
     })
     .from(challenges)
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
-    .where(or(eq(challenges.isPublished, true), fullAccess(teamId)))
-    .orderBy(asc(challenges.number));
+    .where(or(eq(challenges.isPublished, true), fullAccess(teamId)));
+
+  // A fixed shuffle per team (a refresh keeps it), different between teams. The dashboard groups by difficulty.
+  const key = (n: number) => hmacHex(env.VARIANT_HMAC_KEY, `card-order:${teamId}:${n}`);
+  rows.sort((a, b) => key(a.number).localeCompare(key(b.number)));
 
   return rows.map(({ pointsEarned, priorSolves, sealed, full, ...card }) => ({
     ...card,

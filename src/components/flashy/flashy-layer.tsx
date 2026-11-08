@@ -44,6 +44,7 @@ function Overlay({ state, refresh }: { state: Live; refresh: () => Promise<void>
   const [selected, setSelected] = useState('');
   const [confirmSkip, setConfirmSkip] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [error, setError] = useState('');
   // Shown once, from the answer response. After "Continue" the server's `done` keeps it closed.
   const [shown, setShown] = useState<FlashyOutcome | null>(null);
@@ -63,7 +64,7 @@ function Overlay({ state, refresh }: { state: Live; refresh: () => Promise<void>
     if (!wantPlay.current || !el || !videoUrl) return;
     wantPlay.current = false;
     el.currentTime = 0;
-    void el.play().catch(() => {}); // blocked: the controls are there for the team to press
+    void el.play().catch(() => setBlocked(true)); // autoplay blocked: show a tap-to-start button
   });
 
   async function post(path: string, body?: unknown) {
@@ -202,13 +203,28 @@ function Overlay({ state, refresh }: { state: Live; refresh: () => Promise<void>
                     <video
                       ref={player}
                       src={videoUrl}
-                      controls
-                      controlsList="nodownload"
                       playsInline
                       preload="auto"
+                      disablePictureInPicture
+                      onContextMenu={(e) => e.preventDefault()}
+                      // No controls: play straight through. Resume if anything pauses it early.
+                      onPause={(e) => {
+                        if (!e.currentTarget.ended)
+                          void e.currentTarget.play().catch(() => setBlocked(true));
+                      }}
+                      onPlaying={() => setBlocked(false)}
                       onEnded={() => void refresh()}
                       className="size-full"
                     />
+                  )}
+                  {videoUrl && blocked && (
+                    <button
+                      type="button"
+                      onClick={() => void player.current?.play().catch(() => {})}
+                      className={`absolute inset-0 flex items-center justify-center bg-black/70 font-heading text-xl font-black tracking-wider uppercase ${FOCUS}`}
+                    >
+                      ▶ Tap to start
+                    </button>
                   )}
                   {!videoUrl && (
                     <div className="flashy-signal absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
