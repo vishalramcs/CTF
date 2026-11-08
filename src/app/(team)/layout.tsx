@@ -7,6 +7,7 @@ import { TeamNav } from '@/components/participant/team-nav';
 import { LogoutButton } from '@/components/shared/logout-button';
 import { SessionGuard } from '@/components/shared/session-guard';
 import { FlashyLayer } from '@/components/flashy/flashy-layer';
+import { EventEnding } from '@/components/participant/event-ending';
 import { SurpriseLayer } from '@/components/surprises/surprise-layer';
 import { requireTeam } from '@/lib/auth/guards';
 import { getEventState, getTeamScore } from '@/lib/scoring/team-state';
@@ -46,6 +47,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
       {children}
       <SurpriseLayer />
       <FlashyLayer />
+      <EventEnding />
       <SessionGuard loginPath="/login" />
     </>
   );

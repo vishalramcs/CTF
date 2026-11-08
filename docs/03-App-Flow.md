@@ -14,7 +14,7 @@
 | `/` | anyone | Landing. "Signal lost" intro, **Team Login** button, small admin link in the footer. Redirects to `/dashboard` if a team is logged in. |
 | `/login` | public | Team login. |
 | `/dashboard` | team | Challenge grid, score, rank, phase banner, feed. |
-| `/challenge/[number]` | team | One challenge (opens in a **new tab**). `0` = practice. |
+| `/challenge/[number]` | team | One challenge (opens in the same tab after a Spider-Man transition, 8 Nov 2026). `0` = practice. |
 | `/toolkit` | team | Built-in tools (client-side only). |
 | `/manual` | team | Beginner manual. |
 | `/coordinates` | team | Coordinate Board + final submission. |
@@ -82,12 +82,12 @@ Layout, top to bottom:
 3. Challenge grid: **practice card** first (onboarding only, then collapses to a small link), then 10 cards grouped by difficulty: Easy ×4, Medium ×3, Difficult ×2, Main Difficult ×1.
    - Card: `#n`, title, difficulty chip, **current points** (strikes through 100 and shows 50 in AI Mode), state (Locked / Open / Solved ✓ with points earned).
    - Which challenges carry fragments is **not** shown.
-   - Click → `window.open('/challenge/n', '_blank', 'noopener')`.
+   - Click → a Spider-Man transition covers the page, the question loads under it (`router.push`), then opens out of him (`src/lib/swing/`). Same tab; Back works.
 4. Right rail (stacks below on mobile): mini leaderboard (top 10 + own row) and live solve feed.
 
 Live behaviour: a `board` ping refreshes score, rank, board and feed. A `phase` ping refreshes card points and lock states and shows the banner animation.
 
-### 3.3 Challenge (new tab)
+### 3.3 Challenge
 ```mermaid
 flowchart TD
   A[Open /challenge/n] --> B{session valid?}

@@ -70,7 +70,7 @@ Each requirement has an ID so code, tests and milestones can refer to it.
 ### 5.2 Participant dashboard
 - **DASH-1** Shows 10 challenge cards (4 Easy, 3 Medium, 2 Difficult, 1 Main Difficult) plus the practice card. Each card shows number, title, difficulty, **current** point value (it changes in AI Mode), and solved or unsolved state.
 - **DASH-2** All 10 challenges are open from the start of `main_ctf`, in any order.
-- **DASH-3** Clicking a card opens `/challenge/[number]` in a **new tab**.
+- **DASH-3** Clicking a card opens `/challenge/[number]` **in the same tab**, behind a Spider-Man transition (a different one each time); Back returns to the dashboard. A modified click (Ctrl/middle) still opens a new tab. *(Changed 8 Nov 2026 by organiser decision; was: new tab.)*
 - **DASH-4** Shows the team's live score and rank, a phase banner with a countdown to the next scheduled phase, and the live solve feed.
 - **DASH-5** Links to Toolkit, Manual, Coordinate Board and Leaderboard.
 

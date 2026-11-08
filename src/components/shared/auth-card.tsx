@@ -1,5 +1,5 @@
 import { SpiderLogo } from '@/components/participant/spider-logo';
-import { HangingSpider } from '@/components/shared/hanging-spider';
+import { HangingHero } from '@/components/shared/hanging-hero';
 
 // Original web art (Design Brief §2): thin lines radiating from one corner.
 function WebCorner({ className }: { className: string }) {
@@ -63,15 +63,16 @@ export function AuthCard({
       </main>
     );
   }
-  // Below lg the spider is not rendered, so it can never sit over the form.
+  // Spider-Man hangs on the right (smaller on a phone), drawn before the card so it stays behind it.
   return (
     <main className="relative flex min-h-dvh overflow-hidden">
+      <HangingHero />
       <div className="relative flex flex-1 items-center justify-center p-4">
         <WebCorner className="top-0 left-0" />
         {card}
       </div>
       <aside className="relative hidden flex-1 border-l border-border lg:block">
-        <HangingSpider />
+        <div aria-hidden className="login-stage" />
       </aside>
     </main>
   );

@@ -33,6 +33,8 @@ export type FeedItem = {
 export type PublicState = {
   v: number;
   status: EventStatus;
+  /** When the status last changed (ISO): one END is told apart from a rehearsal's. */
+  statusChangedAt: string;
   frozen: boolean;
   leaderboard: BoardRow[];
   serverTime: number;
@@ -85,6 +87,7 @@ export async function getPublicState(): Promise<PublicState> {
     db
       .select({
         status: eventState.status,
+        statusChangedAt: eventState.statusChangedAt,
         frozen: eventState.leaderboardFrozen,
         v: eventState.scoreboardVersion,
         due: sql<boolean>`(${eventState.freezeAt} IS NOT NULL AND ${eventState.freezeAt} <= now()
@@ -98,6 +101,7 @@ export async function getPublicState(): Promise<PublicState> {
   return {
     v: state.v,
     status: state.status as EventStatus,
+    statusChangedAt: new Date(state.statusChangedAt).toISOString(),
     frozen: state.frozen,
     leaderboard,
     serverTime: Date.now(),

@@ -24,6 +24,7 @@ export default async function LoginPage({
         next={target}
         usernameLabel="Team name"
         compact
+        cinematic
         notice={isSessionEndReason(reason) ? SESSION_ENDED_MESSAGES[reason] : undefined}
       />
     </AuthCard>

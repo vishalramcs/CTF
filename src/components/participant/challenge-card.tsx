@@ -1,10 +1,13 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { MouseEvent, SyntheticEvent } from 'react';
 
 import FlipCard from '@/components/FlipCard';
 import PixelCard from '@/components/PixelCard';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
-import { playSwing } from '@/lib/swing/controller';
+import { playQuestionTransition, waitForPath } from '@/lib/swing/controller';
 
 export const DIFFICULTY: Record<
   Card['difficulty'],
@@ -48,25 +51,26 @@ function stateLabel(card: Card): string {
   }
 }
 
-// A plain click on "Open mission" plays the swing, then opens the question in a new tab as before.
-// Modified clicks (new window, background tab) keep the browser's own behaviour.
-function openWithSwing(event: MouseEvent<HTMLAnchorElement>, href: string) {
+// A plain click on "Open mission" plays a Spider-Man transition (a different one each time) between
+// the dashboard and the question, in this tab: the question loads under the backdrop once it covers
+// the page, and opens out of him. Back returns to the dashboard. Modified clicks (new window,
+// background tab) keep the browser's own behaviour. While a transition runs, further clicks are
+// ignored. The href is fixed per card, so the question opened is always the one clicked.
+function openWithSwing(
+  event: MouseEvent<HTMLAnchorElement>,
+  href: string,
+  push: (href: string) => void,
+) {
   event.stopPropagation();
   if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
     return;
   event.preventDefault();
-  const swing = playSwing();
-  if (!swing) return; // a swing is already playing
-  void swing.then(() => {
-    // Still within the click's activation window, so the tab is allowed; fall back if blocked.
-    const tab = window.open(href, '_blank');
-    if (tab) tab.opener = null;
-    else window.location.assign(href);
-  });
+  void playQuestionTransition({ onCover: () => push(href), ready: waitForPath(href) });
 }
 
-// Design Brief §5. Click flips the card; the real link on the back opens the new tab.
+// Design Brief §5. Click flips the card; the real link on the back opens the question.
 export function ChallengeCard({ card }: { card: Card }) {
+  const router = useRouter();
   // Points fall as more teams solve it, so show what it started at.
   const decayed = card.currentPoints !== card.basePoints;
   // FlipCard captures the pointer and takes Enter and Space, so the link must keep its own events.
@@ -142,10 +146,10 @@ export function ChallengeCard({ card }: { card: Card }) {
             </p>
             <Link
               href={`/challenge/${card.number}`}
-              target="_blank"
-              rel="noopener"
               onPointerDown={stop}
-              onClick={(event) => openWithSwing(event, `/challenge/${card.number}`)}
+              onClick={(event) =>
+                openWithSwing(event, `/challenge/${card.number}`, (h) => router.push(h))
+              }
               onKeyDown={stop}
               className="inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-4 font-semibold text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >

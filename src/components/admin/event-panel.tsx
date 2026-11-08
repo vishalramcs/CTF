@@ -23,7 +23,12 @@ const BUTTONS: { action: TransitionAction; label: string; confirm: string }[] = 
   },
   { action: 'pause', label: 'PAUSE', confirm: 'Submissions stop until you resume.' },
   { action: 'resume', label: 'RESUME', confirm: 'Submissions open again.' },
-  { action: 'end', label: 'END', confirm: 'The event ends for everyone. This can not be undone.' },
+  {
+    action: 'end',
+    label: 'END',
+    confirm:
+      'The event ends for everyone: no more flags, hints or answers. Every participant screen fades to black and plays the Spider-Man ending clip once, then shows the closing card. This can not be undone.',
+  },
 ];
 
 type Dialog = TransitionAction | 'reset';

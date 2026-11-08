@@ -531,8 +531,8 @@
   border-color: rgb(208 138 78 / 0.5);
 }
 
-/* Login page: the hanging spider panel and a subtle title glitch (docs/10 §4). */
-.hanging-spider-stage {
+/* Login page: the red stage panel, the hanging Spider-Man and a subtle title glitch (docs/10 §4). */
+.login-stage {
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -540,29 +540,55 @@
     radial-gradient(ellipse 60% 46% at 100% 0%, rgb(190 0 8 / 0.5), transparent 72%),
     radial-gradient(ellipse 60% 48% at 100% 100%, rgb(175 0 10 / 0.5), transparent 72%);
 }
-.hanging-spider {
-  position: absolute;
+/* Hangs from the top edge on its web and sways; behind the login card, never over the form. */
+.spidey-hang {
+  --x: 86vw;
+  --drop: 3vh;
+  --h: 28vh;
+  position: fixed;
   top: 0;
-  left: 50%;
+  left: var(--x);
   width: 0;
-  transform-origin: top center;
+  height: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
   animation: spider-sway 5s ease-in-out infinite;
+  transition: opacity 0.4s;
 }
-.hanging-spider__line {
-  display: block;
-  width: 3px;
-  height: clamp(170px, 29vh, 285px);
-  margin-left: -1.5px;
-  background: #ed101b;
-  box-shadow: 0 0 5px rgb(255 0 20 / 0.5);
+@media (min-width: 64rem) {
+  .spidey-hang {
+    --x: 75vw;
+    --drop: 12vh;
+    --h: 60vh;
+  }
 }
-.hanging-spider__body {
-  display: block;
-  width: clamp(100px, 10vw, 145px);
-  height: auto;
-  transform: translateX(-50%);
-  overflow: visible;
-  filter: drop-shadow(0 0 5px rgb(255 0 18 / 0.28));
+.spidey-hang[data-dropped] {
+  opacity: 0;
+}
+.spidey-hang__web {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 2px;
+  height: var(--drop);
+  background: #eef3fb;
+  box-shadow: 0 0 3px rgb(255 255 255 / 0.6);
+}
+.spidey-hang__hand {
+  position: absolute;
+  left: 0;
+  top: var(--drop);
+}
+.spidey-hang__body {
+  position: absolute;
+  left: 0;
+  top: var(--drop);
+  height: var(--h);
+  width: auto;
+  max-width: none;
+  /* transform-origin and transform come from the login pose (src/lib/swing/poses.ts). */
+  filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.55));
+  user-select: none;
 }
 @keyframes spider-sway {
   0%,
@@ -596,7 +622,7 @@
   animation: flashy-glitch-b 6s steps(1) infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .hanging-spider {
+  .spidey-hang {
     animation: none;
   }
   .glitch-title::before,
@@ -617,18 +643,34 @@
 .swing-overlay[data-active] {
   visibility: visible;
 }
-.swing-shade {
+/* While a transition covers the page, clicks land on the backdrop, not the page underneath. */
+.swing-overlay[data-block] {
+  pointer-events: auto;
+}
+.swing-ring {
+  fill: none;
+  stroke: #eef3fb;
+  stroke-width: 2;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgb(120 170 255 / 0.7));
+}
+.swing-curtain {
   position: absolute;
   inset: 0;
   opacity: 0;
   background: radial-gradient(ellipse at 50% 55%, transparent 35%, rgb(0 0 0 / 0.85) 100%);
+}
+/* A navigating transition hides the page swap completely. */
+.swing-overlay[data-backdrop='solid'] .swing-curtain {
+  background: radial-gradient(ellipse at 50% 45%, #0b1020 0%, #02030a 75%);
 }
 .swing-rope {
   position: absolute;
   inset: 0;
   overflow: visible;
 }
-.swing-rope line {
+.swing-rope path {
+  fill: none;
   stroke: #eef3fb;
   stroke-width: 1.8;
   stroke-linecap: round;
@@ -639,7 +681,6 @@
   left: 0;
   top: 0;
   max-width: none;
-  transform-origin: 82.9% 1.6%;
   will-change: transform, filter, opacity;
   image-rendering: auto;
   user-select: none;
@@ -665,6 +706,47 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .swing-reveal {
+    animation: none;
+  }
+}
+
+/* The event's last scene (src/components/participant/event-ending.tsx): fade to black, the clip, the
+   closing card. No player chrome anywhere. */
+.event-ending[open],
+.event-ending[open]::backdrop {
+  animation: ending-fade 0.7s ease-out both;
+}
+.event-ending__clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.event-ending[data-phase='clip'] .event-ending__clip {
+  opacity: 1;
+}
+.event-ending__final {
+  position: relative;
+  background: radial-gradient(ellipse at 50% 45%, #0b1020 0%, #000 70%);
+  animation: ending-fade 1.4s ease-out both;
+}
+@keyframes ending-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-ending[open],
+  .event-ending[open]::backdrop,
+  .event-ending__final {
     animation: none;
   }
 }

@@ -1,8 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import { takeHangingHero } from '@/components/shared/hanging-hero';
 import { Button } from '@/components/ui/button';
+import { playSwing, waitForPath } from '@/lib/swing/controller';
 
 const inputClass =
   'mt-1 h-11 w-full rounded-md border border-input bg-secondary px-3 font-mono text-base outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring';
@@ -13,13 +16,17 @@ export function LoginForm({
   notice,
   usernameLabel = 'Username',
   compact = false,
+  cinematic = false,
 }: {
   endpoint: string;
   next: string;
   notice?: string;
   usernameLabel?: string;
   compact?: boolean;
+  /** Team login: Spider-Man drops in once the server has accepted the login. */
+  cinematic?: boolean;
 }) {
+  const router = useRouter();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
 
@@ -38,6 +45,17 @@ export function LoginForm({
         }),
       });
       if (res.ok) {
+        if (cinematic) {
+          // Only after the server accepted it. Logout is a full load, so this document holds nothing
+          // from an earlier session and an in-app navigation is safe; the page swaps under the backdrop.
+          const target = new URL(next, window.location.origin).pathname;
+          const played = playSwing('login', {
+            origin: takeHangingHero(),
+            onCover: () => router.push(next),
+            ready: waitForPath(target),
+          });
+          if (played) return;
+        }
         // A full load, so nothing cached from a previous session survives.
         window.location.assign(next);
         return;

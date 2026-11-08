@@ -24,6 +24,7 @@ const start = [
 const state = (over: Partial<LiveState>): LiveState => ({
   v: 1,
   status: 'running',
+  statusChangedAt: '2026-11-01T08:00:00.000Z',
   frozen: false,
   leaderboard: start,
   serverTime: Date.UTC(2026, 10, 1, 8),
