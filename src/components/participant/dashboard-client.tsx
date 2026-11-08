@@ -56,7 +56,7 @@ export function DashboardClient({
 
   return (
     <div>
-      <main className="mx-auto flex max-w-[1200px] flex-col gap-10 p-4 pb-24">
+      <main className="glass mx-auto flex max-w-[1200px] flex-col gap-10 p-4 pb-24">
         <section
           aria-labelledby="welcome"
           className="fade-up flex items-center justify-between gap-6 sm:py-6"

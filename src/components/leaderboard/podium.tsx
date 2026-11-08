@@ -53,7 +53,7 @@ export function Podium({
     <LayoutGroup>
       <ol
         aria-label="Top three teams"
-        className={`mx-auto grid w-full grid-cols-3 items-end gap-2 sm:gap-4 ${
+        className={`podium-glass mx-auto grid w-full grid-cols-3 items-end gap-2 sm:gap-4 ${
           large ? 'max-w-5xl' : 'max-w-3xl'
         } ${takeover ? 'podium-takeover' : ''}`}
       >
