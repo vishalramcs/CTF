@@ -168,6 +168,9 @@ export const eventState = app.table('event_state', {
   freezeAt: timestamptz('freeze_at'),
   decoderReleased: boolean('decoder_released').notNull().default(false),
   locationPoints: numeric('location_points', { precision: 7, scale: 2 }).notNull().default('25'),
+  finalSignal: text('final_signal'),
+  finalPoints: numeric('final_points', { precision: 7, scale: 2 }).notNull().default('100'),
+  coordinateAnswerAltHashes: text('coordinate_answer_alt_hashes').array().notNull().default([]),
 });
 
 export const vaultKeys = app.table('vault_keys', {

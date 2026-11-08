@@ -1,0 +1,31 @@
+catalog_id,object_type,constellation,right_ascension,declination,distance_ly
+NGC 7000,Emission nebula,Cygnus,20h 59m 17s,+44° 31′ 44″,2590
+SVY-0528-C,Survey candidate,Auriga,05h 28m 06s,+34° 52′ 26″,10000
+M 38,Open cluster,Auriga,05h 28m 42s,+35° 51′ 18″,4200
+IC 1805,Emission nebula,Cassiopeia,02h 33m 22s,+61° 26′ 36″,7500
+M 42,Emission nebula,Orion,05h 35m 17s,−05° 23′ 28″,1344
+IC 405,Emission nebula,Auriga,05h 16m 05s,+34° 27′ 49″,1500
+M 57,Planetary nebula,Lyra,18h 53m 35s,+33° 01′ 45″,2300
+SVY-0528-A,Survey candidate,Columba,05h 28m 06s,−34° 25′ 26″,10000
+NGC 2237,Emission nebula,Monoceros,06h 33m 45s,+04° 59′ 54″,5200
+M 1,Supernova remnant,Taurus,05h 34m 32s,+22° 00′ 52″,6500
+NGC 1931,Emission nebula,Auriga,05h 31m 25s,+34° 14′ 42″,7000
+M 16,Emission nebula,Serpens,18h 18m 48s,−13° 49′ 00″,7000
+SVY-0528-D,Survey candidate,Auriga,05h 28m 06s,+34° 25′ 26″,1000
+IC 1396,Emission nebula,Cepheus,21h 39m 06s,+57° 30′ 00″,2400
+M 36,Open cluster,Auriga,05h 36m 18s,+34° 08′ 24″,4100
+NGC 6543,Planetary nebula,Draco,17h 58m 33s,+66° 37′ 59″,3300
+IC 417,Emission nebula,Auriga,05h 28m 06s,+34° 25′ 26″,10000
+M 8,Emission nebula,Sagittarius,18h 03m 37s,−24° 23′ 12″,4100
+SVY-1528-E,Survey candidate,Hercules,15h 28m 06s,+34° 25′ 26″,10000
+IC 410,Emission nebula,Auriga,05h 22m 44s,+33° 31′ 00″,12000
+M 27,Planetary nebula,Vulpecula,19h 59m 36s,+22° 43′ 16″,1360
+NGC 281,Emission nebula,Cassiopeia,00h 52m 59s,+56° 37′ 19″,9500
+SVY-0528-B,Survey candidate,Auriga,05h 28m 16s,+34° 25′ 26″,10000
+M 37,Open cluster,Auriga,05h 52m 18s,+32° 33′ 02″,4500
+IC 434,Dark nebula,Orion,05h 40m 59s,−02° 27′ 30″,1375
+NGC 7293,Planetary nebula,Aquarius,22h 29m 39s,−20° 50′ 14″,650
+M 17,Emission nebula,Sagittarius,18h 20m 26s,−16° 10′ 36″,5500
+IC 1848,Emission nebula,Cassiopeia,02h 51m 10s,+60° 26′ 00″,7500
+M 20,Emission nebula,Sagittarius,18h 02m 23s,−23° 01′ 48″,4100
+NGC 2070,Emission nebula,Dorado,05h 38m 38s,−69° 05′ 42″,160000

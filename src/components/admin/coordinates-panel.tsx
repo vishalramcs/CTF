@@ -56,10 +56,10 @@ function AssignCoordinates({ config }: { config: CoordinateConfig }) {
     <form onSubmit={save} className={panelClass}>
       <SectionTitle>Assign coordinates to questions</SectionTitle>
       <p className="text-sm text-muted-foreground">
-        6 coordinates, 2 per location (North and South). Pick the question that gives each one
-        and type the coordinate. Use 2 Easy, 2 Medium and 2 Difficult questions. When a team
-        solves that question it sees the coordinate on its question page and in its Locations
-        box. Solving the Main Question gives all six.
+        6 coordinates, 2 per location (North and South). Pick the question that gives each one and
+        type the coordinate. Use 2 Easy, 2 Medium and 2 Difficult questions. When a team solves that
+        question it sees the coordinate on its question page and in its Locations box. Solving the
+        Main Question gives all six.
       </p>
       <p role="status" className="text-sm">
         {config.assignedCount === 0
@@ -96,8 +96,7 @@ function AssignCoordinates({ config }: { config: CoordinateConfig }) {
                     <option value="">Choose a question</option>
                     {config.questions.map((q) => (
                       <option key={q.id} value={q.id}>
-                        Q{q.number} · {DIFFICULTIES[q.difficulty as Difficulty].label} ·{' '}
-                        {q.title}
+                        Q{q.number} · {DIFFICULTIES[q.difficulty as Difficulty].label} · {q.title}
                       </option>
                     ))}
                   </select>
@@ -183,11 +182,85 @@ function LocationNames({ config }: { config: CoordinateConfig }) {
   );
 }
 
+// docs/13. The final step: what a team holding all six fragments sees, the accepted answers and the
+// bonus. Saved answers are never sent back here; leaving the box empty keeps them.
+function SpaceSignal({ config }: { config: CoordinateConfig }) {
+  const { run, pending, error } = useAction();
+  const [signal, setSignal] = useState(config.finalSignal);
+  const [answers, setAnswers] = useState('');
+  const [points, setPoints] = useState(String(config.finalPoints));
+
+  return (
+    <form
+      className={panelClass}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const result = await run('POST', '/api/admin/coordinates/signal', {
+          signal,
+          answers,
+          points: Number(points),
+        });
+        if (result.ok) setAnswers('');
+      }}
+    >
+      <SectionTitle>Space signal (final race)</SectionTitle>
+      <p className="text-sm text-muted-foreground">
+        A team that holds all six coordinates sees this text and can download the celestial
+        catalogue. The first real team to name the object wins the race; every team that names it
+        gets the bonus once.
+      </p>
+      <p role="status" className="text-sm">
+        {config.hasAnswer
+          ? `✓ ${Math.max(config.answerCount, 1)} accepted answer(s) saved.`
+          : 'No answer saved yet: the signal stays hidden until one is.'}{' '}
+        {config.winner ? `Winner: ${config.winner.team}.` : 'No winner yet.'}
+      </p>
+      <Field label="Signal text (shown at 6/6)">
+        <textarea
+          className={inputClass}
+          maxLength={600}
+          rows={4}
+          placeholder="Right Ascension: … / Declination: … / Distance: …"
+          value={signal}
+          onChange={(e) => setSignal(e.target.value)}
+        />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
+        <Field label="Accepted answers, one per line (empty keeps the saved ones)">
+          <textarea
+            className={inputClass}
+            maxLength={400}
+            rows={2}
+            autoComplete="off"
+            value={answers}
+            onChange={(e) => setAnswers(e.target.value)}
+          />
+        </Field>
+        <Field label="Bonus points">
+          <input
+            type="number"
+            min={0}
+            max={1000}
+            className={inputClass}
+            value={points}
+            onChange={(e) => setPoints(e.target.value)}
+          />
+        </Field>
+      </div>
+      <ErrorText>{error}</ErrorText>
+      <Button type="submit" className={actionClass} disabled={pending}>
+        Save space signal
+      </Button>
+    </form>
+  );
+}
+
 export function CoordinatesPanel({ config }: { config: CoordinateConfig; timeZone?: string }) {
   return (
     <>
       <AssignCoordinates config={config} />
       <LocationNames config={config} />
+      <SpaceSignal config={config} />
     </>
   );
 }

@@ -142,9 +142,16 @@ export async function getCoordinateBoard(teamId: string) {
     };
   });
 
-  const [{ points }] = await db.execute<{ points: string }>(
-    sql`SELECT location_points AS points FROM app.event_state WHERE id = 1`,
-  );
+  const [{ points, signal, final_points: finalPoints, answer_set: answerSet }] = await db.execute<{
+    points: string;
+    signal: string | null;
+    final_points: string;
+    answer_set: boolean;
+  }>(sql`SELECT location_points AS points, final_signal AS signal, final_points,
+                coordinate_answer_hash IS NOT NULL AS answer_set
+           FROM app.event_state WHERE id = 1`);
+  // docs/13. The space signal is sent only to a team holding all six fragments.
+  const allHeld = held.length === FRAGMENT_SLOTS;
 
   return {
     slots: FRAGMENT_SLOTS,
@@ -159,6 +166,10 @@ export async function getCoordinateBoard(teamId: string) {
     locations,
     finalCoordinates: final,
     found: found !== undefined,
+    signal:
+      allHeld && signal && answerSet
+        ? { text: signal, points: Number(finalPoints), found: found !== undefined }
+        : null,
   };
 }
 

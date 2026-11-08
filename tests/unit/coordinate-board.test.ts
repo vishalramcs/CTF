@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CoordinateBoard } from '@/components/coordinates/coordinate-board';
 import { fragmentId } from '@/lib/coordinates/fragments';
+import { normalizeFinal } from '@/lib/coordinates/normalize';
 import type { CoordinateBoard as BoardData } from '@/lib/coordinates/state';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh() {} }) }));
@@ -16,7 +17,11 @@ const slot = (order: number, value: string | null) => ({
 });
 
 // `values` is the fragment held in each slot 1-6, or null.
-function board(values: (string | null)[], answered = true): BoardData {
+function board(
+  values: (string | null)[],
+  answered = true,
+  signal: BoardData['signal'] = null,
+): BoardData {
   const locations = [1, 2, 3].map((position) => {
     const north = slot(2 * position - 1, values[2 * position - 2]);
     const south = slot(2 * position, values[2 * position - 1]);
@@ -38,6 +43,7 @@ function board(values: (string | null)[], answered = true): BoardData {
     locations,
     finalCoordinates: null,
     found: false,
+    signal,
   };
 }
 
@@ -96,5 +102,36 @@ describe('CoordinateBoard', () => {
     const html = render(['A', 'B', 'C', 'D', 'E', 'F']);
     expect(html).toContain('All three locations reconstructed');
     for (const n of [1, 2, 3]) expect(html).toContain(`TEXT${n}`);
+  });
+
+  it('shows the space signal, catalogue and answer box only when the server sends a signal', () => {
+    const none = render(['A', 'B', 'C', 'D', 'E', 'F']);
+    expect(none).not.toContain('Space signal');
+    expect(none).not.toContain('/api/coordinates/catalog');
+    const all = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const html = renderToStaticMarkup(
+      createElement(CoordinateBoard, {
+        board: board(all, true, { text: 'SIGNAL-TEXT', points: 100, found: false }),
+      }),
+    );
+    expect(html).toContain('SIGNAL-TEXT');
+    expect(html).toContain('/api/coordinates/catalog');
+    expect(html).toContain('Name the object for +100');
+    const found = renderToStaticMarkup(
+      createElement(CoordinateBoard, {
+        board: board(all, true, { text: 'SIGNAL-TEXT', points: 100, found: true }),
+      }),
+    );
+    expect(found).toContain('Signal traced');
+    expect(found).not.toContain('Name the object');
+  });
+});
+
+describe('normalizeFinal', () => {
+  it('ignores case, punctuation and spaces', () => {
+    expect(normalizeFinal('NGC 7000')).toBe('ngc7000');
+    expect(normalizeFinal(' n.g.c.7000 ')).toBe('ngc7000');
+    expect(normalizeFinal('North  America!')).toBe('northamerica');
+    expect(normalizeFinal(' .. ')).toBeNull();
   });
 });

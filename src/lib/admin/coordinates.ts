@@ -47,6 +47,9 @@ export async function loadCoordinateConfig() {
   const [state] = await db
     .select({
       hasAnswer: eventState.coordinateAnswerHash,
+      answerCount: sql<number>`cardinality(${eventState.coordinateAnswerAltHashes})`,
+      finalSignal: eventState.finalSignal,
+      finalPoints: eventState.finalPoints,
       winnerId: eventState.coordinateWinnerId,
       wonAt: eventState.coordinateWonAt,
       winnerName: teams.name,
@@ -83,6 +86,9 @@ export async function loadCoordinateConfig() {
   const assigned = questions.filter((q) => q.fragmentValue !== null);
   return {
     hasAnswer: state.hasAnswer !== null,
+    answerCount: Number(state.answerCount),
+    finalSignal: state.finalSignal ?? '',
+    finalPoints: Number(state.finalPoints),
     winner: state.winnerName ? { team: state.winnerName, at: state.wonAt } : null,
     mainFirst: mainFirst ? { team: mainFirst.team, at: mainFirst.at } : null,
     questions,

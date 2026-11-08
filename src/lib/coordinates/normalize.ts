@@ -10,6 +10,11 @@ export function placeMatches(given: string, label: string): boolean {
   return [g, g.replace(/ city$/, '')].some((x) => accepted.includes(squash(x)));
 }
 
+// docs/13. The final answer also drops spaces, so "NGC7000", "ngc 7000" and "N.G.C. 7000" are one answer.
+export function normalizeFinal(input: string): string | null {
+  return normalizeLocation(input)?.replace(/ /g, '') || null;
+}
+
 export function normalizeLocation(input: string): string | null {
   const normalized = input
     .normalize('NFKD')
