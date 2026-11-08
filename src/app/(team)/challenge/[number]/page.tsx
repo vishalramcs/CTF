@@ -48,9 +48,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ numb
         <Link href="/dashboard" className={BACK}>
           Back to dashboard
         </Link>
-        <h1 className="font-heading text-4xl font-black uppercase">
-          #{view.number} {view.title}
-        </h1>
+        <h1 className="font-heading text-4xl font-black uppercase">{view.title}</h1>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <DifficultyChip difficulty={view.difficulty} />
           <span className="text-muted-foreground">{view.category}</span>

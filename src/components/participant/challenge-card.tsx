@@ -86,7 +86,7 @@ export function ChallengeCard({ card }: { card: Card }) {
       radius={10}
       background="var(--card)"
       shadowOpacity={0.6}
-      ariaLabel={`Question ${card.number}, ${card.title}, ${DIFFICULTY[card.difficulty].label}, ${card.currentPoints} points, ${stateLabel(card)}. Flip for the link.`}
+      ariaLabel={`Question: ${card.title}, ${DIFFICULTY[card.difficulty].label}, ${card.currentPoints} points, ${stateLabel(card)}. Flip for the link.`}
       className={`w-full! focus-visible:ring-2 focus-visible:ring-ring ${
         card.state === 'solved' ? 'opacity-75' : ''
       }`}
@@ -110,8 +110,8 @@ export function ChallengeCard({ card }: { card: Card }) {
             <div
               className={`flex flex-col justify-between gap-3 rounded-[10px] border border-border border-l-4 p-4 ${DIFFICULTY[card.difficulty].accent}`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-heading text-2xl font-black">#{card.number}</p>
+              {/* No question number: the order is shuffled per team (organiser decision). */}
+              <div className="flex items-start justify-end gap-2">
                 <DifficultyChip difficulty={card.difficulty} />
               </div>
               {/* The card has a fixed height; the back shows the full title. */}
@@ -141,9 +141,7 @@ export function ChallengeCard({ card }: { card: Card }) {
       back={
         (
           <div className="flex h-full flex-col justify-between gap-3 rounded-[10px] border border-border p-4">
-            <p className="font-semibold">
-              #{card.number} {card.title}
-            </p>
+            <p className="font-semibold">{card.title}</p>
             <Link
               href={`/challenge/${card.number}`}
               onPointerDown={stop}
