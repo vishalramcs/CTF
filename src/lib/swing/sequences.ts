@@ -29,7 +29,8 @@ export const MOVES = [
 ] as const;
 export type Move = (typeof MOVES)[number];
 
-type Entrance = 'dashboard' | 'leaderboard' | 'history' | 'tools';
+// No dashboard entrance: its stop-and-go landing read as a jerk (organiser decision, 8 Nov 2026).
+type Entrance = 'leaderboard' | 'history' | 'tools';
 export type SequenceName = 'login' | 'easter' | Entrance | `q:${Move}` | `s:${Move}`;
 
 /** The character's height at scale 1. */
@@ -331,32 +332,6 @@ export const SEQUENCES: Record<SequenceName, (W: number, H: number, o?: Origin) 
   }),
 
   // Page entrances: short, small, over the page, never in the way of a click.
-  dashboard: () => ({
-    backdrop: 'vignette',
-    ambient: true,
-    steps: [
-      {
-        pose: 'land',
-        ms: 650,
-        motion: 'leap',
-        from: [1.15, -0.15],
-        to: [0.86, 0.8],
-        lift: 0.1,
-        scale: flat(0.45),
-      },
-      {
-        pose: 'land',
-        ms: 550,
-        motion: 'leap',
-        from: [0.86, 0.8],
-        to: [1.25, 0.45],
-        lift: 0.15,
-        rot: 20,
-        scale: flat(0.45),
-        fade: [1, 0.6],
-      },
-    ],
-  }),
   leaderboard: (W, H) => ({
     backdrop: 'vignette',
     ambient: true,
@@ -403,7 +378,6 @@ export const SEQUENCES: Record<SequenceName, (W: number, H: number, o?: Origin) 
 };
 
 const PAGE: Record<string, SequenceName> = {
-  '/dashboard': 'dashboard',
   '/leaderboard': 'leaderboard',
   '/history': 'history',
   '/tools': 'tools',

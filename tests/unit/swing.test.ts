@@ -87,7 +87,7 @@ describe('playSwing', () => {
     const first = playQuestionTransition({});
     expect(first).not.toBeNull();
     expect(playQuestionTransition({})).toBeNull(); // a rapid second click is ignored
-    expect(playSwing('dashboard')).toBeNull(); // a page entrance never interrupts
+    expect(playSwing('history')).toBeNull(); // a page entrance never interrupts
     expect(playSwing('s:descent')).toBeNull(); // nor does a secret show
     finish();
     await first;
@@ -275,12 +275,12 @@ describe('sequences', () => {
   });
 
   it('maps each page to its own entrance', () => {
-    expect(sequenceForPath('/dashboard')).toBe('dashboard');
+    expect(sequenceForPath('/dashboard')).toBeNull();
     expect(sequenceForPath('/leaderboard')).toBe('leaderboard');
     expect(sequenceForPath('/history')).toBe('history');
     expect(sequenceForPath('/tools')).toBe('tools');
     expect(sequenceForPath('/challenge/3')).toBeNull();
-    for (const name of ['dashboard', 'leaderboard', 'history', 'tools'] as const)
+    for (const name of ['leaderboard', 'history', 'tools'] as const)
       expect(SEQUENCES[name](W, H).ambient).toBe(true);
   });
 });
