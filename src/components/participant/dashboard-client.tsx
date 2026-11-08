@@ -17,7 +17,6 @@ import type { SurpriseDone } from '@/lib/participant/history';
 import type { ChallengeCard as Card } from '@/lib/scoring/team-state';
 import type { CoordinateBoard as BoardData } from '@/lib/coordinates/state';
 
-const GROUPS: Card['difficulty'][] = ['easy', 'medium', 'difficult', 'main_difficult'];
 const H2 = 'font-heading text-2xl font-bold uppercase';
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -108,10 +107,7 @@ export function DashboardClient({
               label="Challenges solved"
               value={`${cards.filter((c) => c.state === 'solved').length}/${cards.length}`}
             />
-            <Stat
-              label="Fragments"
-              value={`${board.fragments.length}/${board.slots}`}
-            />
+            <Stat label="Fragments" value={`${board.fragments.length}/${board.slots}`} />
           </dl>
         </section>
 
@@ -121,22 +117,29 @@ export function DashboardClient({
               <h2 id="challenges" className={H2}>
                 Challenges
               </h2>
-              {GROUPS.map((difficulty) => {
-                const group = cards.filter((c) => c.difficulty === difficulty);
-                if (group.length === 0) return null;
-                return (
-                  <div key={difficulty} className="flex flex-col gap-3">
-                    <h3 className="font-heading text-lg font-bold text-muted-foreground uppercase">
-                      {DIFFICULTY[difficulty].label}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {group.map((card) => (
-                        <ChallengeCard key={card.number} card={card} />
-                      ))}
+              {/* Easy, medium and difficult mixed in one list, in this team's own shuffled order
+                  (listChallengeCards); each card still shows its difficulty. The Main Question
+                  keeps its own place at the end. */}
+              {[
+                cards.filter((c) => c.difficulty !== 'main_difficult'),
+                cards.filter((c) => c.difficulty === 'main_difficult'),
+              ].map(
+                (group, i) =>
+                  group.length > 0 && (
+                    <div key={i} className="flex flex-col gap-3">
+                      {i === 1 && (
+                        <h3 className="font-heading text-lg font-bold text-muted-foreground uppercase">
+                          {DIFFICULTY.main_difficult.label}
+                        </h3>
+                      )}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {group.map((card) => (
+                          <ChallengeCard key={card.number} card={card} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  ),
+              )}
             </section>
 
             <section aria-labelledby="locations" className="flex flex-col gap-3">

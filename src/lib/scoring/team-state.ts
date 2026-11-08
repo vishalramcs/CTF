@@ -108,7 +108,8 @@ export async function listChallengeCards(
     .leftJoin(solves, and(eq(solves.challengeId, challenges.id), eq(solves.teamId, teamId)))
     .where(or(eq(challenges.isPublished, true), fullAccess(teamId)));
 
-  // A fixed shuffle per team (a refresh keeps it), different between teams. The dashboard groups by difficulty.
+  // A fixed shuffle per team (a refresh keeps it), different between teams. The dashboard shows easy,
+  // medium and difficult mixed in this order, the Main Question last.
   const key = (n: number) => hmacHex(env.VARIANT_HMAC_KEY, `card-order:${teamId}:${n}`);
   rows.sort((a, b) => key(a.number).localeCompare(key(b.number)));
 
